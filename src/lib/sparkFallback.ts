@@ -1,12 +1,12 @@
 /**
  * Fallback implementation for development environments without Spark runtime
- */
+dec
 
-declare global {
-  interface Window {
-    spark: {
-      llmPrompt: (strings: string[], ...values: any[]) => string
-      llm: (prompt: string, modelName?: string, jsonMode?: boolean) => Promise<string>
+      llm: (prom
+        avatarUrl: s
+        id: 
+        login: string
+      kv: {
       user: () => Promise<{
         avatarUrl: string
         email: string
@@ -16,67 +16,67 @@ declare global {
       }>
       kv: {
         keys: () => Promise<string[]>
-        get: <T>(key: string) => Promise<T | undefined>
-        set: <T>(key: string, value: T) => Promise<void>
-        delete: (key: string) => Promise<void>
-      }
-    }
-  }
-}
-
-// Fallback KV storage using localStorage
-const fallbackKV = {
-  async keys(): Promise<string[]> {
-    const keys: string[] = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key?.startsWith('spark-kv:')) {
-        keys.push(key.replace('spark-kv:', ''))
-      }
-    }
     return keys
+
+    try {
+      }
+     
+  }
+ 
+
+  async delete(key: string): Promise<void
+const fallbackKV = {
+
+const fallbackUser = {
+    return {
+      email: 'local-user@example.com'
+      isOwner: true,
+    }
+}
+    }
+  llmPrompt: (s
   },
 
   async get<T>(key: string): Promise<T | undefined> {
-    try {
-      const item = localStorage.getItem(`spark-kv:${key}`)
-      return item ? JSON.parse(item) : undefined
-    } catch {
-      return undefined
+    
+      return JSON.stringify({
+        placeholder: true
     }
-  },
+    return 'Spark LLM 
+    }
+// I
 
-  async set<T>(key: string, value: T): Promise<void> {
-    localStorage.setItem(`spark-kv:${key}`, JSON.stringify(value))
-  },
-
-  async delete(key: string): Promise<void> {
-    localStorage.removeItem(`spark-kv:${key}`)
+    ...fallbackUser,
   }
+
+
+
+
+
 }
 
 // Fallback user implementation
-const fallbackUser = {
+
   async user() {
-    return {
+
       avatarUrl: 'https://github.com/github.png',
-      email: 'local-user@example.com',
+
       id: 'local-dev-user',
-      isOwner: true,
+
       login: 'local-dev'
-    }
+
   }
-}
 
-// Fallback LLM implementation
-const fallbackLLM = {
-  llmPrompt: (strings: string[], ...values: any[]): string => {
-    return strings.reduce((result, string, i) => {
-      return result + string + (values[i] || '')
-    }, '')
-  },
 
-  async llm(prompt: string, modelName?: string, jsonMode?: boolean): Promise<string> {
+
+
+
+
+
+
+
+
+
     console.warn('Spark LLM not available in development. Returning placeholder response.')
     
     if (jsonMode) {
