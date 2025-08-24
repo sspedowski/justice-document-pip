@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 
 interface Document {
   id: string
@@ -39,7 +40,8 @@ interface Document {
 interface ProcessingDocument {
   fileName: string
   progress: number
-  status: 'uploading' | 'extracting' | 'analyzing' | 'complete' | 'error'
+  status: 'validating' | 'uploading' | 'extracting' | 'analyzing' | 'complete' | 'error'
+  error?: string
 }
 
 const CHILDREN_NAMES = ['Jace', 'Josh', 'Joshua', 'Nicholas', 'John', 'Peyton', 'Owen']
@@ -99,37 +101,65 @@ function App() {
   })
 
   const handleFileUpload = async (files: FileList) => {
-    const fileArray = Array.from(files).filter(file => file.type === 'application/pdf')
+    const fileArray = Array.from(files)
     
     if (fileArray.length === 0) {
-      toast.error('Please select PDF files only')
+      toast.error('Please select files to upload')
       return
     }
 
-    for (const file of fileArray) {
+    // Validate all files first
+    const validationResults = await Promise.all(
+      fileArray.map(async (file) => ({
+        file,
+        isValid: await validatePDF(file),
+        isPDF: file.type === 'application/pdf'
+      }))
+    )
+
+    const invalidFiles = validationResults.filter(r => !r.isValid)
+    const validFiles = validationResults.filter(r => r.isValid).map(r => r.file)
+
+    if (invalidFiles.length > 0) {
+      const invalidNames = invalidFiles.map(f => f.file.name).join(', ')
+      toast.error(`Invalid PDF files: ${invalidNames}`)
+    }
+
+    if (validFiles.length === 0) {
+      toast.error('No valid PDF files found')
+      return
+    }
+
+    // Process valid files
+    for (const file of validFiles) {
       const processingDoc: ProcessingDocument = {
         fileName: file.name,
         progress: 0,
-        status: 'uploading'
+        status: 'validating'
       }
       
       setProcessing(prev => [...prev, processingDoc])
       
       try {
-        await simulateProcessing(file, processingDoc)
+        await processRealPDF(file, processingDoc)
       } catch (error) {
         console.error('Processing error:', error)
         setProcessing(prev => prev.map(p => 
           p.fileName === file.name 
-            ? { ...p, status: 'error', progress: 0 }
+            ? { 
+                ...p, 
+                status: 'error', 
+                progress: 0,
+                error: error instanceof Error ? error.message : 'Unknown error'
+              }
             : p
         ))
-        toast.error(`Failed to process ${file.name}`)
+        toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
   }
 
-  const simulateProcessing = async (file: File, processingDoc: ProcessingDocument) => {
+  const processRealPDF = async (file: File, processingDoc: ProcessingDocument) => {
     const updateProgress = (progress: number, status: ProcessingDocument['status']) => {
       setProcessing(prev => prev.map(p => 
         p.fileName === file.name 
@@ -138,31 +168,38 @@ function App() {
       ))
     }
 
-    updateProgress(20, 'extracting')
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Step 1: Validate (already done, but update UI)
+    updateProgress(10, 'validating')
+    await new Promise(resolve => setTimeout(resolve, 200))
 
-    updateProgress(60, 'analyzing')
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const mockText = `Sample extracted text from ${file.name}. This document contains information about legal proceedings, child welfare investigations, and various procedural matters. Brady material may be relevant. Due process concerns identified. CAPTA compliance issues noted.`
+    // Step 2: Extract text from PDF
+    updateProgress(25, 'extracting')
+    const pdfResult = await extractTextFromPDF(file, 50) // Limit to 50 pages for performance
     
+    updateProgress(70, 'analyzing')
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Step 3: Analyze content for children and laws
     const detectedChildren = CHILDREN_NAMES.filter(name => 
-      mockText.toLowerCase().includes(name.toLowerCase())
+      pdfResult.text.toLowerCase().includes(name.toLowerCase())
     )
     
     const detectedLaws = LAWS.filter(law =>
       law.keywords.some(keyword => 
-        mockText.toLowerCase().includes(keyword.toLowerCase())
+        pdfResult.text.toLowerCase().includes(keyword.toLowerCase())
       )
     ).map(law => law.name)
 
-    const category = guessCategory(mockText)
+    const category = guessCategory(pdfResult.text)
+    
+    // Create a more meaningful description from extracted text
+    const description = createDescription(pdfResult.text, pdfResult.metadata)
     
     const newDoc: Document = {
       id: Date.now().toString(),
       fileName: file.name,
-      title: file.name.replace('.pdf', ''),
-      description: mockText.substring(0, 300) + '...',
+      title: pdfResult.metadata?.title || file.name.replace('.pdf', ''),
+      description,
       category,
       children: detectedChildren,
       laws: detectedLaws,
@@ -179,7 +216,7 @@ function App() {
         oversightPacket: ['Primary', 'Supporting'].includes(category)
       },
       uploadedAt: new Date().toISOString(),
-      textContent: mockText
+      textContent: pdfResult.text.substring(0, 10000) // Store first 10k chars for search
     }
 
     updateProgress(100, 'complete')
@@ -190,17 +227,77 @@ function App() {
       setProcessing(prev => prev.filter(p => p.fileName !== file.name))
     }, 2000)
 
-    toast.success(`Successfully processed ${file.name}`)
+    toast.success(`Successfully processed ${file.name} (${pdfResult.pageCount} pages)`)
+  }
+
+  const createDescription = (text: string, metadata?: any): string => {
+    // Clean and truncate text for description
+    const cleanText = text.replace(/\s+/g, ' ').trim()
+    
+    // Try to find a meaningful first sentence or paragraph
+    const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 20)
+    
+    if (sentences.length > 0) {
+      let description = sentences[0].trim()
+      if (description.length < 100 && sentences.length > 1) {
+        description += '. ' + sentences[1].trim()
+      }
+      
+      // Add metadata context if available
+      if (metadata?.author) {
+        description = `Document by ${metadata.author}. ${description}`
+      }
+      
+      return description.length > 500 
+        ? description.substring(0, 500) + '...'
+        : description
+    }
+    
+    // Fallback to first 300 characters
+    return cleanText.length > 300 
+      ? cleanText.substring(0, 300) + '...'
+      : cleanText || 'No readable text content found'
   }
 
   const guessCategory = (text: string): Document['category'] => {
     const lowerText = text.toLowerCase()
-    if (lowerText.includes('nurse exam') || lowerText.includes('forensic') || lowerText.includes('police report')) {
+    
+    // Primary evidence indicators
+    if (
+      lowerText.includes('nurse exam') || 
+      lowerText.includes('forensic') || 
+      lowerText.includes('police report') ||
+      lowerText.includes('investigation report') ||
+      lowerText.includes('medical exam') ||
+      lowerText.includes('child protective') ||
+      lowerText.includes('abuse allegation') ||
+      lowerText.includes('witness statement')
+    ) {
       return 'Primary'
     }
-    if (lowerText.includes('notice of hearing') || lowerText.includes('scheduling')) {
+    
+    // Skip these documents
+    if (
+      lowerText.includes('notice of hearing') || 
+      lowerText.includes('scheduling') ||
+      lowerText.includes('calendar notice') ||
+      lowerText.includes('administrative notice') ||
+      (lowerText.includes('notice') && lowerText.length < 500) // Short notices
+    ) {
       return 'No'
     }
+    
+    // External documents
+    if (
+      lowerText.includes('newspaper') ||
+      lowerText.includes('news article') ||
+      lowerText.includes('media report') ||
+      lowerText.includes('press release')
+    ) {
+      return 'External'
+    }
+    
+    // Default to supporting for everything else
     return 'Supporting'
   }
 
@@ -318,11 +415,12 @@ function App() {
                     handleFileUpload(e.dataTransfer.files)
                   }}
                   onDragOver={(e) => e.preventDefault()}
+                  onDragEnter={(e) => e.preventDefault()}
                   onClick={() => {
                     const input = document.createElement('input')
                     input.type = 'file'
                     input.multiple = true
-                    input.accept = '.pdf'
+                    input.accept = '.pdf,application/pdf'
                     input.onchange = (e) => {
                       const files = (e.target as HTMLInputElement).files
                       if (files) handleFileUpload(files)
@@ -332,7 +430,10 @@ function App() {
                 >
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Drop PDF files here or click to browse</h3>
-                  <p className="text-muted-foreground">Supports multiple file upload</p>
+                  <p className="text-muted-foreground mb-2">Supports multiple file upload</p>
+                  <p className="text-xs text-muted-foreground">
+                    Files will be processed locally in your browser - no data is sent to external servers
+                  </p>
                 </div>
 
                 {processing.length > 0 && (
@@ -341,10 +442,15 @@ function App() {
                     {processing.map((proc, index) => (
                       <div key={index} className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span>{proc.fileName}</span>
-                          <span className="capitalize">{proc.status}</span>
+                          <span className="truncate max-w-xs">{proc.fileName}</span>
+                          <span className={`capitalize ${proc.status === 'error' ? 'text-destructive' : ''}`}>
+                            {proc.status === 'error' && proc.error ? `Error: ${proc.error}` : proc.status}
+                          </span>
                         </div>
-                        <Progress value={proc.progress} className="h-2" />
+                        <Progress 
+                          value={proc.progress} 
+                          className={`h-2 ${proc.status === 'error' ? 'bg-destructive/20' : ''}`} 
+                        />
                       </div>
                     ))}
                   </div>
