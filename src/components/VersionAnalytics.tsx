@@ -1,77 +1,77 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Badge } from '@/components/ui/badge'
-  Users, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
 import { 
-  BarChar
+  Activity, 
+  BarChart3, 
+  Calendar, 
+  Clock, 
+  Edit, 
+  FileArrowUp, 
   GitBranch, 
-  Edit,
-  BarChart3,
-  title: stri
-  category: 'P
-  laws:
-    law: st
-    par
-  }>
+  TrendingUp, 
+  Users 
+} from '@phosphor-icons/react'
 
-    exhibitBundle: b
-  }
-  textContent?: st
-  lastModified:
-}
-interface DocumentVersion {
-  documentId: string
-  title: string
-  category: 'Primary'
-  laws: string[
-    law: string
-    paragraph: string
-  }>
-  pl
-    exhibitBundle: bool
-  }
-  changedAt: string
-  changeType: 'created' | 
-
-  d
-  uploadedAt: string
-const getChangeTypeCol
-  currentVersion: number
-    case 'imported': r
-  }
-
-
-    case 'edited': return <
+interface Document {
   id: string
-}
-const formatDate 
-    month: 'sho
-    hour: '2-digit',
-  })
+  fileName: string
+  title: string
+  description: string
+  category: 'Primary' | 'Supporting' | 'External' | 'No'
   children: string[]
-  const analytic
-    const totalCreati
-    const total
-    // User acti
-      acc[version.cha
+  laws: string[]
+  misconduct: Array<{
+    law: string
+    page: string
+    paragraph: string
     notes: string
-    
-    
-    
+  }>
+  include: 'YES' | 'NO'
+  placement: {
     masterFile: boolean
-    const recentActivity =
-      .sort((a, b) => new Da
-   
-  changedBy: string
-    }
-    // Monthly trends
-      const monthKey = new Date(version.changed
+    exhibitBundle: boolean
+    oversightPacket: boolean
+  }
+  uploadedAt: string
+  textContent?: string
+  currentVersion: number
+  lastModified: string
+  lastModifiedBy: string
 }
 
-      return acc
-    
-      .map(([month, data]) => ({
+interface DocumentVersion {
+  id: string
+  documentId: string
+  version: number
+  title: string
+  description: string
+  category: 'Primary' | 'Supporting' | 'External' | 'No'
+  children: string[]
+  laws: string[]
+  misconduct: Array<{
+    law: string
+    page: string
+    paragraph: string
+    notes: string
+  }>
+  include: 'YES' | 'NO'
+  placement: {
+    masterFile: boolean
+    exhibitBundle: boolean
+    oversightPacket: boolean
+  }
+  changedBy: string
+  changedAt: string
+  changeNotes?: string
+  changeType: 'created' | 'edited' | 'imported'
+}
+
+interface VersionAnalyticsProps {
+  documents: Document[]
+  documentVersions: DocumentVersion[]
 }
 
 const getChangeTypeColor = (type: string) => {
@@ -101,54 +101,49 @@ const formatDate = (dateString: string) => {
   })
 }
 
-        <Card>
-            <CardTitle className="t
-          </CardHeader>
-            <div className="text-2xl font-bold">{analytics.totalEdits}</div>
-              {analytics.totalEdits} edits made
-          </CardContent>
+export function VersionAnalytics({ documents, documentVersions }: VersionAnalyticsProps) {
+  const analytics = useMemo(() => {
+    const totalVersions = documentVersions.length
+    const totalCreations = documentVersions.filter(v => v.changeType === 'created').length
+    const totalEdits = documentVersions.filter(v => v.changeType === 'edited').length
+    const totalImports = documentVersions.filter(v => v.changeType === 'imported').length
     
-          <CardHeader classNa
-            <Users className="h-4 w-4 text-muted-foreground" />
-          <CardContent>
-            <p c
-            </p>
+    // User activity
+    const userCounts = documentVersions.reduce((acc, version) => {
+      acc[version.changedBy] = (acc[version.changedBy] || 0) + 1
+      return acc
+    }, {} as { [key: string]: number })
     
-        <Card>
+    const mostActiveUser = Object.entries(userCounts)
       .sort(([,a], [,b]) => b - a)[0] || ['None', 0]
     
-            <div className="text-2xl font-bold">{analytics.recentActivity.length}</div>
+    // Recent activity (last 7 days)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const recentActivity = documentVersions
+      .filter(v => new Date(v.changedAt) >= sevenDaysAgo)
+      .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
     
-          </CardContent>
-      </div>
-      <Tabs defaultValue="activity" className="space
-          <TabsTrigger value="activity">Rec
-          <TabsTrigger value="trends">Monthly Trends</Tab
-
+    // Average versions per document
+    const averageVersionsPerDocument = documents.length > 0 ? totalVersions / documents.length : 0
     
-    const changeTypeDistribution = {
-      created: totalCreations,
-      edited: totalEdits,
-      imported: totalImports
-    }
-    
-                     
-                          {getChangeTypeIcon(version.changeType)}
-      const monthKey = new Date(version.changedAt).toISOString().slice(0, 7) // YYYY-MM format
-                          <
-                          </div>
-       
-                        </div>
-                          {formatDate(version.changed
-                
-    }, {} as { [key: string]: { versions: number, documents: Set<string> } })
-    
-                  <Activity className="h-8 w-8 mx-auto mb-2 
-                </div>
-            </
-        </TabsContent>
-        <TabsContent value="distributi
-         
+    // Monthly trends
+    const monthlyTrends = Object.entries(
+      documentVersions.reduce((acc, version) => {
+        const monthKey = new Date(version.changedAt).toISOString().slice(0, 7) // YYYY-MM format
+        if (!acc[monthKey]) {
+          acc[monthKey] = { versions: 0, documents: new Set<string>() }
+        }
+        acc[monthKey].versions++
+        acc[monthKey].documents.add(version.documentId)
+        return acc
+      }, {} as { [key: string]: { versions: number, documents: Set<string> } })
+    )
+      .map(([month, data]) => ({
+        month,
+        versions: data.versions,
+        documents: data.documents.size
+      }))
       .sort(([a], [b]) => a.localeCompare(b))
     
     // Category analysis
@@ -157,21 +152,28 @@ const formatDate = (dateString: string) => {
       return acc
     }, {} as { [key: string]: number })
     
-            
-                    
-                     
-                 
-                  }
+    // Change type distribution
+    const changeTypeDistribution = {
+      created: totalCreations,
+      edited: totalEdits,
+      imported: totalImports
+    }
+    
+    return {
+      totalVersions,
+      totalCreations,
+      totalEdits,
+      totalImports,
       userCounts,
-
+      mostActiveUser: { user: mostActiveUser[0], count: mostActiveUser[1] },
       averageVersionsPerDocument,
       recentActivity: recentActivity.slice(0, 10),
-                </CardTitle>
-              <CardContent>
-                  {Obje
-      activeUsers: Object.keys(userCounts)
-     
-                          <div clas
+      monthlyTrends,
+      categoryVersions,
+      changeTypeDistribution,
+      activeUsers: Object.keys(userCounts).length
+    }
+  }, [documents, documentVersions])
 
   if (documentVersions.length === 0) {
     return (
@@ -185,71 +187,71 @@ const formatDate = (dateString: string) => {
         </CardContent>
       </Card>
     )
-   
+  }
 
-          
-                    
+  return (
+    <div className="space-y-6">
       {/* Summary Cards */}
-                          <div className="flex items-center g
-              
-                                month: 'short' 
-                            </span>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                       
-                       
-                        </div>
-                      </div>
-              {analytics.averageVersionsPerDocument.toFixed(1)} avg per document
-              ) 
-                  <Calen
-               
-
-        </Tabs
-    </div>
-}
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-
-
-
-
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Edits</CardTitle>
+            <Edit className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.totalEdits}</div>
+            <p className="text-xs text-muted-foreground">
               {analytics.totalEdits} edits made
+            </p>
+          </CardContent>
+        </Card>
 
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Versions</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.averageVersionsPerDocument.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">
+              {analytics.averageVersionsPerDocument.toFixed(1)} avg per document
+            </p>
+          </CardContent>
+        </Card>
 
-
-
-
-
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Most Active User</CardTitle>
-
-
-
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">{analytics.mostActiveUser.count}</div>
-
+            <p className="text-xs text-muted-foreground">
               changes by {analytics.mostActiveUser.user}
+            </p>
+          </CardContent>
+        </Card>
 
-
-
-
-
-
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
-
-
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">{analytics.recentActivity.length}</div>
-
+            <p className="text-xs text-muted-foreground">
               changes in last 7 days
-
-
-
-
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       <Tabs defaultValue="activity" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="activity">Recent Activity</TabsTrigger>
           <TabsTrigger value="distribution">Change Types</TabsTrigger>
-
-
+          <TabsTrigger value="trends">Monthly Trends</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="activity" className="space-y-4">
           <Card>
@@ -298,44 +300,44 @@ const formatDate = (dateString: string) => {
 
         <TabsContent value="distribution" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
-
-
-
-
-
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Change Types
+                </CardTitle>
+              </CardHeader>
               <CardContent>
-
-
+                <div className="space-y-4">
+                  {Object.entries(analytics.changeTypeDistribution).map(([type, count]) => {
                     const percentage = analytics.totalVersions > 0 ? (count / analytics.totalVersions) * 100 : 0
+                    return (
+                      <div key={type} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge className={getChangeTypeColor(type)}>
+                              {getChangeTypeIcon(type)}
+                              <span className="ml-1 capitalize">{type}</span>
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">{count} changes</span>
+                          </div>
+                          <span className="text-sm font-medium">{percentage.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={percentage} className="h-2" />
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
                   User Activity
-
-
+                </CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {Object.entries(analytics.userCounts)
@@ -355,33 +357,31 @@ const formatDate = (dateString: string) => {
                             <span className="text-sm font-medium">{percentage.toFixed(1)}%</span>
                           </div>
                           <Progress value={percentage} className="h-2" />
-
+                        </div>
                       )
                     })}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        <TabsContent value="trends" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Monthly Activity Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               {analytics.monthlyTrends.length > 0 ? (
-
+                <div className="space-y-4">
                   {analytics.monthlyTrends.map((trend) => {
-
-
-
-
-
-
+                    const versionPercentage = analytics.totalVersions > 0 ? (trend.versions / analytics.totalVersions) * 100 : 0
+                    return (
+                      <div key={trend.month} className="space-y-2">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">
                               {new Date(trend.month + '-01').toLocaleDateString('en-US', { 
@@ -392,25 +392,26 @@ const formatDate = (dateString: string) => {
                             <Badge variant="outline">
                               {trend.versions} versions, {trend.documents} docs
                             </Badge>
-
+                          </div>
                           <span className="text-sm font-medium">
                             {(trend.versions / trend.documents).toFixed(1)} avg per doc
                           </span>
-
+                        </div>
                         <Progress value={versionPercentage} className="h-3" />
-
-
-
-
-
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
                 <div className="text-center py-6 text-muted-foreground">
                   <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No trend data available yet</p>
-
-
-
-
-
-
-
-
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
