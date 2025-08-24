@@ -52,7 +52,7 @@ const fallbackUser = {
 
 
 
-
+  }
 }
 
 // Fallback user implementation
