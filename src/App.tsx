@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine } from '@phosphor-icons/react'
+import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine, GitCompare } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import { ReportGenerator } from '@/components/ReportGenerator'
+import { DocumentComparison } from '@/components/DocumentComparison'
 import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
 
 interface DocumentVersion {
@@ -135,6 +136,7 @@ function App() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
   const [viewingVersionHistory, setViewingVersionHistory] = useState<Document | null>(null)
+  const [comparingVersions, setComparingVersions] = useState<Document | null>(null)
   const [changeNotes, setChangeNotes] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [contentSearchTerm, setContentSearchTerm] = useState('')
@@ -330,6 +332,16 @@ function App() {
     }
   }
 
+  const showVersionComparison = (doc: Document) => {
+    const versions = getDocumentVersions(doc.id)
+    if (versions.length < 1) {
+      toast.error('Need at least 2 versions to compare. Make some edits to create version history.')
+      return
+    }
+    setComparingVersions(doc)
+    toast.success(`Opening comparison view for "${doc.title}"`)
+  }
+
   const revertToVersion = (documentId: string, versionId: string) => {
     const version = documentVersions.find(v => v.id === versionId)
     if (!version) {
@@ -391,9 +403,18 @@ function App() {
         setSelectedDoc(null)
       }
       
+      // Ctrl/Cmd + D to open version comparison for selected document
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedDoc) {
+        e.preventDefault()
+        showVersionComparison(selectedDoc)
+        setSelectedDoc(null)
+      }
+      
       // Escape to close dialogs
       if (e.key === 'Escape') {
-        if (viewingVersionHistory) {
+        if (comparingVersions) {
+          setComparingVersions(null)
+        } else if (viewingVersionHistory) {
           setViewingVersionHistory(null)
         } else if (editingDoc) {
           setEditingDoc(null)
@@ -406,7 +427,7 @@ function App() {
     
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedDoc, viewingVersionHistory, editingDoc])
+  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions])
 
   const filteredDocuments = allDocuments.filter(doc => {
     const matchesSearch = searchTerm === '' || 
@@ -953,7 +974,7 @@ function App() {
                       <div className="mt-4 pt-3 border-t border-blue-200">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{recentVersions.length} changes in the last 7 days</span>
-                          <span>View detailed analytics in Reports → Versions</span>
+                          <span>View detailed analytics in Reports → Versions. Press Ctrl+D to compare versions.</span>
                         </div>
                       </div>
                     )
@@ -1211,6 +1232,14 @@ function App() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => showVersionComparison(doc)}
+                            title="Compare Versions (Ctrl+D)"
+                          >
+                            <GitCompare className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => handleEditDocument(doc)}
                           >
                             <Edit className="h-3 w-3" />
@@ -1232,7 +1261,7 @@ function App() {
                     ? "Add PDF documents to the input/ directory and push to trigger the pipeline, or upload documents locally for testing"
                     : (contentSearchTerm 
                       ? `No documents contain "${contentSearchTerm}". Try different keywords or check the content search.`
-                      : "Try adjusting your search or filter criteria")
+                      : "Try adjusting your search or filter criteria. Use Ctrl+H for version history or Ctrl+D for version comparison.")
                   }
                 </p>
                 {contentSearchTerm && (
@@ -1570,6 +1599,17 @@ function App() {
                                   Revert to this version
                                 </Button>
                               )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setViewingVersionHistory(null)
+                                  showVersionComparison(viewingVersionHistory)
+                                }}
+                              >
+                                <GitCompare className="h-3 w-3 mr-1" />
+                                Compare
+                              </Button>
                             </div>
                           </div>
                         </CardHeader>
@@ -1633,6 +1673,15 @@ function App() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Document Version Comparison Dialog */}
+      <DocumentComparison
+        document={comparingVersions!}
+        documentVersions={documentVersions}
+        isOpen={!!comparingVersions}
+        onClose={() => setComparingVersions(null)}
+        onRevertToVersion={revertToVersion}
+      />
     </div>
   )
 }
