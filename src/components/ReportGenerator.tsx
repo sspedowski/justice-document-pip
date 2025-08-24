@@ -559,11 +559,6 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
               <CardContent>
                 <ChartContainer
                   config={{
-                    documents: { label: 'Documents', color: 'hsl(var(--primary))' },
-                    primaryDocs: { label: 'Primary Evidence', color: 'hsl(var(--destructive))' }
-                  }}
-                  className="h-80"
-                >
                   <BarChart data={reportData.childrenData.slice(0, 10)}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
@@ -571,6 +566,11 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar dataKey="documents" fill="hsl(var(--primary))" />
                     <Bar dataKey="primaryDocs" fill="hsl(var(--destructive))" />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -587,11 +587,6 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   <Download className="h-3 w-3" />
                 </Button>
               </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    documents: { label: 'Documents', color: 'hsl(var(--accent))' },
-                    evidence: { label: 'Evidence Docs', color: 'hsl(var(--primary))' }
                   }}
                   className="h-80"
                 >
@@ -641,19 +636,11 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   <XAxis dataKey="month" />
                   <YAxis />
                   <ChartTooltip 
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="bg-background border rounded-lg p-3 shadow-lg">
-                            <p className="font-medium">{label}</p>
-                            <p className="text-sm">Total Changes: {data.changes}</p>
-                            <p className="text-sm">Created: {data.created}</p>
-                            <p className="text-sm">Edited: {data.edited}</p>
-                            <p className="text-sm">Imported: {data.imported}</p>
-                          </div>
-                        )
-                      }
+                <BarChart data={reportData.versionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <ChartTooltip order rounded-lg p-3 shadow-lg">
                       return null
                     }}
                   />
@@ -663,15 +650,15 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                 </BarChart>
               </ChartContainer>
             </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Total Versions"
-              value={reportData.summary.totalVersions}
-              subtitle="Across all documents"
-              icon={Clock}
-            />
+                            <p className="text-sm">Imported: {data.imported}</p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Bar dataKey="created" stackId="a" fill="hsl(var(--accent))" />
+                  <Bar dataKey="edited" stackId="a" fill="hsl(var(--primary))" />
             <MetricCard
               title="Most Active Month"
               value={reportData.versionData.length > 0 
