@@ -1222,8 +1222,8 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-          <Card>
-              <Buttonw items-center justify-between">
+              <CardTitle>Children Involvement Distribution</CardTitle>
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={() => exportChartData('Children Involvement', reportData.childrenData)}
