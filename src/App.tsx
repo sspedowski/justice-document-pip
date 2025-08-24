@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch } from '@phosphor-icons/react'
+import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
@@ -43,6 +43,15 @@ interface ProcessingDocument {
   progress: number
   status: 'validating' | 'uploading' | 'extracting' | 'analyzing' | 'complete' | 'error'
   error?: string
+}
+
+interface SearchResult {
+  docId: string
+  matches: Array<{
+    text: string
+    context: string
+    position: number
+  }>
 }
 
 const CHILDREN_NAMES = ['Jace', 'Josh', 'Joshua', 'Nicholas', 'John', 'Peyton', 'Owen']
@@ -86,8 +95,12 @@ function App() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [contentSearchTerm, setContentSearchTerm] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [documentSearchTerm, setDocumentSearchTerm] = useState('')
   const [isLoadingProcessed, setIsLoadingProcessed] = useState(true)
 
   // Load processed documents from GitHub Actions pipeline on component mount
@@ -125,6 +138,92 @@ function App() {
     !processedDocs.some(processedDoc => processedDoc.fileName === localDoc.fileName)
   )]
 
+  // Advanced content search function
+  const searchInDocuments = (query: string): SearchResult[] => {
+    if (!query.trim()) return []
+    
+    const results: SearchResult[] = []
+    const searchLower = query.toLowerCase()
+    
+    allDocuments.forEach(doc => {
+      if (!doc.textContent) return
+      
+      const matches: SearchResult['matches'] = []
+      const text = doc.textContent.toLowerCase()
+      let position = 0
+      
+      // Find all occurrences of the search term
+      while (position < text.length) {
+        const index = text.indexOf(searchLower, position)
+        if (index === -1) break
+        
+        // Extract context around the match (100 chars before and after)
+        const contextStart = Math.max(0, index - 100)
+        const contextEnd = Math.min(text.length, index + searchLower.length + 100)
+        const context = doc.textContent.substring(contextStart, contextEnd)
+        
+        // Get the actual matched text with original casing
+        const matchText = doc.textContent.substring(index, index + searchLower.length)
+        
+        matches.push({
+          text: matchText,
+          context: contextStart > 0 ? '...' + context : context,
+          position: index
+        })
+        
+        position = index + 1
+      }
+      
+      if (matches.length > 0) {
+        results.push({
+          docId: doc.id,
+          matches: matches.slice(0, 5) // Limit to 5 matches per document
+        })
+      }
+    })
+    
+    return results
+  }
+
+  // Effect to update search results when content search term changes
+  useEffect(() => {
+    if (contentSearchTerm.trim()) {
+      const results = searchInDocuments(contentSearchTerm)
+      setSearchResults(results)
+    } else {
+      setSearchResults([])
+    }
+  }, [contentSearchTerm, allDocuments])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + K to focus on main search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        const searchInput = document.querySelector('input[placeholder*="Search documents"]') as HTMLInputElement
+        if (searchInput) {
+          searchInput.focus()
+        }
+      }
+      
+      // Ctrl/Cmd + Shift + F to open content search
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault()
+        setShowAdvancedSearch(true)
+        setTimeout(() => {
+          const contentSearchInput = document.querySelector('input[placeholder*="Search within document content"]') as HTMLInputElement
+          if (contentSearchInput) {
+            contentSearchInput.focus()
+          }
+        }, 100)
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const filteredDocuments = allDocuments.filter(doc => {
     const matchesSearch = searchTerm === '' || 
       doc.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -135,7 +234,11 @@ function App() {
     
     const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter
     
-    return matchesSearch && matchesCategory
+    // If there's a content search active, filter to show only docs with matches
+    const matchesContentSearch = contentSearchTerm === '' || 
+      searchResults.some(result => result.docId === doc.id)
+    
+    return matchesSearch && matchesCategory && matchesContentSearch
   })
 
   const handleFileUpload = async (files: FileList) => {
@@ -241,7 +344,7 @@ function App() {
           oversightPacket: ['Primary', 'Supporting'].includes(category)
         },
         uploadedAt: new Date().toISOString(),
-        textContent: pdfResult.text.substring(0, 10000) // Store first 10k chars for search
+        textContent: pdfResult.text.substring(0, 50000) // Store first 50k chars for search (increased from 10k)
       }
 
       updateProgress(100, 'complete')
@@ -568,97 +671,252 @@ function App() {
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            {/* Search Controls */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search documents by title, description, children, laws... (Ctrl+K)"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-48">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="Primary">Primary</SelectItem>
+                    <SelectItem value="Supporting">Supporting</SelectItem>
+                    <SelectItem value="External">External</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant={showAdvancedSearch ? "default" : "outline"}
+                  onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                  className="relative"
+                >
+                  <TextT className="h-4 w-4 mr-2" />
+                  Content Search
+                  <span className="ml-2 text-xs opacity-70">(Ctrl+Shift+F)</span>
+                </Button>
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-48">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Primary">Primary</SelectItem>
-                  <SelectItem value="Supporting">Supporting</SelectItem>
-                  <SelectItem value="External">External</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
+
+              {/* Advanced Content Search */}
+              {showAdvancedSearch && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MagnifyingGlass className="h-4 w-4" />
+                      Search Inside Documents
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="relative">
+                      <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search within document content..."
+                        value={contentSearchTerm}
+                        onChange={(e) => setContentSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                      {contentSearchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                          onClick={() => setContentSearchTerm('')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {contentSearchTerm && searchResults.length > 0 && (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-muted-foreground">
+                            Found {searchResults.reduce((acc, result) => acc + result.matches.length, 0)} matches 
+                            in {searchResults.length} documents
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Export search results
+                              const searchData = searchResults.map(result => {
+                                const doc = allDocuments.find(d => d.id === result.docId)
+                                return {
+                                  document: doc?.title || 'Unknown',
+                                  fileName: doc?.fileName || 'Unknown',
+                                  matches: result.matches.length,
+                                  matchTexts: result.matches.map(m => m.text).join(', ')
+                                }
+                              })
+                              
+                              const csvContent = [
+                                ['Document', 'File Name', 'Match Count', 'Match Texts'],
+                                ...searchData.map(item => [item.document, item.fileName, item.matches.toString(), item.matchTexts])
+                              ]
+                                .map(row => row.map(cell => `"${cell}"`).join(','))
+                                .join('\n')
+                              
+                              const blob = new Blob([csvContent], { type: 'text/csv' })
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `search-results-${contentSearchTerm}.csv`
+                              a.click()
+                              URL.revokeObjectURL(url)
+                              
+                              toast.success('Search results exported')
+                            }}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Export
+                          </Button>
+                        </div>
+                        {searchResults.map((result) => {
+                          const doc = allDocuments.find(d => d.id === result.docId)
+                          if (!doc) return null
+                          
+                          return (
+                            <div key={result.docId} className="border rounded-lg p-3 bg-muted/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="font-medium text-sm truncate">{doc.title}</div>
+                                <Badge variant="outline" className="text-xs">
+                                  {result.matches.length} matches
+                                </Badge>
+                              </div>
+                              <div className="space-y-2">
+                                {result.matches.slice(0, 2).map((match, idx) => (
+                                  <div key={idx} className="text-xs bg-background rounded p-2">
+                                    <div className="text-muted-foreground">
+                                      {match.context.split(new RegExp(`(${contentSearchTerm})`, 'gi')).map((part, i) =>
+                                        part.toLowerCase() === contentSearchTerm.toLowerCase() ? (
+                                          <mark key={i} className="bg-yellow-200 text-yellow-900 px-1 rounded">
+                                            {part}
+                                          </mark>
+                                        ) : part
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {result.matches.length > 2 && (
+                                  <div className="text-xs text-muted-foreground">
+                                    +{result.matches.length - 2} more matches
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                    
+                    {contentSearchTerm && searchResults.length === 0 && (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <MagnifyingGlass className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No matches found for "{contentSearchTerm}"</p>
+                        <p className="text-xs mt-1">Try different keywords or check spelling</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredDocuments.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-sm font-medium truncate">{doc.title}</CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
-                          <CategoryBadge category={doc.category} />
-                          {processedDocs.some(p => p.id === doc.id) && (
-                            <Badge variant="outline" className="text-xs">
-                              <GitBranch className="h-3 w-3 mr-1" />
-                              Pipeline
-                            </Badge>
-                          )}
+              {filteredDocuments.map((doc) => {
+                const docSearchResult = searchResults.find(result => result.docId === doc.id)
+                return (
+                  <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-sm font-medium truncate">{doc.title}</CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <CategoryBadge category={doc.category} />
+                            {processedDocs.some(p => p.id === doc.id) && (
+                              <Badge variant="outline" className="text-xs">
+                                <GitBranch className="h-3 w-3 mr-1" />
+                                Pipeline
+                              </Badge>
+                            )}
+                            {docSearchResult && (
+                              <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
+                                <MagnifyingGlass className="h-3 w-3 mr-1" />
+                                {docSearchResult.matches.length}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-xs text-muted-foreground overflow-hidden" style={{
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>{doc.description}</p>
-                    
-                    {doc.children.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <Users className="h-3 w-3 text-muted-foreground" />
-                        {doc.children.map((child, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">{child}</Badge>
-                        ))}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-xs text-muted-foreground overflow-hidden" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
+                      }}>{doc.description}</p>
+                      
+                      {/* Show search snippet if available */}
+                      {docSearchResult && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                          <div className="text-xs text-yellow-800 font-medium mb-1">Content matches:</div>
+                          <div className="text-xs text-yellow-700">
+                            {docSearchResult.matches[0].context.substring(0, 100)}...
+                          </div>
+                        </div>
+                      )}
+                      
+                      {doc.children.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Users className="h-3 w-3 text-muted-foreground" />
+                          {doc.children.map((child, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">{child}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {doc.laws.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Scale className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{doc.laws.length} law(s)</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between items-center pt-2">
+                        <Badge variant={doc.include === 'YES' ? 'default' : 'secondary'}>
+                          {doc.include}
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedDoc(doc)}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditDocument(doc)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    )}
-                    
-                    {doc.laws.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <Scale className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{doc.laws.length} law(s)</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center pt-2">
-                      <Badge variant={doc.include === 'YES' ? 'default' : 'secondary'}>
-                        {doc.include}
-                      </Badge>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setSelectedDoc(doc)}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditDocument(doc)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
             </div>
 
             {filteredDocuments.length === 0 && !isLoadingProcessed && (
@@ -668,9 +926,21 @@ function App() {
                 <p className="text-muted-foreground">
                   {allDocuments.length === 0 
                     ? "Add PDF documents to the input/ directory and push to trigger the pipeline, or upload documents locally for testing"
+                    : contentSearchTerm 
+                    ? `No documents contain "${contentSearchTerm}". Try different keywords or check the content search.`
                     : "Try adjusting your search or filter criteria"
                   }
                 </p>
+                {contentSearchTerm && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => setContentSearchTerm('')}
+                  >
+                    Clear content search
+                  </Button>
+                )}
               </div>
             )}
 
@@ -685,61 +955,143 @@ function App() {
       </div>
 
       {/* Document Detail Dialog */}
-      <Dialog open={!!selectedDoc} onOpenChange={() => setSelectedDoc(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={!!selectedDoc} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedDoc(null)
+          setDocumentSearchTerm('')
+        }
+      }}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>{selectedDoc?.title}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedDoc?.title}
+              {selectedDoc?.textContent && (
+                <Badge variant="outline" className="text-xs">
+                  <TextT className="h-3 w-3 mr-1" />
+                  Searchable Text
+                </Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {selectedDoc && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Document Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">File:</span> {selectedDoc.fileName}</div>
-                    <div><span className="font-medium">Category:</span> <CategoryBadge category={selectedDoc.category} /></div>
-                    <div><span className="font-medium">Include:</span> <Badge variant={selectedDoc.include === 'YES' ? 'default' : 'secondary'}>{selectedDoc.include}</Badge></div>
-                    <div><span className="font-medium">Uploaded:</span> {new Date(selectedDoc.uploadedAt).toLocaleDateString()}</div>
+            <div className="flex-1 overflow-hidden">
+              <Tabs defaultValue="details" className="h-full flex flex-col">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="details">Document Details</TabsTrigger>
+                  <TabsTrigger value="content" disabled={!selectedDoc.textContent}>
+                    Text Content {selectedDoc.textContent ? `(${Math.round(selectedDoc.textContent.length / 1000)}k chars)` : '(Not Available)'}
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="flex-1 overflow-y-auto space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Document Details</h4>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="font-medium">File:</span> {selectedDoc.fileName}</div>
+                        <div><span className="font-medium">Category:</span> <CategoryBadge category={selectedDoc.category} /></div>
+                        <div><span className="font-medium">Include:</span> <Badge variant={selectedDoc.include === 'YES' ? 'default' : 'secondary'}>{selectedDoc.include}</Badge></div>
+                        <div><span className="font-medium">Uploaded:</span> {new Date(selectedDoc.uploadedAt).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Placement Rules</h4>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="font-medium">Master File:</span> {selectedDoc.placement.masterFile ? '✓' : '✗'}</div>
+                        <div><span className="font-medium">Exhibit Bundle:</span> {selectedDoc.placement.exhibitBundle ? '✓' : '✗'}</div>
+                        <div><span className="font-medium">Oversight Packet:</span> {selectedDoc.placement.oversightPacket ? '✓' : '✗'}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Placement Rules</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Master File:</span> {selectedDoc.placement.masterFile ? '✓' : '✗'}</div>
-                    <div><span className="font-medium">Exhibit Bundle:</span> {selectedDoc.placement.exhibitBundle ? '✓' : '✗'}</div>
-                    <div><span className="font-medium">Oversight Packet:</span> {selectedDoc.placement.oversightPacket ? '✓' : '✗'}</div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">Children Identified</h4>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedDoc.children.length > 0 
+                        ? selectedDoc.children.map((child, idx) => (
+                            <Badge key={idx} variant="secondary">{child}</Badge>
+                          ))
+                        : <span className="text-muted-foreground text-sm">None identified</span>
+                      }
+                    </div>
                   </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2">Children Identified</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {selectedDoc.children.length > 0 
-                    ? selectedDoc.children.map((child, idx) => (
-                        <Badge key={idx} variant="secondary">{child}</Badge>
-                      ))
-                    : <span className="text-muted-foreground text-sm">None identified</span>
-                  }
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2">Laws & Regulations</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {selectedDoc.laws.length > 0 
-                    ? selectedDoc.laws.map((law, idx) => (
-                        <Badge key={idx} variant="outline">{law}</Badge>
-                      ))
-                    : <span className="text-muted-foreground text-sm">None identified</span>
-                  }
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2">Description</h4>
-                <p className="text-sm text-muted-foreground">{selectedDoc.description}</p>
-              </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">Laws & Regulations</h4>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedDoc.laws.length > 0 
+                        ? selectedDoc.laws.map((law, idx) => (
+                            <Badge key={idx} variant="outline">{law}</Badge>
+                          ))
+                        : <span className="text-muted-foreground text-sm">None identified</span>
+                      }
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">Description</h4>
+                    <p className="text-sm text-muted-foreground">{selectedDoc.description}</p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="content" className="flex-1 overflow-hidden flex flex-col space-y-4">
+                  {selectedDoc.textContent && (
+                    <>
+                      <div className="relative">
+                        <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search within this document..."
+                          value={documentSearchTerm}
+                          onChange={(e) => setDocumentSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                        {documentSearchTerm && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                            onClick={() => setDocumentSearchTerm('')}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 overflow-y-auto border rounded-lg bg-muted/30">
+                        <div className="p-4 text-sm font-mono whitespace-pre-wrap leading-relaxed">
+                          {documentSearchTerm ? (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: selectedDoc.textContent
+                                  .replace(/\n/g, '<br>')
+                                  .replace(
+                                    new RegExp(`(${documentSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'),
+                                    '<mark style="background-color: #fef08a; color: #92400e; padding: 1px 2px; border-radius: 2px;">$1</mark>'
+                                  )
+                              }}
+                            />
+                          ) : (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: selectedDoc.textContent.replace(/\n/g, '<br>')
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {documentSearchTerm && (
+                        <div className="text-xs text-muted-foreground">
+                          {(() => {
+                            const matches = (selectedDoc.textContent.match(new RegExp(documentSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')) || []).length
+                            return matches > 0 ? `${matches} matches found` : 'No matches found'
+                          })()}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </DialogContent>
