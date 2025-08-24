@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress'
 import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
+import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
 
 interface Document {
   id: string
@@ -57,14 +58,23 @@ const LAWS = [
 // Load processed documents from GitHub Actions pipeline
 async function loadProcessedDocuments(): Promise<Document[]> {
   try {
-    const response = await fetch('/app/data/justice-documents.json')
+    // Try relative path first
+    let response = await fetch('/app/data/justice-documents.json')
+    
+    // If that fails, try absolute path from public folder
     if (!response.ok) {
-      throw new Error('Failed to load processed documents')
+      response = await fetch('./app/data/justice-documents.json')
     }
+    
+    if (!response.ok) {
+      console.log('No processed documents file found - this is normal for new installations')
+      return []
+    }
+    
     const data = await response.json()
     return Array.isArray(data) ? data : []
   } catch (error) {
-    console.log('No processed documents found yet, using empty array')
+    console.log('No processed documents found yet, using empty array:', error)
     return []
   }
 }
@@ -92,13 +102,16 @@ function App() {
         const existingFileNames = new Set(processed.map(doc => doc.fileName))
         const localOnly = documents.filter(doc => !existingFileNames.has(doc.fileName))
         
-        if (localOnly.length > 0) {
-          toast.info(`Found ${processed.length} processed documents and ${localOnly.length} local documents`)
-        } else if (processed.length > 0) {
+        if (processed.length > 0) {
           toast.success(`Loaded ${processed.length} processed documents from pipeline`)
+        } else if (localOnly.length > 0) {
+          toast.info(`Found ${localOnly.length} local documents. Add PDFs to input/ directory to use pipeline processing.`)
+        } else {
+          console.log('No documents found - ready to upload new PDFs')
         }
       } catch (error) {
         console.error('Error loading processed documents:', error)
+        // Don't show error toast - this is expected for new installations
       } finally {
         setIsLoadingProcessed(false)
       }
@@ -484,6 +497,11 @@ function App() {
                   {processedDocs.length > 0 && (
                     <div className="mt-3 text-sm text-green-700 bg-green-50 px-3 py-2 rounded">
                       ✓ Found {processedDocs.length} documents processed by the pipeline
+                    </div>
+                  )}
+                  {processedDocs.length === 0 && (
+                    <div className="mt-3 text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded">
+                      ℹ️ No pipeline documents found. Upload PDFs to input/ directory to enable automated processing.
                     </div>
                   )}
                 </div>

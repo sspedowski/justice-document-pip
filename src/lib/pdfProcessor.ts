@@ -4,8 +4,13 @@
  */
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
+// Configure PDF.js worker - try multiple paths for better compatibility
+try {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
+} catch {
+  // Fallback for environments where worker loading fails
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+}
 
 interface PDFProcessingResult {
   text: string
