@@ -1,12 +1,11 @@
 /**
- * Spark Runtime Fallback Implementation
  * Provides fallback functionality when Spark runtime is not available
+ * This enables local development and testing without external dependencies
  */
 
-// Type definitions for Spark runtime
 declare global {
   interface Window {
-    spark?: {
+    spark: {
       llmPrompt: (strings: TemplateStringsArray, ...values: any[]) => string
       llm: (prompt: string, modelName?: string, jsonMode?: boolean) => Promise<string>
       user: () => Promise<{
@@ -84,7 +83,7 @@ const fallbackLLM = {
 
   async llm(prompt: string, modelName?: string, jsonMode?: boolean): Promise<string> {
     // Return a placeholder response for development
-    return jsonMode 
+    return jsonMode
       ? '{"placeholder": true, "message": "LLM not available in development mode"}'
       : 'LLM functionality not available in development mode. This is a placeholder response.'
   }
