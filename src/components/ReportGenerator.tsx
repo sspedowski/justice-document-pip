@@ -592,6 +592,11 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   <Download className="h-3 w-3" />
                 </Button>
               </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    documents: { label: 'Total Documents', color: 'hsl(var(--accent))' },
+                    evidence: { label: 'Evidence Documents', color: 'hsl(var(--primary))' }
                   }}
                   className="h-80"
                 >
@@ -641,20 +646,14 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   <XAxis dataKey="month" />
                   <YAxis />
                   <ChartTooltip 
-                <BarChart data={reportData.versionData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip order rounded-lg p-3 shadow-lg">
-                      return null
-                    }}
-                  />
-                  <Bar dataKey="created" stackId="a" fill="hsl(var(--accent))" />
-                  <Bar dataKey="edited" stackId="a" fill="hsl(var(--primary))" />
-                  <Bar dataKey="imported" stackId="a" fill="hsl(var(--muted-foreground))" />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload
+                        return (
+                          <div className="bg-background border rounded-lg p-3 shadow-lg">
+                            <p className="font-medium">{label}</p>
+                            <p className="text-sm">Created: {data.created}</p>
+                            <p className="text-sm">Edited: {data.edited}</p>
                             <p className="text-sm">Imported: {data.imported}</p>
                           </div>
                         )
@@ -664,6 +663,13 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   />
                   <Bar dataKey="created" stackId="a" fill="hsl(var(--accent))" />
                   <Bar dataKey="edited" stackId="a" fill="hsl(var(--primary))" />
+                  <Bar dataKey="imported" stackId="a" fill="hsl(var(--muted-foreground))" />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <MetricCard
               title="Most Active Month"
               value={reportData.versionData.length > 0 
