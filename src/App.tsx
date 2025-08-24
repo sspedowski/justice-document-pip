@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useState, useEffect } from 'react'
+// import { useKV } from '@github/spark/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,8 +52,32 @@ const LAWS = [
   { name: 'Evidence Tampering', keywords: ['tamper', 'altered', 'fabricated', 'suppressed', 'omitted'] }
 ]
 
+// Temporary localStorage replacement for useKV
+function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const item = localStorage.getItem(key)
+      return item ? JSON.parse(item) : defaultValue
+    } catch {
+      return defaultValue
+    }
+  })
+
+  const setStoredValue = (newValue: T | ((prev: T) => T)) => {
+    try {
+      const valueToStore = newValue instanceof Function ? newValue(value) : newValue
+      setValue(valueToStore)
+      localStorage.setItem(key, JSON.stringify(valueToStore))
+    } catch {
+      console.error('Error saving to localStorage')
+    }
+  }
+
+  return [value, setStoredValue]
+}
+
 function App() {
-  const [documents, setDocuments] = useKV<Document[]>('justice-documents', [])
+  const [documents, setDocuments] = useLocalStorage<Document[]>('justice-documents', [])
   const [processing, setProcessing] = useState<ProcessingDocument[]>([])
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
@@ -246,7 +270,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div id="spark-app" className="min-h-screen bg-background">
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -365,7 +389,11 @@ function App() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-xs text-muted-foreground line-clamp-2">{doc.description}</p>
+                    <p className="text-xs text-muted-foreground overflow-hidden" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>{doc.description}</p>
                     
                     {doc.children.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap">
