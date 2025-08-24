@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp } from '@phosphor-icons/react'
+import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
+import { ReportGenerator } from '@/components/ReportGenerator'
 import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
 
 interface DocumentVersion {
@@ -686,6 +687,42 @@ function App() {
     toast.success('CSV exported successfully')
   }
 
+  const handleExportReport = (reportData: any) => {
+    // Export comprehensive report as JSON
+    const jsonBlob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' })
+    const jsonUrl = URL.createObjectURL(jsonBlob)
+    const jsonLink = document.createElement('a')
+    jsonLink.href = jsonUrl
+    jsonLink.download = `justice-report-${new Date().toISOString().split('T')[0]}.json`
+    jsonLink.click()
+    URL.revokeObjectURL(jsonUrl)
+
+    // Also export as CSV summary
+    const summaryHeaders = ['Metric', 'Value']
+    const summaryRows = [
+      ['Total Documents', reportData.summary.totalDocuments],
+      ['Primary Evidence', reportData.summary.primaryEvidence],
+      ['Included Documents', reportData.summary.includedDocuments],
+      ['Children Involved', reportData.summary.childrenInvolved],
+      ['Laws Violated', reportData.summary.lawsViolated],
+      ['Oversight Ready', reportData.summary.oversightReady],
+      ['Total Versions', reportData.summary.totalVersions],
+      ['Generated At', new Date(reportData.generatedAt).toLocaleString()]
+    ]
+    
+    const csvContent = [summaryHeaders, ...summaryRows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n')
+    
+    const csvBlob = new Blob([csvContent], { type: 'text/csv' })
+    const csvUrl = URL.createObjectURL(csvBlob)
+    const csvLink = document.createElement('a')
+    csvLink.href = csvUrl
+    csvLink.download = `justice-report-summary-${new Date().toISOString().split('T')[0]}.csv`
+    csvLink.click()
+    URL.revokeObjectURL(csvUrl)
+  }
+
   const generateOversightPackets = () => {
     const eligibleDocs = allDocuments.filter(doc => doc.placement.oversightPacket)
     if (eligibleDocs.length === 0) {
@@ -743,6 +780,14 @@ function App() {
                 <GitBranch className="h-4 w-4 mr-2" />
                 {isLoadingProcessed ? 'Loading...' : 'Refresh Data'}
               </Button>
+              <Button 
+                onClick={() => setActiveTab('reports')} 
+                variant={activeTab === 'reports' ? 'default' : 'outline'} 
+                size="sm"
+              >
+                <ChartLine className="h-4 w-4 mr-2" />
+                Reports
+              </Button>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
@@ -758,10 +803,19 @@ function App() {
 
       <div className="container mx-auto px-6 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="dashboard">Document Dashboard</TabsTrigger>
+            <TabsTrigger value="reports">Reports & Analytics</TabsTrigger>
             <TabsTrigger value="upload">Upload & Process</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="reports" className="space-y-6">
+            <ReportGenerator 
+              documents={allDocuments}
+              documentVersions={documentVersions}
+              onExportReport={handleExportReport}
+            />
+          </TabsContent>
 
           <TabsContent value="upload" className="space-y-6">
             <Card>
