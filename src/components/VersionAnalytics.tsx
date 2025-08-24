@@ -1,19 +1,19 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/pro
 import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Clock, 
-  GitBranch, 
   TrendingUp, 
-  Users, 
   Edit, 
-  FileArrowUp, 
-  BarChart3,
-  Calendar,
+  BarChar
   Activity,
-  PieChart
+} from '@phosp
+interface
+  fileNa
+  description: 
+  children: 
+  misconduc
+    page: s
+    notes:
 } from '@phosphor-icons/react'
 
 interface Document {
@@ -30,102 +30,102 @@ interface Document {
     paragraph: string
     notes: string
   }>
-  include: 'YES' | 'NO'
-  placement: {
-    masterFile: boolean
-    exhibitBundle: boolean
-    oversightPacket: boolean
-  }
-  uploadedAt: string
-  textContent?: string
-  currentVersion: number
-  lastModified: string
-  lastModifiedBy: string
-}
-
-interface DocumentVersion {
-  id: string
-  documentId: string
-  version: number
-  title: string
-  description: string
-  category: 'Primary' | 'Supporting' | 'External' | 'No'
-  children: string[]
-  laws: string[]
-  misconduct: Array<{
-    law: string
-    page: string
-    paragraph: string
-    notes: string
-  }>
-  include: 'YES' | 'NO'
-  placement: {
-    masterFile: boolean
-    exhibitBundle: boolean
-    oversightPacket: boolean
-  }
-  changedBy: string
-  changedAt: string
+    oversightPacket: bo
+  changedBy: s
   changeNotes?: string
-  changeType: 'created' | 'edited' | 'imported'
 }
+interface VersionAnalyticsPr
+  d
 
-interface VersionAnalyticsProps {
-  documents: Document[]
-  documentVersions: DocumentVersion[]
-}
-
-interface ActivityMetrics {
-  totalVersions: number
-  totalEdits: number
+  totalVersions: numbe
   totalImports: number
-  totalCreations: number
-  activeUsers: string[]
-  mostActiveUser: { user: string; count: number }
-  averageVersionsPerDocument: number
-  documentsWithMultipleVersions: number
-  recentActivity: DocumentVersion[]
-  versionsByDay: { [key: string]: number }
-  changeTypeDistribution: { [key: string]: number }
-  userActivityBreakdown: { [key: string]: { created: number; edited: number; imported: number } }
-  categoryVersions: { [key: string]: number }
-  monthlyTrends: { month: string; versions: number; documents: number }[]
-}
+  activeUsers: string[
+  averageVersionsPerDocu
+ 
 
-export function VersionAnalytics({ documents, documentVersions }: VersionAnalyticsProps) {
-  const analytics = useMemo((): ActivityMetrics => {
-    const totalVersions = documentVersions.length
-    const totalEdits = documentVersions.filter(v => v.changeType === 'edited').length
-    const totalImports = documentVersions.filter(v => v.changeType === 'imported').length
-    const totalCreations = documentVersions.filter(v => v.changeType === 'created').length
+  categoryVersions: { [key:
+}
+export function Vers
+    const totalVe
+    const total
     
-    // Active users analysis
-    const userCounts = documentVersions.reduce((acc, version) => {
-      acc[version.changedBy] = (acc[version.changedBy] || 0) + 1
+    const userCounts = documentVersions.reduce((acc, ver
       return acc
-    }, {} as { [key: string]: number })
     
-    const activeUsers = Object.keys(userCounts)
-    const mostActiveUser = Object.entries(userCounts).reduce(
-      (max, [user, count]) => count > max.count ? { user, count } : max,
-      { user: '', count: 0 }
-    )
+    const mostActiveU
+      { user: '
     
-    // Document version metrics
-    const documentsWithVersions = new Set(documentVersions.map(v => v.documentId)).size
-    const averageVersionsPerDocument = documentsWithVersions > 0 ? totalVersions / documentsWithVersions : 0
-    const documentsWithMultipleVersions = documents.filter(doc => doc.currentVersion > 1).length
+    const documentsWi
+    const documen
     
-    // Recent activity (last 7 days)
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    const recentActivity = documentVersions
-      .filter(v => new Date(v.changedAt) >= sevenDaysAgo)
-      .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
+    sevenDaysAgo.setDat
+      .filter(
       .slice(0, 10)
+    // Daily version activ
+      const date = new Date(
+   
     
-    // Daily version activity
-    const versionsByDay = documentVersions.reduce((acc, version) => {
+    const changeTyp
+      return acc
+    
+ 
+
+      acc[version.changedBy][vers
+    }, {} as { [key: st
+    // Category-based version analysi
+ 
+
+    // Monthly trends
+      const date = new 
+      if (!acc[month
+      }
+      acc[monthKey].docu
+    }, {} as { [key: st
+    const monthlyTrends = Object.entries(monthlyD
+        month,
+        documents: data.documents.size
+      .sort((a, b) => a.month.local
+    
+      totalVersions,
+      totalImports,
+      activeUsers,
+      averageVersionsPerDocument,
+ 
+
+      categoryVersions,
+    }
+
+    switch (type) {
+      case 'edited': return <Edit className="h-3 w-3" />
+      default: return <Activity className="h-3 w-3" />
+  }
+  const getChangeTypeColor =
+      case 'created': return 'bg-green-100 text-green-800'
+      case 'imported': return 'bg-purple-100 text-purple-800'
+    }
+
+    
+      case 'Supporting': return 'bg-blue-100 te
+      case 'No': return 'bg-gray-100 text-gray-800'
+    }
+
+    r
+    
+      minute: '2-digit'
+  }
+  const formatMonth = (monthString: string) => {
+    return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', {
+    
+  }
+  return (
+      <div className="grid grid-cols-1 md:grid-cols-
+        <Card>
+            <CardTitle className="text-sm font-medium">To
+          </CardHeader>
+            <div cl
+    
+          </CardContent>
+
       const date = new Date(version.changedAt).toISOString().split('T')[0]
       acc[date] = (acc[date] || 0) + 1
       return acc
@@ -251,9 +251,9 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
               Across {documents.length} documents
             </p>
           </CardContent>
-        </Card>
+               
 
-        <Card>
+              
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Documents</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -263,7 +263,7 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
             <p className="text-xs text-muted-foreground">
               {Math.round((analytics.documentsWithMultipleVersions / documents.length) * 100)}% with multiple versions
             </p>
-          </CardContent>
+                      </
         </Card>
 
         <Card>
@@ -282,23 +282,23 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Versions</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <div key={user} className="space-y-2">
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.averageVersionsPerDocument.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
               Per document
-            </p>
+                
           </CardContent>
-        </Card>
+               
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+                    </div>
           <TabsTrigger value="users">User Analytics</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+              </div>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -308,13 +308,13 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="h-5 w-5" />
-                  Change Type Distribution
+              {analytics.monthlyTrends.len
                 </CardTitle>
-              </CardHeader>
+                  <p>Not en
               <CardContent className="space-y-3">
-                {Object.entries(analytics.changeTypeDistribution).map(([type, count]) => {
+                <div className="space-y-4">
                   const percentage = (count / analytics.totalVersions) * 100
-                  return (
+                    const 
                     <div key={type} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -326,11 +326,11 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                         </div>
                         <span className="text-sm font-medium">{percentage.toFixed(1)}%</span>
                       </div>
-                      <Progress value={percentage} className="h-2" />
+                    )
                     </div>
                   )
                 })}
-              </CardContent>
+
             </Card>
 
             {/* Category Version Distribution */}
@@ -338,13 +338,13 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Versions by Category
+                  <Activity className=
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {Object.entries(analytics.categoryVersions).map(([category, count]) => {
                   const percentage = (count / analytics.totalVersions) * 100
-                  return (
+                      cons
                     <div key={category} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -360,9 +360,9 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                   )
                 })}
               </CardContent>
-            </Card>
+        </TabsConte
           </div>
-        </TabsContent>
+  )
 
         <TabsContent value="activity" className="space-y-4">
           <Card>
@@ -372,7 +372,7 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                 Recent Version Activity
                 <Badge variant="outline" className="ml-2">Last 7 days</Badge>
               </CardTitle>
-            </CardHeader>
+
             <CardContent>
               {analytics.recentActivity.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
@@ -402,17 +402,17 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                         <div className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(version.changedAt)}
                         </div>
-                      </div>
+
                     )
                   })}
                 </div>
-              )}
+
             </CardContent>
-          </Card>
+
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
-          <Card>
+
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -420,7 +420,7 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+
                 {Object.entries(analytics.userActivityBreakdown).map(([user, activity]) => {
                   const total = activity.created + activity.edited + activity.imported
                   return (
@@ -430,7 +430,7 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                           <div className="font-medium">{user}</div>
                           <Badge variant="outline">{total} total</Badge>
                         </div>
-                      </div>
+
                       <div className="grid grid-cols-3 gap-2">
                         <div className="text-center p-2 bg-green-50 rounded">
                           <div className="text-sm font-medium text-green-800">{activity.created}</div>
@@ -446,11 +446,11 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                         </div>
                       </div>
                     </div>
-                  )
+
                 })}
-              </div>
+
             </CardContent>
-          </Card>
+
         </TabsContent>
 
         <TabsContent value="trends" className="space-y-4">
@@ -458,11 +458,11 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Monthly Activity Trends
+
                 <Badge variant="outline" className="ml-2">Last 6 months</Badge>
-              </CardTitle>
+
             </CardHeader>
-            <CardContent>
+
               {analytics.monthlyTrends.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -484,21 +484,21 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <Progress value={versionPercentage} className="h-2" />
+
                           <div className="text-xs text-muted-foreground">
                             {(trend.versions / trend.documents).toFixed(1)} avg versions per document
                           </div>
-                        </div>
+
                       </div>
-                    )
+
                   })}
-                </div>
+
               )}
-            </CardContent>
+
           </Card>
 
           {/* Daily Activity Heatmap */}
-          <Card>
+
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
@@ -510,21 +510,21 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                 <div className="text-center py-8 text-muted-foreground">
                   <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No daily activity data available</p>
-                </div>
+
               ) : (
-                <div className="space-y-2">
+
                   {Object.entries(analytics.versionsByDay)
-                    .sort(([a], [b]) => b.localeCompare(a))
+
                     .slice(0, 14) // Last 14 days
                     .map(([date, count]) => {
                       const maxCount = Math.max(...Object.values(analytics.versionsByDay))
                       const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0
                       
-                      return (
+
                         <div key={date} className="flex items-center gap-4">
                           <div className="text-sm text-muted-foreground w-20">
                             {new Date(date).toLocaleDateString('en-US', { 
-                              month: 'short', 
+
                               day: 'numeric' 
                             })}
                           </div>
@@ -536,13 +536,13 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
                           </div>
                         </div>
                       )
-                    })}
+
                 </div>
-              )}
+
             </CardContent>
-          </Card>
+
         </TabsContent>
-      </Tabs>
+
     </div>
-  )
+
 }
