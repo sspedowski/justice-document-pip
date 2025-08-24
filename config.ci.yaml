@@ -1,0 +1,47 @@
+paths:
+  input_dir: "input"
+  output_dir: "output"
+  metadata_dir: "output/metadata"
+  packets_dir: "output/packets"
+
+placement:
+  include_if_missing_child_but_relevant: true
+  default_classification: "Supporting"
+
+packet_header:
+  project_name: "Justice Contact & Action Book — Master File"
+  submitter_name: "Stephanie Spedowski (Mother & Advocate)"
+  submitter_phone: "(616) 333-0486"
+  submitter_email: "godspathtojustice@gmail.com"
+  call_to_action: >
+    This document is submitted as evidence of systemic failures and child endangerment.
+    Please review, open an investigation, and respond with next steps.
+
+recipients:
+  - FBI — Detroit Field Office
+  - U.S. DOJ — Civil Rights Division
+  - Michigan Attorney General
+  - Judicial Tenure Commission
+  - Attorney Grievance Commission
+  - Media & Press (sanitized packets)
+
+laws:
+  - name: "Brady v. Maryland"
+    keywords: ["Brady", "exculpatory", "suppressed evidence", "withheld"]
+  - name: "Due Process (14th Amendment)"
+    keywords: ["due process", "denied hearing", "procedural", "fundamental fairness"]
+  - name: "CAPTA"
+    keywords: ["CAPTA", "child abuse prevention", "failure to investigate"]
+  - name: "Perjury"
+    keywords: ["perjury", "false statement", "sworn", "oath"]
+  - name: "Evidence Tampering"
+    keywords: ["tamper", "altered", "fabricated", "suppressed", "omitted"]
+
+children:
+  - "Jace"
+  - "Josh"
+  - "Joshua"
+  - "Nicholas"
+  - "John"
+  - "Peyton"
+  - "Owen"

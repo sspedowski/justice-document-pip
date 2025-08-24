@@ -1,0 +1,62 @@
+name: Justice Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "input/**"
+      - "scripts/**"
+      - "config.ci.yaml"
+      - "requirements.txt"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pipeline (index + metadata + packets)
+        run: |
+          python scripts/run_pipeline.py --config config.ci.yaml
+
+      - name: Merge metadata to app store (justice-documents.json)
+        run: |
+          python scripts/merge_metadata_to_store.py
+
+      - name: Upload artifacts (packets + index + csv)
+        uses: actions/upload-artifact@v4
+        with:
+          name: justice-output
+          path: |
+            output/packets/*.pdf
+            output/PRINTABLE_Index.pdf
+            output/MasterReview_INDEX.csv
+
+      - name: Commit refreshed data (json + csv + printable index)
+        run: |
+          git config user.name "justice-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/data/justice-documents.json
+          git add output/PRINTABLE_Index.pdf output/MasterReview_INDEX.csv || true
+          git add output/metadata/*.json || true
+          git commit -m "ci: refresh justice-documents + index" || echo "Nothing to commit"
+          git push

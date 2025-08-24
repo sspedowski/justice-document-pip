@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-// import { useKV } from '@github/spark/hooks'
+import { useKV } from '@github/spark/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit } from '@phosphor-icons/react'
+import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 
@@ -78,16 +78,65 @@ function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T | ((pre
   return [value, setStoredValue]
 }
 
+// Load processed documents from GitHub Actions pipeline
+async function loadProcessedDocuments(): Promise<Document[]> {
+  try {
+    const response = await fetch('/app/data/justice-documents.json')
+    if (!response.ok) {
+      throw new Error('Failed to load processed documents')
+    }
+    const data = await response.json()
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.log('No processed documents found yet, using empty array')
+    return []
+  }
+}
+
 function App() {
-  const [documents, setDocuments] = useLocalStorage<Document[]>('justice-documents', [])
+  const [documents, setDocuments] = useKV<Document[]>('justice-documents', [])
+  const [processedDocs, setProcessedDocs] = useState<Document[]>([])
   const [processing, setProcessing] = useState<ProcessingDocument[]>([])
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [isLoadingProcessed, setIsLoadingProcessed] = useState(true)
 
-  const filteredDocuments = documents.filter(doc => {
+  // Load processed documents from GitHub Actions pipeline on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingProcessed(true)
+      try {
+        const processed = await loadProcessedDocuments()
+        setProcessedDocs(processed)
+        
+        // Merge with locally uploaded documents, avoiding duplicates
+        const existingFileNames = new Set(processed.map(doc => doc.fileName))
+        const localOnly = documents.filter(doc => !existingFileNames.has(doc.fileName))
+        
+        if (localOnly.length > 0) {
+          toast.info(`Found ${processed.length} processed documents and ${localOnly.length} local documents`)
+        } else if (processed.length > 0) {
+          toast.success(`Loaded ${processed.length} processed documents from pipeline`)
+        }
+      } catch (error) {
+        console.error('Error loading processed documents:', error)
+      } finally {
+        setIsLoadingProcessed(false)
+      }
+    }
+    
+    loadData()
+  }, [])
+
+  // Combine processed and local documents
+  const allDocuments = [...processedDocs, ...documents.filter(localDoc => 
+    !processedDocs.some(processedDoc => processedDoc.fileName === localDoc.fileName)
+  )]
+
+  const filteredDocuments = allDocuments.filter(doc => {
     const matchesSearch = searchTerm === '' || 
       doc.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -308,11 +357,24 @@ function App() {
   const saveEditedDocument = () => {
     if (!editingDoc) return
     
-    setDocuments(prev => prev.map(doc => 
-      doc.id === editingDoc.id ? editingDoc : doc
-    ))
+    // Check if this is a processed document (from GitHub Actions) or local document
+    const isProcessedDoc = processedDocs.some(doc => doc.id === editingDoc.id)
+    
+    if (isProcessedDoc) {
+      // For processed documents, only update local state (changes won't persist across refreshes)
+      setProcessedDocs(prev => prev.map(doc => 
+        doc.id === editingDoc.id ? editingDoc : doc
+      ))
+      toast.success('Document updated (local changes only - use GitHub repository for permanent changes)')
+    } else {
+      // For local documents, update persistent storage
+      setDocuments(prev => prev.map(doc => 
+        doc.id === editingDoc.id ? editingDoc : doc
+      ))
+      toast.success('Document updated successfully')
+    }
+    
     setEditingDoc(null)
-    toast.success('Document updated successfully')
   }
 
   const exportToCSV = () => {
@@ -322,7 +384,7 @@ function App() {
       'Title', 'Description'
     ]
     
-    const rows = documents.map(doc => [
+    const rows = allDocuments.map(doc => [
       doc.fileName,
       doc.category,
       doc.children.join(', '),
@@ -352,8 +414,26 @@ function App() {
   }
 
   const generateOversightPackets = () => {
-    const eligibleDocs = documents.filter(doc => doc.placement.oversightPacket)
-    toast.success(`Generated ${eligibleDocs.length} oversight packets`)
+    const eligibleDocs = allDocuments.filter(doc => doc.placement.oversightPacket)
+    if (eligibleDocs.length === 0) {
+      toast.error('No documents eligible for oversight packets')
+      return
+    }
+    
+    toast.success(`${eligibleDocs.length} documents ready for oversight packets. Use GitHub Actions to generate PDFs.`)
+  }
+
+  const refreshProcessedData = async () => {
+    setIsLoadingProcessed(true)
+    try {
+      const processed = await loadProcessedDocuments()
+      setProcessedDocs(processed)
+      toast.success(`Refreshed: Found ${processed.length} processed documents`)
+    } catch (error) {
+      toast.error('Failed to refresh processed documents')
+    } finally {
+      setIsLoadingProcessed(false)
+    }
   }
 
   const CategoryBadge = ({ category }: { category: Document['category'] }) => {
@@ -379,6 +459,10 @@ function App() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button onClick={refreshProcessedData} variant="outline" size="sm" disabled={isLoadingProcessed}>
+                <GitBranch className="h-4 w-4 mr-2" />
+                {isLoadingProcessed ? 'Loading...' : 'Refresh Data'}
+              </Button>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
@@ -403,8 +487,36 @@ function App() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <GitBranch className="h-5 w-5" />
+                  GitHub Actions Pipeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Automated Processing</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    This system uses GitHub Actions to automatically process PDF documents. To add new documents:
+                  </p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Add PDF files to the <code className="bg-background px-1 rounded">input/</code> directory in your repository</li>
+                    <li>Commit and push changes to the main branch</li>
+                    <li>GitHub Actions will automatically extract text, classify documents, and generate oversight packets</li>
+                    <li>Use the "Refresh Data" button above to load newly processed documents</li>
+                  </ol>
+                  {processedDocs.length > 0 && (
+                    <div className="mt-3 text-sm text-green-700 bg-green-50 px-3 py-2 rounded">
+                      ✓ Found {processedDocs.length} documents processed by the pipeline
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Upload className="h-5 w-5" />
-                  Upload PDF Documents
+                  Local PDF Upload (Development)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -490,8 +602,18 @@ function App() {
                 <Card key={doc.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-sm font-medium truncate">{doc.title}</CardTitle>
-                      <CategoryBadge category={doc.category} />
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-sm font-medium truncate">{doc.title}</CardTitle>
+                        <div className="flex items-center gap-2 mt-1">
+                          <CategoryBadge category={doc.category} />
+                          {processedDocs.some(p => p.id === doc.id) && (
+                            <Badge variant="outline" className="text-xs">
+                              <GitBranch className="h-3 w-3 mr-1" />
+                              Pipeline
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -543,16 +665,23 @@ function App() {
               ))}
             </div>
 
-            {filteredDocuments.length === 0 && (
+            {filteredDocuments.length === 0 && !isLoadingProcessed && (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No documents found</h3>
                 <p className="text-muted-foreground">
-                  {documents.length === 0 
-                    ? "Upload some PDF documents to get started"
+                  {allDocuments.length === 0 
+                    ? "Add PDF documents to the input/ directory and push to trigger the pipeline, or upload documents locally for testing"
                     : "Try adjusting your search or filter criteria"
                   }
                 </p>
+              </div>
+            )}
+
+            {isLoadingProcessed && (
+              <div className="text-center py-12">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading processed documents...</p>
               </div>
             )}
           </TabsContent>
