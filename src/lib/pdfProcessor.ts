@@ -1,7 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure worker for pdfjs
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure worker for pdfjs with fallback options
+try {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+} catch (error) {
+  console.warn('Failed to configure PDF worker, trying alternative source');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
 
 export interface PDFProcessingResult {
   text: string;
@@ -27,8 +32,15 @@ export async function extractTextFromPDF(file: File, maxPages: number = 50): Pro
     // Convert file to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // Load the PDF document
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    // Load the PDF document with additional options
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true
+    });
+    
+    const pdf = await loadingTask.promise;
     
     // Get document metadata
     const metadata = await pdf.getMetadata().catch(() => ({ info: {}, metadata: null }));
@@ -77,6 +89,12 @@ export async function extractTextFromPDF(file: File, maxPages: number = 50): Pro
     };
   } catch (error) {
     console.error('Error extracting text from PDF:', error);
+    
+    // If it's a worker error, provide more specific guidance
+    if (error instanceof Error && error.message.includes('worker')) {
+      throw new Error('PDF processing failed: Worker could not be loaded. Please try refreshing the page or use a different browser.');
+    }
+    
     throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -112,7 +130,13 @@ export async function validatePDF(file: File): Promise<boolean> {
 export async function getPDFInfo(file: File): Promise<{ pageCount: number; size: number; name: string }> {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      useSystemFonts: true
+    });
+    const pdf = await loadingTask.promise;
     
     return {
       pageCount: pdf.numPages,
