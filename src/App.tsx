@@ -950,39 +950,7 @@ function App() {
               </div>
             )}
           </TabsContent>
-
-            {filteredDocuments.length === 0 && !isLoadingProcessed && (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No documents found</h3>
-                <p className="text-muted-foreground">
-                  {allDocuments.length === 0 
-                    ? "Add PDF documents to the input/ directory and push to trigger the pipeline, or upload documents locally for testing"
-                    : contentSearchTerm 
-                    ? `No documents contain "${contentSearchTerm}". Try different keywords or check the content search.`
-                    : "Try adjusting your search or filter criteria"
-                  }
-                </p>
-                {contentSearchTerm && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => setContentSearchTerm('')}
-                  >
-                    Clear content search
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {isLoadingProcessed && (
-              <div className="text-center py-12">
-                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading processed documents...</p>
-              </div>
-            )}
-          </TabsContent>
+        </Tabs>
         </Tabs>
       </div>
 
