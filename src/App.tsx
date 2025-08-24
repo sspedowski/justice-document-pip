@@ -951,7 +951,7 @@ function App() {
             )}
           </TabsContent>
         </Tabs>
-      {/* Removed closing div to test */}
+      </div>
 
       {/* Document Detail Dialog */}
       <Dialog open={!!selectedDoc} onOpenChange={(open) => {
