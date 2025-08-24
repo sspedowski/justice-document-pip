@@ -911,6 +911,57 @@ function App() {
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Version Analytics Summary */}
+            {documentVersions.length > 0 && (
+              <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <GitBranch className="h-5 w-5 text-blue-600" />
+                    Version Tracking Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{documentVersions.length}</div>
+                      <div className="text-muted-foreground">Total Versions</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {documentVersions.filter(v => v.changeType === 'edited').length}
+                      </div>
+                      <div className="text-muted-foreground">Edits Made</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {allDocuments.filter(doc => doc.currentVersion > 1).length}
+                      </div>
+                      <div className="text-muted-foreground">Active Docs</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {new Set(documentVersions.map(v => v.changedBy)).size}
+                      </div>
+                      <div className="text-muted-foreground">Contributors</div>
+                    </div>
+                  </div>
+                  {(() => {
+                    const sevenDaysAgo = new Date()
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+                    const recentVersions = documentVersions.filter(v => new Date(v.changedAt) >= sevenDaysAgo)
+                    return recentVersions.length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-blue-200">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{recentVersions.length} changes in the last 7 days</span>
+                          <span>View detailed analytics in Reports → Versions</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Search Controls */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">

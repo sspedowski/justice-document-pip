@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, ResponsiveContainer } from 'recharts'
-import { Download, FileText, TrendUp, Users, Scale, Shield, Calendar, AlertTriangle, CheckCircle, Clock, BarChart3, Warning, Target, Gavel, FileCheck, ChartPie, Table } from '@phosphor-icons/react'
+import { Download, FileText, TrendUp, Users, Scale, Shield, Calendar, AlertTriangle, CheckCircle, Clock, BarChart3, Warning, Target, Gavel, FileCheck, ChartPie, Table, GitBranch } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { VersionAnalytics } from './VersionAnalytics'
 
 interface Document {
   id: string
@@ -295,12 +296,16 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="evidence">Evidence</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="versions" className="flex items-center gap-1">
+            <GitBranch className="h-3 w-3" />
+            Versions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -712,6 +717,13 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
               icon={Target}
             />
           </div>
+        </TabsContent>
+
+        <TabsContent value="versions" className="space-y-6">
+          <VersionAnalytics 
+            documents={documents}
+            documentVersions={documentVersions}
+          />
         </TabsContent>
       </Tabs>
     </div>
