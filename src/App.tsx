@@ -714,7 +714,6 @@ function App() {
     
     toast.success('CSV exported successfully')
   }
-  }
 
   const handleExportReport = (reportData: any) => {
     // Export comprehensive report as JSON
