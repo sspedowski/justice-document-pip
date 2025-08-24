@@ -328,6 +328,8 @@ function App() {
       toast.success(`Viewing ${versions.length} version${versions.length === 1 ? '' : 's'} of "${doc.title}"`)
     }
   }
+
+  const revertToVersion = (documentId: string, versionId: string) => {
     const version = documentVersions.find(v => v.id === versionId)
     if (!version) {
       toast.error('Version not found')
