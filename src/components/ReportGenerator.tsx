@@ -559,6 +559,16 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
               <CardContent>
                 <ChartContainer
                   config={{
+                    documents: {
+                      label: "Total Documents",
+                      color: "hsl(var(--primary))"
+                    },
+                    primaryDocs: {
+                      label: "Primary Documents", 
+                      color: "hsl(var(--destructive))"
+                    }
+                  }}
+                >
                   <BarChart data={reportData.childrenData.slice(0, 10)}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
@@ -566,11 +576,6 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar dataKey="documents" fill="hsl(var(--primary))" />
                     <Bar dataKey="primaryDocs" fill="hsl(var(--destructive))" />
-                  </BarChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
                   </BarChart>
                 </ChartContainer>
               </CardContent>
