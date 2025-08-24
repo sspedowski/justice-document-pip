@@ -78,14 +78,20 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
   // Generate comprehensive report data
   const reportData = useMemo(() => {
     const now = new Date()
-    const filteredDocs = documents.filter(doc => {
+    const filteredDocs = (documents || []).filter(doc => {
+      if (!doc) return false
       if (selectedCategory !== 'all' && doc.category !== selectedCategory) return false
       
       if (selectedTimeRange !== 'all') {
-        const docDate = new Date(doc.uploadedAt)
-        const monthsAgo = selectedTimeRange === '1m' ? 1 : selectedTimeRange === '3m' ? 3 : selectedTimeRange === '6m' ? 6 : 12
-        const cutoff = new Date(now.getFullYear(), now.getMonth() - monthsAgo, now.getDate())
-        if (docDate < cutoff) return false
+        try {
+          const docDate = new Date(doc.uploadedAt || now)
+          const monthsAgo = selectedTimeRange === '1m' ? 1 : selectedTimeRange === '3m' ? 3 : selectedTimeRange === '6m' ? 6 : 12
+          const cutoff = new Date(now.getFullYear(), now.getMonth() - monthsAgo, now.getDate())
+          if (docDate < cutoff) return false
+        } catch (error) {
+          console.warn('Invalid date for document:', doc.fileName, error)
+          return true // Include document if date parsing fails
+        }
       }
       
       return true
@@ -94,17 +100,17 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
     // Summary statistics
     const summary = {
       totalDocuments: filteredDocs.length,
-      primaryEvidence: filteredDocs.filter(d => d.category === 'Primary').length,
-      supportingEvidence: filteredDocs.filter(d => d.category === 'Supporting').length,
-      externalEvidence: filteredDocs.filter(d => d.category === 'External').length,
-      excludedDocuments: filteredDocs.filter(d => d.category === 'No').length,
-      includedDocuments: filteredDocs.filter(d => d.include === 'YES').length,
-      masterFileReady: filteredDocs.filter(d => d.placement.masterFile).length,
-      exhibitBundleReady: filteredDocs.filter(d => d.placement.exhibitBundle).length,
-      oversightReady: filteredDocs.filter(d => d.placement.oversightPacket).length,
-      childrenInvolved: [...new Set(filteredDocs.flatMap(d => d.children))].length,
-      lawsViolated: [...new Set(filteredDocs.flatMap(d => d.laws))].length,
-      totalVersions: documentVersions.filter(v => filteredDocs.some(d => d.id === v.documentId)).length
+      primaryEvidence: filteredDocs.filter(d => d && d.category === 'Primary').length,
+      supportingEvidence: filteredDocs.filter(d => d && d.category === 'Supporting').length,
+      externalEvidence: filteredDocs.filter(d => d && d.category === 'External').length,
+      excludedDocuments: filteredDocs.filter(d => d && d.category === 'No').length,
+      includedDocuments: filteredDocs.filter(d => d && d.include === 'YES').length,
+      masterFileReady: filteredDocs.filter(d => d && d.placement?.masterFile).length,
+      exhibitBundleReady: filteredDocs.filter(d => d && d.placement?.exhibitBundle).length,
+      oversightReady: filteredDocs.filter(d => d && d.placement?.oversightPacket).length,
+      childrenInvolved: [...new Set(filteredDocs.flatMap(d => d && d.children ? d.children : []))].length,
+      lawsViolated: [...new Set(filteredDocs.flatMap(d => d && d.laws ? d.laws : []))].length,
+      totalVersions: (documentVersions || []).filter(v => v && filteredDocs.some(d => d && d.id === v.documentId)).length
     }
 
     // Category distribution for pie chart

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, ArrowRight, GitBranch, Clock, User, FileText, Scale, Users, Eye, AlertTriangle, CheckCircle, X } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, GitBranch, Clock, User, FileText, AlertTriangle, CheckCircle, X } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface DocumentVersion {
@@ -62,14 +62,6 @@ interface Document {
   lastModifiedBy: string
 }
 
-interface DocumentComparisonProps {
-  document: Document
-  documentVersions: DocumentVersion[]
-  isOpen: boolean
-  onClose: () => void
-  onRevertToVersion?: (documentId: string, versionId: string) => void
-}
-
 interface ComparisonChange {
   field: string
   oldValue: any
@@ -77,26 +69,37 @@ interface ComparisonChange {
   type: 'added' | 'removed' | 'changed'
 }
 
-export function DocumentComparison({ 
-  document, 
-  documentVersions, 
-  isOpen, 
+interface DocumentComparisonProps {
+  document: Document
+  documentVersions: DocumentVersion[]
+  isOpen: boolean
+  onClose: () => void
+  onRevertToVersion: (documentId: string, versionId: string) => void
+}
+
+export function DocumentComparison({
+  document,
+  documentVersions,
+  isOpen,
   onClose,
-  onRevertToVersion 
+  onRevertToVersion
 }: DocumentComparisonProps) {
-  const [selectedVersions, setSelectedVersions] = useState<{left: string | null, right: string | null}>({
+  const [selectedVersions, setSelectedVersions] = useState<{
+    left: string | null
+    right: string | null
+  }>({
     left: null,
     right: null
   })
 
-  // Get available versions for this document, sorted by version number (newest first)
+  // Get available versions for this document, sorted by version number
   const availableVersions = useMemo(() => {
     const versions = documentVersions
       .filter(v => v.documentId === document.id)
       .sort((a, b) => b.version - a.version)
-    
-    // Add current document state as "version 0" for comparison
-    const currentDocumentAsVersion: DocumentVersion = {
+
+    // Add current document state as a version
+    const currentVersion: DocumentVersion = {
       id: `current-${document.id}`,
       documentId: document.id,
       version: document.currentVersion,
@@ -109,25 +112,19 @@ export function DocumentComparison({
       include: document.include,
       placement: document.placement,
       changedBy: document.lastModifiedBy || 'Unknown',
-      changedAt: document.lastModified,
-      changeNotes: 'Current state',
+      changedAt: document.lastModified || new Date().toISOString(),
       changeType: 'edited'
     }
-    
-    return [currentDocumentAsVersion, ...versions]
+
+    return [currentVersion, ...versions]
   }, [document, documentVersions])
 
-  // Auto-select the two most recent versions when dialog opens
-  React.useEffect(() => {
+  // Auto-select latest versions when opening
+  useMemo(() => {
     if (isOpen && availableVersions.length >= 2) {
       setSelectedVersions({
-        left: availableVersions[1].id, // Second most recent (older)
-        right: availableVersions[0].id  // Most recent (newer)
-      })
-    } else if (isOpen && availableVersions.length === 1) {
-      setSelectedVersions({
-        left: availableVersions[0].id,
-        right: null
+        left: availableVersions[1]?.id || null,
+        right: availableVersions[0]?.id || null
       })
     }
   }, [isOpen, availableVersions])
@@ -157,11 +154,11 @@ export function DocumentComparison({
     ]
 
     fieldsToCompare.forEach(field => {
-      if (leftVersion[field.key] !== rightVersion[field.key]) {
+      if (leftVersion[field.key as keyof DocumentVersion] !== rightVersion[field.key as keyof DocumentVersion]) {
         changes.push({
           field: field.label,
-          oldValue: leftVersion[field.key],
-          newValue: rightVersion[field.key],
+          oldValue: leftVersion[field.key as keyof DocumentVersion],
+          newValue: rightVersion[field.key as keyof DocumentVersion],
           type: 'changed'
         })
       }
@@ -174,8 +171,8 @@ export function DocumentComparison({
     ]
 
     arrayFields.forEach(field => {
-      const oldArray = leftVersion[field.key] || []
-      const newArray = rightVersion[field.key] || []
+      const oldArray = (leftVersion[field.key as keyof DocumentVersion] as string[]) || []
+      const newArray = (rightVersion[field.key as keyof DocumentVersion] as string[]) || []
       
       const added = newArray.filter(item => !oldArray.includes(item))
       const removed = oldArray.filter(item => !newArray.includes(item))
@@ -207,8 +204,8 @@ export function DocumentComparison({
     ]
 
     placementFields.forEach(field => {
-      const oldValue = leftVersion.placement[field.key]
-      const newValue = rightVersion.placement[field.key]
+      const oldValue = leftVersion.placement[field.key as keyof typeof leftVersion.placement]
+      const newValue = rightVersion.placement[field.key as keyof typeof rightVersion.placement]
       
       if (oldValue !== newValue) {
         changes.push({
@@ -387,7 +384,7 @@ export function DocumentComparison({
       case 'changed':
         return <AlertTriangle className="h-4 w-4 text-orange-600" />
       default:
-        return <Eye className="h-4 w-4 text-muted-foreground" />
+        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -512,37 +509,42 @@ export function DocumentComparison({
               {changes.length > 0 ? (
                 <div className="space-y-3">
                   {changes.map((change, index) => (
-                    <Card key={index}>
+                    <Card key={index} className="border-l-4 border-l-transparent data-[type=added]:border-l-green-500 data-[type=removed]:border-l-red-500 data-[type=changed]:border-l-orange-500" data-type={change.type}>
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <ChangeTypeIcon type={change.type} />
                           <div className="flex-1">
-                            <div className="font-medium text-sm">{change.field}</div>
-                            <div className="mt-2 text-sm">
-                              {change.type === 'added' && (
-                                <div className="bg-green-50 border border-green-200 rounded p-2">
-                                  <span className="text-green-800 font-medium">Added:</span>
-                                  <span className="ml-2 text-green-700">{change.newValue}</span>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-medium text-sm">{change.field}</span>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  change.type === 'added' ? 'border-green-200 text-green-700 bg-green-50' :
+                                  change.type === 'removed' ? 'border-red-200 text-red-700 bg-red-50' :
+                                  'border-orange-200 text-orange-700 bg-orange-50'
+                                }
+                              >
+                                {change.type}
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div className="space-y-1">
+                                <span className="text-xs text-muted-foreground font-medium">
+                                  {change.type === 'removed' ? 'Removed' : 'Before'}:
+                                </span>
+                                <div className="bg-red-50 border border-red-200 rounded p-2 text-red-800">
+                                  {change.oldValue ? String(change.oldValue) : '(none)'}
                                 </div>
-                              )}
-                              {change.type === 'removed' && (
-                                <div className="bg-red-50 border border-red-200 rounded p-2">
-                                  <span className="text-red-800 font-medium">Removed:</span>
-                                  <span className="ml-2 text-red-700">{change.oldValue}</span>
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-xs text-muted-foreground font-medium">
+                                  {change.type === 'added' ? 'Added' : 'After'}:
+                                </span>
+                                <div className="bg-green-50 border border-green-200 rounded p-2 text-green-800">
+                                  {change.newValue ? String(change.newValue) : '(none)'}
                                 </div>
-                              )}
-                              {change.type === 'changed' && (
-                                <div className="space-y-2">
-                                  <div className="bg-red-50 border border-red-200 rounded p-2">
-                                    <span className="text-red-800 font-medium">From:</span>
-                                    <span className="ml-2 text-red-700">{change.oldValue}</span>
-                                  </div>
-                                  <div className="bg-green-50 border border-green-200 rounded p-2">
-                                    <span className="text-green-800 font-medium">To:</span>
-                                    <span className="ml-2 text-green-700">{change.newValue}</span>
-                                  </div>
-                                </div>
-                              )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -551,11 +553,11 @@ export function DocumentComparison({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-600 opacity-50" />
-                  <h3 className="font-semibold mb-2 text-green-800">No Changes Detected</h3>
-                  <p className="text-sm text-muted-foreground">
-                    The selected versions are identical
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="font-semibold mb-2">No Changes Found</h3>
+                  <p className="text-sm">
+                    The selected versions appear to be identical.
                   </p>
                 </div>
               )}

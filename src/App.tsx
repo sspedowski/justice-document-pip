@@ -192,22 +192,27 @@ function App() {
   }, []) // Removed documents dependency to prevent infinite loop
 
   // Combine processed and local documents - use useMemo to prevent recalculation on every render
-  const allDocuments = useMemo(() => [
-    ...processedDocs, 
-    ...documents.filter(localDoc => 
-      !processedDocs.some(processedDoc => processedDoc.fileName === localDoc.fileName)
-    )
-  ], [processedDocs, documents])
+  const allDocuments = useMemo(() => {
+    const processed = processedDocs.filter(doc => doc && doc.id) || []
+    const local = documents.filter(doc => doc && doc.id) || []
+    
+    return [
+      ...processed, 
+      ...local.filter(localDoc => 
+        !processed.some(processedDoc => processedDoc.fileName === localDoc.fileName)
+      )
+    ]
+  }, [processedDocs, documents])
 
   // Advanced content search function
   const searchInDocuments = (query: string): SearchResult[] => {
-    if (!query.trim()) return []
+    if (!query.trim() || allDocuments.length === 0) return []
     
     const results: SearchResult[] = []
     const searchLower = query.toLowerCase()
     
     allDocuments.forEach(doc => {
-      if (!doc.textContent) return
+      if (!doc || !doc.textContent) return
       
       const matches: SearchResult['matches'] = []
       const text = doc.textContent.toLowerCase()
@@ -248,17 +253,17 @@ function App() {
 
   // Effect to update search results when content search term changes
   useEffect(() => {
-    if (contentSearchTerm.trim()) {
+    if (contentSearchTerm.trim() && allDocuments.length > 0) {
       const results = searchInDocuments(contentSearchTerm)
       setSearchResults(results)
     } else {
       setSearchResults([])
     }
-  }, [contentSearchTerm])
+  }, [contentSearchTerm, allDocuments])
 
   // Separate effect to handle search results update when documents change
   useEffect(() => {
-    if (contentSearchTerm.trim()) {
+    if (contentSearchTerm.trim() && allDocuments.length > 0) {
       const results = searchInDocuments(contentSearchTerm)
       setSearchResults(results)
     }
@@ -430,12 +435,14 @@ function App() {
   }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions])
 
   const filteredDocuments = allDocuments.filter(doc => {
+    if (!doc) return false
+    
     const matchesSearch = searchTerm === '' || 
-      doc.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.children.some(child => child.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      doc.laws.some(law => law.toLowerCase().includes(searchTerm.toLowerCase()))
+      (doc.fileName && doc.fileName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (doc.title && doc.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (doc.children && doc.children.some(child => child && child.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+      (doc.laws && doc.laws.some(law => law && law.toLowerCase().includes(searchTerm.toLowerCase())))
     
     const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter
     
@@ -679,22 +686,22 @@ function App() {
       'Title', 'Description'
     ]
     
-    const rows = allDocuments.map(doc => [
-      doc.fileName,
-      doc.category,
-      doc.children.join(', '),
-      doc.laws.join(', '),
-      doc.misconduct.map(m => `${m.law} p${m.page}/${m.paragraph}`).join('; '),
-      doc.include,
-      doc.placement.masterFile.toString(),
-      doc.placement.exhibitBundle.toString(),
-      doc.placement.oversightPacket.toString(),
-      doc.title,
-      doc.description
+    const rows = allDocuments.filter(doc => doc).map(doc => [
+      doc.fileName || '',
+      doc.category || '',
+      (doc.children || []).join(', '),
+      (doc.laws || []).join(', '),
+      (doc.misconduct || []).map(m => `${m.law || ''} p${m.page || ''}/${m.paragraph || ''}`).join('; '),
+      doc.include || '',
+      (doc.placement?.masterFile || false).toString(),
+      (doc.placement?.exhibitBundle || false).toString(),
+      (doc.placement?.oversightPacket || false).toString(),
+      doc.title || '',
+      doc.description || ''
     ])
     
     const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       .join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -706,6 +713,7 @@ function App() {
     URL.revokeObjectURL(url)
     
     toast.success('CSV exported successfully')
+  }
   }
 
   const handleExportReport = (reportData: any) => {
@@ -767,14 +775,15 @@ function App() {
     }
   }
 
-  const CategoryBadge = ({ category }: { category: Document['category'] }) => {
+  const CategoryBadge = ({ category }: { category: Document['category'] | undefined }) => {
+    const safeCategory = category || 'No'
     const colors = {
       Primary: 'bg-red-100 text-red-800',
       Supporting: 'bg-blue-100 text-blue-800',
       External: 'bg-green-100 text-green-800',
       No: 'bg-gray-100 text-gray-800'
     }
-    return <Badge className={colors[category]}>{category}</Badge>
+    return <Badge className={colors[safeCategory as keyof typeof colors]}>{safeCategory}</Badge>
   }
 
   return (
@@ -1145,16 +1154,18 @@ function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredDocuments.map((doc) => {
+                if (!doc || !doc.id) return null
+                
                 const docSearchResult = searchResults.find(result => result.docId === doc.id)
                 return (
                   <Card key={doc.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-sm font-medium truncate">{doc.title}</CardTitle>
+                          <CardTitle className="text-sm font-medium truncate">{doc.title || 'Untitled'}</CardTitle>
                           <div className="flex items-center gap-2 mt-1">
-                            <CategoryBadge category={doc.category} />
-                            {processedDocs.some(p => p.id === doc.id) && (
+                            <CategoryBadge category={doc.category || 'No'} />
+                            {processedDocs.some(p => p && p.id === doc.id) && (
                               <Badge variant="outline" className="text-xs">
                                 <GitBranch className="h-3 w-3 mr-1" />
                                 Pipeline
@@ -1193,7 +1204,7 @@ function App() {
                         </div>
                       )}
                       
-                      {doc.children.length > 0 && (
+                      {(doc.children && doc.children.length > 0) && (
                         <div className="flex items-center gap-1 flex-wrap">
                           <Users className="h-3 w-3 text-muted-foreground" />
                           {doc.children.map((child, idx) => (
@@ -1202,7 +1213,7 @@ function App() {
                         </div>
                       )}
                       
-                      {doc.laws.length > 0 && (
+                      {(doc.laws && doc.laws.length > 0) && (
                         <div className="flex items-center gap-1 flex-wrap">
                           <Scale className="h-3 w-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">{doc.laws.length} law(s)</span>
@@ -1210,8 +1221,8 @@ function App() {
                       )}
                       
                       <div className="flex justify-between items-center pt-2">
-                        <Badge variant={doc.include === 'YES' ? 'default' : 'secondary'}>
-                          {doc.include}
+                        <Badge variant={(doc.include || 'NO') === 'YES' ? 'default' : 'secondary'}>
+                          {doc.include || 'NO'}
                         </Badge>
                         <div className="flex gap-1">
                           <Button
@@ -1327,10 +1338,10 @@ function App() {
                     <div>
                       <h4 className="font-semibold mb-2">Document Details</h4>
                       <div className="space-y-2 text-sm">
-                        <div><span className="font-medium">File:</span> {selectedDoc.fileName}</div>
+                        <div><span className="font-medium">File:</span> {selectedDoc.fileName || 'Unknown'}</div>
                         <div><span className="font-medium">Category:</span> <CategoryBadge category={selectedDoc.category} /></div>
-                        <div><span className="font-medium">Include:</span> <Badge variant={selectedDoc.include === 'YES' ? 'default' : 'secondary'}>{selectedDoc.include}</Badge></div>
-                        <div><span className="font-medium">Uploaded:</span> {new Date(selectedDoc.uploadedAt).toLocaleDateString()}</div>
+                        <div><span className="font-medium">Include:</span> <Badge variant={(selectedDoc.include || 'NO') === 'YES' ? 'default' : 'secondary'}>{selectedDoc.include || 'NO'}</Badge></div>
+                        <div><span className="font-medium">Uploaded:</span> {selectedDoc.uploadedAt ? new Date(selectedDoc.uploadedAt).toLocaleDateString() : 'Unknown'}</div>
                         {selectedDoc.currentVersion && (
                           <div><span className="font-medium">Version:</span> {selectedDoc.currentVersion}</div>
                         )}
@@ -1345,9 +1356,9 @@ function App() {
                     <div>
                       <h4 className="font-semibold mb-2">Placement Rules</h4>
                       <div className="space-y-2 text-sm">
-                        <div><span className="font-medium">Master File:</span> {selectedDoc.placement.masterFile ? '✓' : '✗'}</div>
-                        <div><span className="font-medium">Exhibit Bundle:</span> {selectedDoc.placement.exhibitBundle ? '✓' : '✗'}</div>
-                        <div><span className="font-medium">Oversight Packet:</span> {selectedDoc.placement.oversightPacket ? '✓' : '✗'}</div>
+                        <div><span className="font-medium">Master File:</span> {selectedDoc.placement?.masterFile ? '✓' : '✗'}</div>
+                        <div><span className="font-medium">Exhibit Bundle:</span> {selectedDoc.placement?.exhibitBundle ? '✓' : '✗'}</div>
+                        <div><span className="font-medium">Oversight Packet:</span> {selectedDoc.placement?.oversightPacket ? '✓' : '✗'}</div>
                         <div className="mt-3">
                           <Button
                             size="sm"
@@ -1369,7 +1380,7 @@ function App() {
                   <div>
                     <h4 className="font-semibold mb-2">Children Identified</h4>
                     <div className="flex gap-2 flex-wrap">
-                      {selectedDoc.children.length > 0 
+                      {(selectedDoc.children && selectedDoc.children.length > 0)
                         ? selectedDoc.children.map((child, idx) => (
                             <Badge key={idx} variant="secondary">{child}</Badge>
                           ))
@@ -1381,7 +1392,7 @@ function App() {
                   <div>
                     <h4 className="font-semibold mb-2">Laws & Regulations</h4>
                     <div className="flex gap-2 flex-wrap">
-                      {selectedDoc.laws.length > 0 
+                      {(selectedDoc.laws && selectedDoc.laws.length > 0)
                         ? selectedDoc.laws.map((law, idx) => (
                             <Badge key={idx} variant="outline">{law}</Badge>
                           ))
@@ -1392,7 +1403,7 @@ function App() {
                   
                   <div>
                     <h4 className="font-semibold mb-2">Description</h4>
-                    <p className="text-sm text-muted-foreground">{selectedDoc.description}</p>
+                    <p className="text-sm text-muted-foreground">{selectedDoc.description || 'No description available'}</p>
                   </div>
                 </TabsContent>
                 
@@ -1675,13 +1686,15 @@ function App() {
       </Dialog>
 
       {/* Document Version Comparison Dialog */}
-      <DocumentComparison
-        document={comparingVersions!}
-        documentVersions={documentVersions}
-        isOpen={!!comparingVersions}
-        onClose={() => setComparingVersions(null)}
-        onRevertToVersion={revertToVersion}
-      />
+      {comparingVersions && (
+        <DocumentComparison
+          document={comparingVersions}
+          documentVersions={documentVersions}
+          isOpen={!!comparingVersions}
+          onClose={() => setComparingVersions(null)}
+          onRevertToVersion={revertToVersion}
+        />
+      )}
     </div>
   )
 }
