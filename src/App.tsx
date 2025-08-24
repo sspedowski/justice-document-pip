@@ -925,9 +925,9 @@ function App() {
                 <p className="text-muted-foreground">
                   {allDocuments.length === 0 
                     ? "Add PDF documents to the input/ directory and push to trigger the pipeline, or upload documents locally for testing"
-                    : contentSearchTerm 
-                    ? `No documents contain "${contentSearchTerm}". Try different keywords or check the content search.`
-                    : "Try adjusting your search or filter criteria"
+                    : (contentSearchTerm 
+                      ? `No documents contain "${contentSearchTerm}". Try different keywords or check the content search.`
+                      : "Try adjusting your search or filter criteria")
                   }
                 </p>
                 {contentSearchTerm && (
@@ -951,7 +951,7 @@ function App() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
+      {/* Removed closing div to test */}
 
       {/* Document Detail Dialog */}
       <Dialog open={!!selectedDoc} onOpenChange={(open) => {
@@ -1171,6 +1171,7 @@ function App() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }
