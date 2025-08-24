@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -131,12 +131,15 @@ function App() {
     }
     
     loadData()
-  }, [])
+  }, []) // Removed documents dependency to prevent infinite loop
 
-  // Combine processed and local documents
-  const allDocuments = [...processedDocs, ...documents.filter(localDoc => 
-    !processedDocs.some(processedDoc => processedDoc.fileName === localDoc.fileName)
-  )]
+  // Combine processed and local documents - use useMemo to prevent recalculation on every render
+  const allDocuments = useMemo(() => [
+    ...processedDocs, 
+    ...documents.filter(localDoc => 
+      !processedDocs.some(processedDoc => processedDoc.fileName === localDoc.fileName)
+    )
+  ], [processedDocs, documents])
 
   // Advanced content search function
   const searchInDocuments = (query: string): SearchResult[] => {
@@ -193,7 +196,15 @@ function App() {
     } else {
       setSearchResults([])
     }
-  }, [contentSearchTerm, allDocuments])
+  }, [contentSearchTerm])
+
+  // Separate effect to handle search results update when documents change
+  useEffect(() => {
+    if (contentSearchTerm.trim()) {
+      const results = searchInDocuments(contentSearchTerm)
+      setSearchResults(results)
+    }
+  }, [allDocuments])
 
   // Keyboard shortcuts
   useEffect(() => {
