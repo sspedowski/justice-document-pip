@@ -9,10 +9,37 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X } from '@phosphor-icons/react'
+import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
+
+interface DocumentVersion {
+  id: string
+  documentId: string
+  version: number
+  title: string
+  description: string
+  category: 'Primary' | 'Supporting' | 'External' | 'No'
+  children: string[]
+  laws: string[]
+  misconduct: Array<{
+    law: string
+    page: string
+    paragraph: string
+    notes: string
+  }>
+  include: 'YES' | 'NO'
+  placement: {
+    masterFile: boolean
+    exhibitBundle: boolean
+    oversightPacket: boolean
+  }
+  changedBy: string
+  changedAt: string
+  changeNotes?: string
+  changeType: 'created' | 'edited' | 'imported'
+}
 
 interface Document {
   id: string
@@ -36,6 +63,9 @@ interface Document {
   }
   uploadedAt: string
   textContent?: string
+  currentVersion: number
+  lastModified: string
+  lastModifiedBy: string
 }
 
 interface ProcessingDocument {
@@ -81,7 +111,15 @@ async function loadProcessedDocuments(): Promise<Document[]> {
     }
     
     const data = await response.json()
-    return Array.isArray(data) ? data : []
+    const documents = Array.isArray(data) ? data : []
+    
+    // Ensure all documents have version information
+    return documents.map(doc => ({
+      ...doc,
+      currentVersion: doc.currentVersion || 1,
+      lastModified: doc.lastModified || doc.uploadedAt || new Date().toISOString(),
+      lastModifiedBy: doc.lastModifiedBy || 'Pipeline Import'
+    }))
   } catch (error) {
     console.log('No processed documents found yet, using empty array:', error)
     return []
@@ -90,10 +128,13 @@ async function loadProcessedDocuments(): Promise<Document[]> {
 
 function App() {
   const [documents, setDocuments] = useKV<Document[]>('justice-documents', [])
+  const [documentVersions, setDocumentVersions] = useKV<DocumentVersion[]>('document-versions', [])
   const [processedDocs, setProcessedDocs] = useState<Document[]>([])
   const [processing, setProcessing] = useState<ProcessingDocument[]>([])
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
+  const [viewingVersionHistory, setViewingVersionHistory] = useState<Document | null>(null)
+  const [changeNotes, setChangeNotes] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [contentSearchTerm, setContentSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -110,6 +151,20 @@ function App() {
       try {
         const processed = await loadProcessedDocuments()
         setProcessedDocs(processed)
+        
+        // Create initial version entries for processed documents that don't have them
+        const processedVersions: DocumentVersion[] = []
+        processed.forEach(doc => {
+          const existingVersions = documentVersions.filter(v => v.documentId === doc.id)
+          if (existingVersions.length === 0) {
+            const initialVersion = createDocumentVersion(doc, 'imported', 'Document imported from pipeline processing')
+            processedVersions.push(initialVersion)
+          }
+        })
+        
+        if (processedVersions.length > 0) {
+          setDocumentVersions(prev => [...prev, ...processedVersions])
+        }
         
         // Merge with locally uploaded documents, avoiding duplicates
         const existingFileNames = new Set(processed.map(doc => doc.fileName))
@@ -206,6 +261,102 @@ function App() {
     }
   }, [allDocuments])
 
+  // Version management functions
+  const createDocumentVersion = (doc: Document, changeType: DocumentVersion['changeType'], notes?: string): DocumentVersion => {
+    const version = (doc.currentVersion || 0) + 1
+    return {
+      id: `${doc.id}-v${version}-${Date.now()}`,
+      documentId: doc.id,
+      version,
+      title: doc.title,
+      description: doc.description,
+      category: doc.category,
+      children: [...doc.children],
+      laws: [...doc.laws],
+      misconduct: doc.misconduct.map(m => ({ ...m })),
+      include: doc.include,
+      placement: { ...doc.placement },
+      changedBy: 'Current User', // In a real app, this would come from authentication
+      changedAt: new Date().toISOString(),
+      changeNotes: notes,
+      changeType
+    }
+  }
+
+  const saveDocumentWithVersion = (updatedDoc: Document, changeType: DocumentVersion['changeType'], notes?: string) => {
+    // Create version history entry
+    const version = createDocumentVersion(updatedDoc, changeType, notes)
+    
+    // Update document with new version info
+    const docWithVersion = {
+      ...updatedDoc,
+      currentVersion: version.version,
+      lastModified: new Date().toISOString(),
+      lastModifiedBy: 'Current User'
+    }
+
+    // Save version and document
+    setDocumentVersions(prev => [...prev, version])
+    
+    // Check if this is a processed document or local document
+    const isProcessedDoc = processedDocs.some(doc => doc.id === updatedDoc.id)
+    
+    if (isProcessedDoc) {
+      setProcessedDocs(prev => prev.map(doc => 
+        doc.id === updatedDoc.id ? docWithVersion : doc
+      ))
+    } else {
+      setDocuments(prev => prev.map(doc => 
+        doc.id === updatedDoc.id ? docWithVersion : doc
+      ))
+    }
+  }
+
+  const getDocumentVersions = (documentId: string): DocumentVersion[] => {
+    return documentVersions
+      .filter(v => v.documentId === documentId)
+      .sort((a, b) => b.version - a.version)
+  }
+
+  const showVersionHistory = (doc: Document) => {
+    const versions = getDocumentVersions(doc.id)
+    setViewingVersionHistory(doc)
+    
+    if (versions.length === 0) {
+      toast.info('No version history yet. Changes to this document will be tracked going forward.')
+    } else {
+      toast.success(`Viewing ${versions.length} version${versions.length === 1 ? '' : 's'} of "${doc.title}"`)
+    }
+  }
+    const version = documentVersions.find(v => v.id === versionId)
+    if (!version) {
+      toast.error('Version not found')
+      return
+    }
+
+    const currentDoc = allDocuments.find(d => d.id === documentId)
+    if (!currentDoc) {
+      toast.error('Document not found')
+      return
+    }
+
+    // Create updated document from version data
+    const revertedDoc: Document = {
+      ...currentDoc,
+      title: version.title,
+      description: version.description,
+      category: version.category,
+      children: [...version.children],
+      laws: [...version.laws],
+      misconduct: version.misconduct.map(m => ({ ...m })),
+      include: version.include,
+      placement: { ...version.placement }
+    }
+
+    saveDocumentWithVersion(revertedDoc, 'edited', `Reverted to version ${version.version}`)
+    toast.success(`Reverted to version ${version.version}`)
+  }
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -229,11 +380,30 @@ function App() {
           }
         }, 100)
       }
+      
+      // Ctrl/Cmd + H to open version history for selected document
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h' && selectedDoc) {
+        e.preventDefault()
+        showVersionHistory(selectedDoc)
+        setSelectedDoc(null)
+      }
+      
+      // Escape to close dialogs
+      if (e.key === 'Escape') {
+        if (viewingVersionHistory) {
+          setViewingVersionHistory(null)
+        } else if (editingDoc) {
+          setEditingDoc(null)
+          setChangeNotes('')
+        } else if (selectedDoc) {
+          setSelectedDoc(null)
+        }
+      }
     }
     
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [selectedDoc, viewingVersionHistory, editingDoc])
 
   const filteredDocuments = allDocuments.filter(doc => {
     const matchesSearch = searchTerm === '' || 
@@ -355,12 +525,20 @@ function App() {
           oversightPacket: ['Primary', 'Supporting'].includes(category)
         },
         uploadedAt: new Date().toISOString(),
-        textContent: pdfResult.text.substring(0, 50000) // Store first 50k chars for search (increased from 10k)
+        textContent: pdfResult.text.substring(0, 50000), // Store first 50k chars for search (increased from 10k)
+        currentVersion: 1,
+        lastModified: new Date().toISOString(),
+        lastModifiedBy: 'Current User'
       }
 
       updateProgress(100, 'complete')
       
+      // Save document and create initial version
       setDocuments(prev => [...prev, newDoc])
+      
+      // Create initial version entry
+      const initialVersion = createDocumentVersion(newDoc, 'created', 'Initial document upload and processing')
+      setDocumentVersions(prev => [...prev, initialVersion])
       
       setTimeout(() => {
         setProcessing(prev => prev.filter(p => p.fileName !== file.name))
@@ -462,24 +640,12 @@ function App() {
   const saveEditedDocument = () => {
     if (!editingDoc) return
     
-    // Check if this is a processed document (from GitHub Actions) or local document
-    const isProcessedDoc = processedDocs.some(doc => doc.id === editingDoc.id)
+    const notes = changeNotes.trim() || 'Document edited'
+    saveDocumentWithVersion(editingDoc, 'edited', notes)
     
-    if (isProcessedDoc) {
-      // For processed documents, only update local state (changes won't persist across refreshes)
-      setProcessedDocs(prev => prev.map(doc => 
-        doc.id === editingDoc.id ? editingDoc : doc
-      ))
-      toast.success('Document updated (local changes only - use GitHub repository for permanent changes)')
-    } else {
-      // For local documents, update persistent storage
-      setDocuments(prev => prev.map(doc => 
-        doc.id === editingDoc.id ? editingDoc : doc
-      ))
-      toast.success('Document updated successfully')
-    }
-    
+    toast.success('Document updated with version history')
     setEditingDoc(null)
+    setChangeNotes('')
   }
 
   const exportToCSV = () => {
@@ -560,7 +726,14 @@ function App() {
               <Scale className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Justice Document Manager</h1>
-                <p className="text-sm text-muted-foreground">Contact & Action Book — Master File System</p>
+                <p className="text-sm text-muted-foreground">
+                  Contact & Action Book — Master File System
+                  {allDocuments.length > 0 && (
+                    <span className="ml-2">
+                      • {allDocuments.length} documents • {documentVersions.length} versions tracked
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -859,6 +1032,12 @@ function App() {
                                 Pipeline
                               </Badge>
                             )}
+                            {doc.currentVersion && doc.currentVersion > 1 && (
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                v{doc.currentVersion}
+                              </Badge>
+                            )}
                             {docSearchResult && (
                               <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
                                 <MagnifyingGlass className="h-3 w-3 mr-1" />
@@ -913,6 +1092,14 @@ function App() {
                             onClick={() => setSelectedDoc(doc)}
                           >
                             <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => showVersionHistory(doc)}
+                            title="Version History (Ctrl+H)"
+                          >
+                            <Clock className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
@@ -975,6 +1162,12 @@ function App() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedDoc?.title}
+              {selectedDoc?.currentVersion && selectedDoc.currentVersion > 1 && (
+                <Badge variant="outline" className="text-xs">
+                  <Clock className="h-3 w-3 mr-1" />
+                  v{selectedDoc.currentVersion}
+                </Badge>
+              )}
               {selectedDoc?.textContent && (
                 <Badge variant="outline" className="text-xs">
                   <TextT className="h-3 w-3 mr-1" />
@@ -1002,6 +1195,15 @@ function App() {
                         <div><span className="font-medium">Category:</span> <CategoryBadge category={selectedDoc.category} /></div>
                         <div><span className="font-medium">Include:</span> <Badge variant={selectedDoc.include === 'YES' ? 'default' : 'secondary'}>{selectedDoc.include}</Badge></div>
                         <div><span className="font-medium">Uploaded:</span> {new Date(selectedDoc.uploadedAt).toLocaleDateString()}</div>
+                        {selectedDoc.currentVersion && (
+                          <div><span className="font-medium">Version:</span> {selectedDoc.currentVersion}</div>
+                        )}
+                        {selectedDoc.lastModified && (
+                          <div><span className="font-medium">Last Modified:</span> {new Date(selectedDoc.lastModified).toLocaleDateString()}</div>
+                        )}
+                        {selectedDoc.lastModifiedBy && (
+                          <div><span className="font-medium">Modified By:</span> {selectedDoc.lastModifiedBy}</div>
+                        )}
                       </div>
                     </div>
                     <div>
@@ -1010,6 +1212,20 @@ function App() {
                         <div><span className="font-medium">Master File:</span> {selectedDoc.placement.masterFile ? '✓' : '✗'}</div>
                         <div><span className="font-medium">Exhibit Bundle:</span> {selectedDoc.placement.exhibitBundle ? '✓' : '✗'}</div>
                         <div><span className="font-medium">Oversight Packet:</span> {selectedDoc.placement.oversightPacket ? '✓' : '✗'}</div>
+                        <div className="mt-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              showVersionHistory(selectedDoc)
+                              setSelectedDoc(null)
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <Clock className="h-3 w-3" />
+                            View Version History
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1170,8 +1386,20 @@ function App() {
                 />
               </div>
               
+              <div>
+                <label className="text-sm font-medium">Change Notes</label>
+                <Input
+                  placeholder="What changes are you making? (optional)"
+                  value={changeNotes}
+                  onChange={(e) => setChangeNotes(e.target.value)}
+                />
+              </div>
+              
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditingDoc(null)}>
+                <Button variant="outline" onClick={() => {
+                  setEditingDoc(null)
+                  setChangeNotes('')
+                }}>
                   Cancel
                 </Button>
                 <Button onClick={saveEditedDocument}>
@@ -1180,6 +1408,122 @@ function App() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Version History Dialog */}
+      <Dialog open={!!viewingVersionHistory} onOpenChange={() => setViewingVersionHistory(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Version History: {viewingVersionHistory?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {viewingVersionHistory && (() => {
+            const versions = getDocumentVersions(viewingVersionHistory.id)
+            return (
+              <div className="flex-1 overflow-y-auto space-y-4">
+                {versions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No version history available for this document</p>
+                    <p className="text-xs mt-1">Changes will be tracked going forward</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {versions.map((version, index) => (
+                      <Card key={version.id} className={`${index === 0 ? 'ring-2 ring-primary/20' : ''}`}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Badge variant={index === 0 ? 'default' : 'outline'}>
+                                Version {version.version}
+                                {index === 0 && ' (Current)'}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {version.changeType === 'created' && <FileArrowUp className="h-3 w-3 mr-1" />}
+                                {version.changeType === 'edited' && <Edit className="h-3 w-3 mr-1" />}
+                                {version.changeType === 'imported' && <GitBranch className="h-3 w-3 mr-1" />}
+                                {version.changeType}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {index > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (window.confirm(`Are you sure you want to revert to version ${version.version}? This will create a new version with the old data.`)) {
+                                      revertToVersion(viewingVersionHistory.id, version.id)
+                                      setViewingVersionHistory(null)
+                                    }
+                                  }}
+                                >
+                                  Revert to this version
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-muted-foreground">Changed by:</span>
+                              <div className="flex items-center gap-1 mt-1">
+                                <User className="h-3 w-3" />
+                                {version.changedBy}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Changed at:</span>
+                              <div className="mt-1">
+                                {new Date(version.changedAt).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {version.changeNotes && (
+                            <div className="bg-muted/50 rounded p-3">
+                              <span className="font-medium text-muted-foreground text-xs">Change Notes:</span>
+                              <p className="text-sm mt-1">{version.changeNotes}</p>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <span className="font-medium">Title:</span> {version.title}
+                            </div>
+                            <div>
+                              <span className="font-medium">Category:</span> {version.category}
+                            </div>
+                            <div>
+                              <span className="font-medium">Include:</span> {version.include}
+                            </div>
+                            <div>
+                              <span className="font-medium">Children:</span> {version.children.join(', ') || 'None'}
+                            </div>
+                            <div className="col-span-2">
+                              <span className="font-medium">Laws:</span> {version.laws.join(', ') || 'None'}
+                            </div>
+                          </div>
+                          
+                          <details className="text-xs">
+                            <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
+                              Show full description
+                            </summary>
+                            <div className="mt-2 p-2 bg-muted/30 rounded text-xs">
+                              {version.description}
+                            </div>
+                          </details>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </DialogContent>
       </Dialog>
     </div>

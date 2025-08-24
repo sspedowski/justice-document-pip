@@ -72,11 +72,23 @@
 - **Text Extraction**: Uses PDF.js for browser-based text extraction from PDF documents
 - **Content Analysis**: Automatically detects child names and legal violations from document text
 - **Classification**: Smart categorization into Primary, Supporting, External, or No categories
+- **Version Control**: Automatic versioning system tracks all document changes
 
 ### Document Management
 - **Searchable Dashboard**: Filter and search through all processed documents
+- **Advanced Content Search**: Full-text search within document content with highlighting
 - **Metadata Editing**: Ability to manually adjust classifications and details
+- **Version History Tracking**: Complete audit trail of all document changes with timestamps and notes
+- **Document Comparison**: View and revert to previous versions of document metadata
 - **Batch Operations**: Export CSV reports and generate oversight packets
+
+### Version History System
+- **Automatic Versioning**: Every document edit creates a new version entry
+- **Change Tracking**: Records who made changes, when, and optional notes about what changed
+- **Version Comparison**: Side-by-side view of different document versions
+- **Rollback Capability**: Ability to revert to any previous version
+- **Audit Trail**: Complete history for legal documentation and compliance
+- **Change Types**: Differentiates between created, edited, and imported document versions
 
 ### GitHub Integration
 - **Pipeline Sync**: Loads documents processed by GitHub Actions pipeline
