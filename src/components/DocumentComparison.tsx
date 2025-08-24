@@ -1,66 +1,66 @@
 import React, { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, ArrowRight, GitBranch, Clock, User, FileText, AlertTriangle, CheckCircle, X } from '@phosphor-icons/react'
-import { toast } from 'sonner'
+  category: 'Primary' | 'Suppo
 
-interface DocumentVersion {
-  id: string
-  documentId: string
-  version: number
-  title: string
-  description: string
-  category: 'Primary' | 'Supporting' | 'External' | 'No'
-  children: string[]
-  laws: string[]
-  misconduct: Array<{
     law: string
-    page: string
-    paragraph: string
-    notes: string
+    paragrap
   }>
-  include: 'YES' | 'NO'
   placement: {
-    masterFile: boolean
-    exhibitBundle: boolean
-    oversightPacket: boolean
+    exhibitBund
   }
-  changedBy: string
   changedAt: string
-  changeNotes?: string
-  changeType: 'created' | 'edited' | 'imported'
-}
+  changeType: 'creat
 
-interface Document {
   id: string
-  fileName: string
   title: string
-  description: string
-  category: 'Primary' | 'Supporting' | 'External' | 'No'
-  children: string[]
+  category: 'Pri
   laws: string[]
-  misconduct: Array<{
     law: string
-    page: string
-    paragraph: string
-    notes: string
+    
   }>
-  include: 'YES' | 'NO'
   placement: {
-    masterFile: boolean
-    exhibitBundle: boolean
-    oversightPacket: boolean
+    exhibitBundle: bool
   }
-  uploadedAt: string
   textContent?: string
-  currentVersion: number
-  lastModified: string
-  lastModifiedBy: string
+  l
 }
+interface Compariso
+  oldValue: any
+  type: 'added' | 'removed' | 'changed'
+
+
+  isOpen: boolean
+  onRevertTo
+
+  document,
+  isOpen,
+  onRevertToVersion
+  const [selectedVer
+    right: strin
+    left: null,
+  })
+  // Get availab
+    const versions = 
+      .sort((a, b
+    
+      id: `current-${do
+      version:
+      description: docu
+      children: document.c
+      misconduct: document.m
+   
+      changedAt: doc
+    }
+    return [currentVersi
+
+  useMemo(() => {
+ 
 
 interface ComparisonChange {
   field: string
@@ -114,134 +114,134 @@ export function DocumentComparison({
       changedBy: document.lastModifiedBy || 'Unknown',
       changedAt: document.lastModified || new Date().toISOString(),
       changeType: 'edited'
-    }
-
-    return [currentVersion, ...versions]
-  }, [document, documentVersions])
-
-  // Auto-select latest versions when opening
-  useMemo(() => {
-    if (isOpen && availableVersions.length >= 2) {
-      setSelectedVersions({
-        left: availableVersions[1]?.id || null,
-        right: availableVersions[0]?.id || null
-      })
-    }
-  }, [isOpen, availableVersions])
-
-  const leftVersion = useMemo(() => 
-    availableVersions.find(v => v.id === selectedVersions.left),
-    [availableVersions, selectedVersions.left]
-  )
-
-  const rightVersion = useMemo(() => 
-    availableVersions.find(v => v.id === selectedVersions.right),
-    [availableVersions, selectedVersions.right]
-  )
-
-  // Calculate differences between versions
-  const changes = useMemo((): ComparisonChange[] => {
-    if (!leftVersion || !rightVersion) return []
-
-    const changes: ComparisonChange[] = []
-
-    // Compare basic fields
-    const fieldsToCompare = [
-      { key: 'title', label: 'Title' },
-      { key: 'category', label: 'Category' },
-      { key: 'include', label: 'Include Status' },
-      { key: 'description', label: 'Description' }
-    ]
-
-    fieldsToCompare.forEach(field => {
-      if (leftVersion[field.key as keyof DocumentVersion] !== rightVersion[field.key as keyof DocumentVersion]) {
-        changes.push({
-          field: field.label,
-          oldValue: leftVersion[field.key as keyof DocumentVersion],
-          newValue: rightVersion[field.key as keyof DocumentVersion],
-          type: 'changed'
-        })
-      }
-    })
-
-    // Compare arrays (children, laws)
-    const arrayFields = [
-      { key: 'children', label: 'Children' },
-      { key: 'laws', label: 'Laws' }
-    ]
-
-    arrayFields.forEach(field => {
-      const oldArray = (leftVersion[field.key as keyof DocumentVersion] as string[]) || []
-      const newArray = (rightVersion[field.key as keyof DocumentVersion] as string[]) || []
-      
-      const added = newArray.filter(item => !oldArray.includes(item))
-      const removed = oldArray.filter(item => !newArray.includes(item))
-      
-      added.forEach(item => {
-        changes.push({
-          field: field.label,
-          oldValue: null,
-          newValue: item,
-          type: 'added'
-        })
-      })
-      
-      removed.forEach(item => {
-        changes.push({
-          field: field.label,
-          oldValue: item,
-          newValue: null,
-          type: 'removed'
-        })
-      })
-    })
-
-    // Compare placement settings
-    const placementFields = [
-      { key: 'masterFile', label: 'Master File' },
-      { key: 'exhibitBundle', label: 'Exhibit Bundle' },
-      { key: 'oversightPacket', label: 'Oversight Packet' }
-    ]
-
-    placementFields.forEach(field => {
-      const oldValue = leftVersion.placement[field.key as keyof typeof leftVersion.placement]
-      const newValue = rightVersion.placement[field.key as keyof typeof rightVersion.placement]
-      
-      if (oldValue !== newValue) {
-        changes.push({
-          field: `Placement: ${field.label}`,
-          oldValue: oldValue ? 'Yes' : 'No',
-          newValue: newValue ? 'Yes' : 'No',
-          type: 'changed'
-        })
-      }
-    })
-
-    return changes
-  }, [leftVersion, rightVersion])
-
-  const swapVersions = () => {
-    setSelectedVersions(prev => ({
-      left: prev.right,
-      right: prev.left
-    }))
   }
 
-  const formatVersionLabel = (version: DocumentVersion) => {
-    const isCurrentState = version.id.startsWith('current-')
-    return `v${version.version}${isCurrentState ? ' (Current)' : ''} - ${new Date(version.changedAt).toLocaleDateString()}`
-  }
-
-  const VersionCard = ({ version, title, side }: { version: DocumentVersion | undefined, title: string, side: 'left' | 'right' }) => {
-    if (!version) {
       return (
-        <Card className="flex-1">
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              {title}
-              <Badge variant="outline">No Version Selected</Badge>
+
             </CardTitle>
-          </CardHeader>
+          <CardCo
+            <p>Select a version to compare</p>
+        </Card>
+    }
+    const isCurrentState = version.id.startsWit
+    retu
+     
+            <div className="flex 
+
+                {isCurrentState && '
+            </div>
+              <Button
+   
+
+                    toast.success(`Re
+                  }
+              >
+   
+
+            <User className="h-3 w-3" />
+          </div>
+            <div className="text-xs bg-muted/50 
+
+        </CardHeader>
+
+              <span classNa
+            </div>
+            <div>
+              <div className="mt-1">
+                  version.category === 'Primary' ?
+                  version.category === 'External' 
+     
+
+            </div>
+            <div>
+              <div cla
+                  {version.in
+              </div>
+            
+              <span class
+          
+       
+      
+
+            </div>
+            <div>
+              <div className="mt-1 flex gap-1
+                  version.laws.map((
+     
+
+              </div>
+            
+              <span className="font-medium text-muted-foreground">Placement:</span>
+      
+                  <span>{version.placement.masterFile ? '✓' : '✗'}</s
+                <div className="flex items-center justify-between">
+      
+                <div classNam
+                  <spa
+              </div>
+            
+              <span class
+                {versio
+          
+        
+    )
+
+    switch (type) {
+        return <CheckCircle c
+        return <X classNa
+        return <AlertTria
+        return <AlertTria
+  }
+  if (av
+      
+
+              <GitBranch classNam
+            </DialogTitle>
+          <div className="text-center py-8">
+            <h3 className="font-semibold mb-2">Not Enoug
+              This document needs at least 2 versions to en
+     
+
+    )
+
+    <Dialog open={isOpen} onOpenChange={() => onClose()}>
+      
+            <GitBranch className="
+          </DialogTitl
+        
+          <Tabs defaultValue="side-by-side" 
+              <TabsTrigger value="side-by-si
+            </TabsList>
+          
+       
+      
+
+                  
+                      <SelectValu
+
+                        <Selec
+                        </SelectIt
+                    </S
+                </div>
+       
+   
+
+                >
+                  <ArrowRight className="h-4 w-4" />
+                
+   
+
+                  >
+                   
+              
+                        <SelectIt
+                      
+                    </SelectContent>
+                </div
+              
+              <div class
+                  <Vers
           <CardContent className="text-center py-8 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Select a version to compare</p>
@@ -483,15 +483,15 @@ export function DocumentComparison({
               
               {/* Side-by-side Version Comparison */}
               <div className="flex gap-4 flex-1 overflow-hidden">
-                <div className="flex-1 overflow-y-auto">
+
                   <VersionCard version={leftVersion} title="From Version" side="left" />
-                </div>
+
                 <div className="flex-1 overflow-y-auto">
                   <VersionCard version={rightVersion} title="To Version" side="right" />
                 </div>
               </div>
-            </TabsContent>
-            
+
+
             <TabsContent value="changes" className="flex-1 overflow-y-auto space-y-4">
               <div className="p-4 bg-muted/30 rounded-lg">
                 <h3 className="font-semibold mb-2">Changes Summary</h3>
@@ -508,63 +508,62 @@ export function DocumentComparison({
               
               {changes.length > 0 ? (
                 <div className="space-y-3">
-                  {changes.map((change, index) => (
+
                     <Card key={index} className="border-l-4 border-l-transparent data-[type=added]:border-l-green-500 data-[type=removed]:border-l-red-500 data-[type=changed]:border-l-orange-500" data-type={change.type}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <ChangeTypeIcon type={change.type} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-medium text-sm">{change.field}</span>
-                              <Badge 
-                                variant="outline" 
-                                className={
-                                  change.type === 'added' ? 'border-green-200 text-green-700 bg-green-50' :
-                                  change.type === 'removed' ? 'border-red-200 text-red-700 bg-red-50' :
-                                  'border-orange-200 text-orange-700 bg-orange-50'
-                                }
-                              >
-                                {change.type}
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                              <div className="space-y-1">
-                                <span className="text-xs text-muted-foreground font-medium">
-                                  {change.type === 'removed' ? 'Removed' : 'Before'}:
-                                </span>
-                                <div className="bg-red-50 border border-red-200 rounded p-2 text-red-800">
-                                  {change.oldValue ? String(change.oldValue) : '(none)'}
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-xs text-muted-foreground font-medium">
-                                  {change.type === 'added' ? 'Added' : 'After'}:
-                                </span>
-                                <div className="bg-green-50 border border-green-200 rounded p-2 text-green-800">
-                                  {change.newValue ? String(change.newValue) : '(none)'}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <h3 className="font-semibold mb-2">No Changes Found</h3>
-                  <p className="text-sm">
-                    The selected versions appear to be identical.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
