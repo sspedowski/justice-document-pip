@@ -1171,7 +1171,6 @@ function App() {
           )}
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   )
 }
