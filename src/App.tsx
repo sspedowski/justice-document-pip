@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '@/hooks/useKV'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,30 +53,6 @@ const LAWS = [
   { name: 'Perjury', keywords: ['perjury', 'false statement', 'sworn', 'oath'] },
   { name: 'Evidence Tampering', keywords: ['tamper', 'altered', 'fabricated', 'suppressed', 'omitted'] }
 ]
-
-// Temporary localStorage replacement for useKV
-function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void] {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const item = localStorage.getItem(key)
-      return item ? JSON.parse(item) : defaultValue
-    } catch {
-      return defaultValue
-    }
-  })
-
-  const setStoredValue = (newValue: T | ((prev: T) => T)) => {
-    try {
-      const valueToStore = newValue instanceof Function ? newValue(value) : newValue
-      setValue(valueToStore)
-      localStorage.setItem(key, JSON.stringify(valueToStore))
-    } catch {
-      console.error('Error saving to localStorage')
-    }
-  }
-
-  return [value, setStoredValue]
-}
 
 // Load processed documents from GitHub Actions pipeline
 async function loadProcessedDocuments(): Promise<Document[]> {
@@ -189,22 +165,8 @@ function App() {
       
       setProcessing(prev => [...prev, processingDoc])
       
-      try {
-        await processRealPDF(file, processingDoc)
-      } catch (error) {
-        console.error('Processing error:', error)
-        setProcessing(prev => prev.map(p => 
-          p.fileName === file.name 
-            ? { 
-                ...p, 
-                status: 'error', 
-                progress: 0,
-                error: error instanceof Error ? error.message : 'Unknown error'
-              }
-            : p
-        ))
-        toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
+      // Process each file (error handling is done within processRealPDF)
+      await processRealPDF(file, processingDoc)
     }
   }
 
@@ -217,66 +179,82 @@ function App() {
       ))
     }
 
-    // Step 1: Validate (already done, but update UI)
-    updateProgress(10, 'validating')
-    await new Promise(resolve => setTimeout(resolve, 200))
+    try {
+      // Step 1: Validate (already done, but update UI)
+      updateProgress(10, 'validating')
+      await new Promise(resolve => setTimeout(resolve, 200))
 
-    // Step 2: Extract text from PDF
-    updateProgress(25, 'extracting')
-    const pdfResult = await extractTextFromPDF(file, 50) // Limit to 50 pages for performance
-    
-    updateProgress(70, 'analyzing')
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Step 3: Analyze content for children and laws
-    const detectedChildren = CHILDREN_NAMES.filter(name => 
-      pdfResult.text.toLowerCase().includes(name.toLowerCase())
-    )
-    
-    const detectedLaws = LAWS.filter(law =>
-      law.keywords.some(keyword => 
-        pdfResult.text.toLowerCase().includes(keyword.toLowerCase())
+      // Step 2: Extract text from PDF
+      updateProgress(25, 'extracting')
+      const pdfResult = await extractTextFromPDF(file, 50) // Limit to 50 pages for performance
+      
+      updateProgress(70, 'analyzing')
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Step 3: Analyze content for children and laws
+      const detectedChildren = CHILDREN_NAMES.filter(name => 
+        pdfResult.text.toLowerCase().includes(name.toLowerCase())
       )
-    ).map(law => law.name)
+      
+      const detectedLaws = LAWS.filter(law =>
+        law.keywords.some(keyword => 
+          pdfResult.text.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ).map(law => law.name)
 
-    const category = guessCategory(pdfResult.text)
-    
-    // Create a more meaningful description from extracted text
-    const description = createDescription(pdfResult.text, pdfResult.metadata)
-    
-    const newDoc: Document = {
-      id: Date.now().toString(),
-      fileName: file.name,
-      title: pdfResult.metadata?.title || file.name.replace('.pdf', ''),
-      description,
-      category,
-      children: detectedChildren,
-      laws: detectedLaws,
-      misconduct: detectedLaws.map(law => ({
-        law,
-        page: '',
-        paragraph: '',
-        notes: ''
-      })),
-      include: category === 'No' ? 'NO' : 'YES',
-      placement: {
-        masterFile: category !== 'No',
-        exhibitBundle: ['Primary', 'Supporting'].includes(category),
-        oversightPacket: ['Primary', 'Supporting'].includes(category)
-      },
-      uploadedAt: new Date().toISOString(),
-      textContent: pdfResult.text.substring(0, 10000) // Store first 10k chars for search
+      const category = guessCategory(pdfResult.text)
+      
+      // Create a more meaningful description from extracted text
+      const description = createDescription(pdfResult.text, pdfResult.metadata)
+      
+      const newDoc: Document = {
+        id: Date.now().toString(),
+        fileName: file.name,
+        title: pdfResult.metadata?.title || file.name.replace('.pdf', ''),
+        description,
+        category,
+        children: detectedChildren,
+        laws: detectedLaws,
+        misconduct: detectedLaws.map(law => ({
+          law,
+          page: '',
+          paragraph: '',
+          notes: ''
+        })),
+        include: category === 'No' ? 'NO' : 'YES',
+        placement: {
+          masterFile: category !== 'No',
+          exhibitBundle: ['Primary', 'Supporting'].includes(category),
+          oversightPacket: ['Primary', 'Supporting'].includes(category)
+        },
+        uploadedAt: new Date().toISOString(),
+        textContent: pdfResult.text.substring(0, 10000) // Store first 10k chars for search
+      }
+
+      updateProgress(100, 'complete')
+      
+      setDocuments(prev => [...prev, newDoc])
+      
+      setTimeout(() => {
+        setProcessing(prev => prev.filter(p => p.fileName !== file.name))
+      }, 2000)
+
+      toast.success(`Successfully processed ${file.name} (${pdfResult.pageCount} pages)`)
+    } catch (error) {
+      console.error('Processing error:', error)
+      updateProgress(0, 'error')
+      setProcessing(prev => prev.map(p => 
+        p.fileName === file.name 
+          ? { 
+              ...p, 
+              status: 'error', 
+              progress: 0,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          : p
+      ))
+      toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-
-    updateProgress(100, 'complete')
-    
-    setDocuments(prev => [...prev, newDoc])
-    
-    setTimeout(() => {
-      setProcessing(prev => prev.filter(p => p.fileName !== file.name))
-    }, 2000)
-
-    toast.success(`Successfully processed ${file.name} (${pdfResult.pageCount} pages)`)
   }
 
   const createDescription = (text: string, metadata?: any): string => {

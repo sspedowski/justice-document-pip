@@ -1,12 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure worker for pdfjs with fallback options
-try {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
-} catch (error) {
-  console.warn('Failed to configure PDF worker, trying alternative source');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-}
+// Disable worker for browser compatibility - process PDFs in main thread
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+pdfjsLib.GlobalWorkerOptions.workerPort = null;
 
 export interface PDFProcessingResult {
   text: string;
@@ -32,18 +28,25 @@ export async function extractTextFromPDF(file: File, maxPages: number = 50): Pro
     // Convert file to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     
-    // Load the PDF document with additional options
+    // Load the PDF document with worker-free configuration
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       useWorkerFetch: false,
       isEvalSupported: false,
-      useSystemFonts: true
+      useSystemFonts: true,
+      disableAutoFetch: true,
+      disableStream: true
     });
     
     const pdf = await loadingTask.promise;
     
-    // Get document metadata
-    const metadata = await pdf.getMetadata().catch(() => ({ info: {}, metadata: null }));
+    // Get document metadata with error handling
+    let metadata: any = { info: {} };
+    try {
+      metadata = await pdf.getMetadata();
+    } catch (metaError) {
+      console.warn('Could not extract PDF metadata:', metaError);
+    }
     
     const textChunks: string[] = [];
     const pagesToProcess = Math.min(pdf.numPages, maxPages);
@@ -56,7 +59,8 @@ export async function extractTextFromPDF(file: File, maxPages: number = 50): Pro
         
         // Combine text items into a single string for this page
         const pageText = textContent.items
-          .map((item: any) => item.str)
+          .map((item: any) => item.str || '')
+          .filter(str => str.trim().length > 0)
           .join(' ')
           .trim();
         
@@ -90,9 +94,15 @@ export async function extractTextFromPDF(file: File, maxPages: number = 50): Pro
   } catch (error) {
     console.error('Error extracting text from PDF:', error);
     
-    // If it's a worker error, provide more specific guidance
-    if (error instanceof Error && error.message.includes('worker')) {
-      throw new Error('PDF processing failed: Worker could not be loaded. Please try refreshing the page or use a different browser.');
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('worker')) {
+        throw new Error('PDF processing failed: Unable to load PDF worker. The PDF may be corrupted or too complex.');
+      } else if (error.message.includes('Invalid PDF')) {
+        throw new Error('Invalid PDF file format. Please ensure the file is a valid PDF document.');
+      } else if (error.message.includes('password')) {
+        throw new Error('This PDF is password protected and cannot be processed.');
+      }
     }
     
     throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -134,7 +144,9 @@ export async function getPDFInfo(file: File): Promise<{ pageCount: number; size:
       data: arrayBuffer,
       useWorkerFetch: false,
       isEvalSupported: false,
-      useSystemFonts: true
+      useSystemFonts: true,
+      disableAutoFetch: true,
+      disableStream: true
     });
     const pdf = await loadingTask.promise;
     
