@@ -951,7 +951,6 @@ function App() {
             )}
           </TabsContent>
         </Tabs>
-        </Tabs>
       </div>
 
       {/* Document Detail Dialog */}
