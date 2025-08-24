@@ -1,25 +1,26 @@
 /**
- * for development environments without the Spark runtime
+ * Spark runtime fallback implementation
  * for development environments without the Spark runtime
  */
-    spark?: {
+
+declare global {
   interface Window {
     spark?: {
       llmPrompt: (strings: string[], ...values: any[]) => string
-      kv: {
-        get: <T>(key: strin
-        delete: (key: str
-    }
-}
-// Fallback KV storage u
-  async keys(): Promi
-    for 
+      llm: (prompt: string, modelName?: string, jsonMode?: boolean) => Promise<string>
+      user: () => Promise<{
+        avatarUrl: string
+        email: string
+        id: string
+        isOwner: boolean
+        login: string
+      }>
       kv: {
         keys: () => Promise<string[]>
         get: <T>(key: string) => Promise<T | undefined>
         set: <T>(key: string, value: T) => Promise<void>
         delete: (key: string) => Promise<void>
-
+      }
     }
   }
 }
@@ -34,11 +35,11 @@ const fallbackKV = {
         keys.push(key.replace('spark-kv:', ''))
       }
     }
-  }
+    return keys
   },
 
   async get<T>(key: string): Promise<T | undefined> {
-    retur
+    try {
       const item = localStorage.getItem(`spark-kv:${key}`)
       return item ? JSON.parse(item) : undefined
     } catch {
@@ -52,21 +53,21 @@ const fallbackKV = {
 
   async delete(key: string): Promise<void> {
     localStorage.removeItem(`spark-kv:${key}`)
-
+  }
 }
 
 // Fallback user implementation
-    
+const fallbackUser = {
   async user() {
-}
+    return {
       avatarUrl: 'https://github.com/github.png',
-if (typeof window !== 'undefin
+      email: 'local-user@example.com',
       id: 'local-user',
-    ...fallbackUser,
+      isOwner: true,
       login: 'local-user'
-  con
+    }
   }
-/
+}
 
 // Fallback LLM implementation
 const fallbackLLM = {
@@ -80,29 +81,30 @@ const fallbackLLM = {
     console.log('Fallback LLM called with prompt:', prompt.substring(0, 100) + '...')
 
     if (jsonMode) {
-
+      return JSON.stringify({
         fallback: true, 
         message: 'LLM functionality requires Spark runtime' 
       })
-
+    }
     
     return 'This is a fallback response. LLM functionality requires the Spark runtime environment.'
   }
-
+}
 
 // Initialize fallback if Spark is not available
 if (typeof window !== 'undefined' && !window.spark) {
   window.spark = {
     ...fallbackLLM,
-
+    ...fallbackUser,
     kv: fallbackKV
-
+  }
+  
   console.log('Spark fallback initialized for development')
-
+}
 
 // Auto-detect and warn about fallback usage
 if (typeof window !== 'undefined') {
-
+  const originalConsoleLog = console.log
   console.log = (...args) => {
     if (args[0]?.includes?.('Fallback LLM called')) {
       originalConsoleLog('⚠️ Using fallback LLM - some features may be limited')
