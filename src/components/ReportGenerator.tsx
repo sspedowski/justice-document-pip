@@ -121,38 +121,38 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
         const docDate = new Date(doc.uploadedAt)
         return docDate.getMonth() === date.getMonth() && docDate.getFullYear() === date.getFullYear()
       })
-        primary: monthDocs.filter(d => d.category === 'Primary').length,
-        supporting: monthDocs.filter(d => d.category === 'Supporting').length,
+      
+      return {
         month: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
         documents: monthDocs.length,
         primary: monthDocs.filter(d => d.category === 'Primary').length,
         supporting: monthDocs.filter(d => d.category === 'Supporting').length,
         external: monthDocs.filter(d => d.category === 'External').length
-        primaryDocs: filteredDocs.filter(d => d.children.includes(child) && d.category === 'Primary').length
+      }
     }).reverse()
-      .sort((a, b) => b.documents - a.documents)
+
     // Children involvement data
     const childrenData = [...new Set(filteredDocs.flatMap(d => d.children))]
-      .map(child => ({et(filteredDocs.flatMap(d => d.laws))]
+      .map(child => ({
         name: child,
         documents: filteredDocs.filter(d => d.children.includes(child)).length,
         primaryDocs: filteredDocs.filter(d => d.children.includes(child) && d.category === 'Primary').length
-      })) filteredDocs.filter(d => d.laws.includes(law) && ['Primary', 'Supporting'].includes(d.category)).length
+      }))
       .sort((a, b) => b.documents - a.documents)
-b.documents - a.documents)
+
     // Laws violation data
     const lawsData = [...new Set(filteredDocs.flatMap(d => d.laws))]
-      .map(law => ({y.from({ length: 6 }, (_, i) => {
-        name: law,e(now.getFullYear(), now.getMonth() - i, 1)
+      .map(law => ({
+        name: law,
         documents: filteredDocs.filter(d => d.laws.includes(law)).length,
         evidence: filteredDocs.filter(d => d.laws.includes(law) && ['Primary', 'Supporting'].includes(d.category)).length
-      }))th() === date.getMonth() && versionDate.getFullYear() === date.getFullYear()
+      }))
       .sort((a, b) => b.documents - a.documents)
 
     // Version activity data
     const versionData = Array.from({ length: 6 }, (_, i) => {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthVersions = documentVersions.filter(version => {length,
+      const monthVersions = documentVersions.filter(version => {
         const versionDate = new Date(version.changedAt)
         return versionDate.getMonth() === date.getMonth() && versionDate.getFullYear() === date.getFullYear()
       })
@@ -163,9 +163,9 @@ b.documents - a.documents)
         created: monthVersions.filter(v => v.changeType === 'created').length,
         edited: monthVersions.filter(v => v.changeType === 'edited').length,
         imported: monthVersions.filter(v => v.changeType === 'imported').length
-      
+      }
     }).reverse()
-        ...month,
+
     // Compliance score calculation
     const complianceData = timelineData.map(month => {
       const monthDocs = filteredDocs.filter(doc => {
@@ -173,38 +173,387 @@ b.documents - a.documents)
         const [monthName, year] = month.month.split(' ')
         const monthIndex = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(monthName)
         return docDate.getMonth() === monthIndex && docDate.getFullYear() === 2000 + parseInt(year)
-      })eData,
-      childrenData,
+      })
+      
       let score = 0
       if (monthDocs.length > 0) {
         const primaryRatio = monthDocs.filter(d => d.category === 'Primary').length / monthDocs.length
         const includedRatio = monthDocs.filter(d => d.include === 'YES').length / monthDocs.length
         const oversightRatio = monthDocs.filter(d => d.placement.oversightPacket).length / monthDocs.length
         score = Math.round((primaryRatio * 40 + includedRatio * 35 + oversightRatio * 25) * 100)
-              <SelectItem value="1m">Last Month</SelectItem>
-         <SelectItem value="3m">Last 3 Months</SelectItem>
-      return {<SelectItem value="6m">Last 6 Months</SelectItem>
-        ...month,ectItem>
+      }
+      
+      return {
+        ...month,
         complianceScore: score
-        </div>
-    })>
+      }
+    })
 
-              </CardHeader>
+    return {
       summary,
-                <ChartContainer
+      categoryData,
       timelineData,
-                    excluded: { label: 'Excluded', color: 'hsl(var(--muted-foreground))' }
+      childrenData,
       lawsData,
-                  <PieChart>
+      versionData,
       complianceData,
       generatedAt: now.toISOString()
-                      cx="50%"
+    }
   }, [documents, documentVersions, selectedTimeRange, selectedCategory])
-                      labelLine={false}
+
   const exportChartData = (chartName: string, data: any[]) => {
-                            <p className={`text-sm font-medium ${
-      Object.keys(data[0] || {}),xt-green-600' :
-      ...data.map(row => Object.values(row))ed-600'
+    const csvContent = [
+      Object.keys(data[0] || {}),
+      ...data.map(row => Object.values(row))
+    ]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${chartName.toLowerCase().replace(/\s+/g, '-')}-data.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    toast.success(`${chartName} data exported`)
+  }
+
+  const MetricCard = ({ title, value, subtitle, icon: Icon, trend }: {
+    title: string
+    value: string | number
+    subtitle: string
+    icon: any
+    trend?: 'up' | 'down' | 'neutral'
+  }) => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            <p className={`text-sm ${
+              trend === 'up' ? 'text-green-600' :
+              trend === 'down' ? 'text-red-600' :
+              'text-muted-foreground'
+            }`}>
+              {subtitle}
+            </p>
+          </div>
+          <Icon className="h-8 w-8 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Controls */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Justice Analytics Report
+          </h2>
+          <p className="text-muted-foreground">
+            Comprehensive analysis and insights for document management and compliance
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="1m">Last Month</SelectItem>
+              <SelectItem value="3m">Last 3 Months</SelectItem>
+              <SelectItem value="6m">Last 6 Months</SelectItem>
+              <SelectItem value="1y">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-40">
+              <SelectValue /> 
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Primary">Primary Only</SelectItem>
+              <SelectItem value="Supporting">Supporting Only</SelectItem>
+              <SelectItem value="External">External Only</SelectItem>
+              <SelectItem value="No">Excluded Only</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button onClick={() => onExportReport(reportData)} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export Report
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="evidence">Evidence</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              title="Total Documents"
+              value={reportData.summary.totalDocuments}
+              subtitle={`${reportData.summary.includedDocuments} included`}
+              icon={FileText}
+            />
+            <MetricCard
+              title="Primary Evidence"
+              value={reportData.summary.primaryEvidence}
+              subtitle={`${Math.round((reportData.summary.primaryEvidence / Math.max(reportData.summary.totalDocuments, 1)) * 100)}% of total`}
+              icon={Shield}
+            />
+            <MetricCard
+              title="Children Involved"
+              value={reportData.summary.childrenInvolved}
+              subtitle={`${reportData.childrenData.length} unique names`}
+              icon={Users}
+            />
+            <MetricCard
+              title="Laws Violated"
+              value={reportData.summary.lawsViolated}
+              subtitle={`${reportData.lawsData.length} distinct violations`}
+              icon={Scale}
+            />
+          </div>
+
+          {/* Category Distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Document Categories</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportChartData('Document Categories', reportData.categoryData)}
+                >
+                  <Download className="h-3 w-3" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    primary: { label: 'Primary', color: 'hsl(var(--destructive))' },
+                    supporting: { label: 'Supporting', color: 'hsl(var(--primary))' },
+                    external: { label: 'External', color: 'hsl(var(--accent))' },
+                    excluded: { label: 'Excluded', color: 'hsl(var(--muted-foreground))' }
+                  }}
+                  className="h-80"
+                >
+                  <PieChart>
+                    <Pie
+                      data={reportData.categoryData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {reportData.categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Document Status</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportChartData('Document Status', [
+                    { status: 'Included', count: reportData.summary.includedDocuments },
+                    { status: 'Excluded', count: reportData.summary.totalDocuments - reportData.summary.includedDocuments },
+                    { status: 'Master File Ready', count: reportData.summary.masterFileReady },
+                    { status: 'Oversight Ready', count: reportData.summary.oversightReady }
+                  ])}
+                >
+                  <Download className="h-3 w-3" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Inclusion Rate</span>
+                    <span className="text-sm text-muted-foreground">
+                      {Math.round((reportData.summary.includedDocuments / Math.max(reportData.summary.totalDocuments, 1)) * 100)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(reportData.summary.includedDocuments / Math.max(reportData.summary.totalDocuments, 1)) * 100} 
+                    className="h-2"
+                  />
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Master File Readiness</span>
+                    <span className="text-sm text-muted-foreground">
+                      {Math.round((reportData.summary.masterFileReady / Math.max(reportData.summary.totalDocuments, 1)) * 100)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(reportData.summary.masterFileReady / Math.max(reportData.summary.totalDocuments, 1)) * 100} 
+                    className="h-2"
+                  />
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Oversight Packet Readiness</span>
+                    <span className="text-sm text-muted-foreground">
+                      {Math.round((reportData.summary.oversightReady / Math.max(reportData.summary.totalDocuments, 1)) * 100)}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={(reportData.summary.oversightReady / Math.max(reportData.summary.totalDocuments, 1)) * 100} 
+                    className="h-2"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Document Upload Timeline</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportChartData('Upload Timeline', reportData.timelineData)}
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  documents: { label: 'Total Documents', color: 'hsl(var(--primary))' },
+                  primary: { label: 'Primary', color: 'hsl(var(--destructive))' },
+                  supporting: { label: 'Supporting', color: 'hsl(var(--accent))' },
+                  external: { label: 'External', color: 'hsl(var(--muted-foreground))' }
+                }}
+                className="h-80"
+              >
+                <AreaChart data={reportData.timelineData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="primary" 
+                    stackId="1"
+                    stroke="hsl(var(--destructive))" 
+                    fill="hsl(var(--destructive))"
+                    fillOpacity={0.6}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="supporting" 
+                    stackId="1"
+                    stroke="hsl(var(--accent))" 
+                    fill="hsl(var(--accent))"
+                    fillOpacity={0.6}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="external" 
+                    stackId="1"
+                    stroke="hsl(var(--muted-foreground))" 
+                    fill="hsl(var(--muted-foreground))"
+                    fillOpacity={0.6}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="compliance" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Compliance Score Over Time</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportChartData('Compliance Score', reportData.complianceData)}
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  complianceScore: { label: 'Compliance Score', color: 'hsl(var(--accent))' }
+                }}
+                className="h-80"
+              >
+                <AreaChart data={reportData.complianceData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis domain={[0, 100]} />
+                  <ChartTooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload
+                        const score = data.complianceScore
+                        const color = score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                        return (
+                          <div className="bg-background border rounded-lg p-3 shadow-lg">
+                            <p className="font-medium">{label}</p>
+                            <p className={`text-sm font-medium ${color}`}>
+                              Compliance Score: {score}%
+                            </p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="complianceScore" 
+                    stroke="hsl(var(--accent))" 
+                    fill="hsl(var(--accent))"
+                    fillOpacity={0.3}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="evidence" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Children Involvement</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportChartData('Children Involvement', reportData.childrenData)}
+                >
+                  <Download className="h-3 w-3" />
                 </Button>
               </CardHeader>
               <CardContent>
@@ -213,26 +562,101 @@ b.documents - a.documents)
                     documents: { label: 'Documents', color: 'hsl(var(--primary))' },
                     primaryDocs: { label: 'Primary Evidence', color: 'hsl(var(--destructive))' }
                   }}
-    a.download = `${chartName.toLowerCase().replace(/\s+/g, '-')}-data.csv`
+                  className="h-80"
                 >
                   <BarChart data={reportData.childrenData.slice(0, 10)}>
                     <CartesianGrid strokeDasharray="3 3" />
-    toast.success(`${chartName} data exported`)
+                    <XAxis dataKey="name" />
                     <YAxis />
                     <ChartTooltip content={<ChartTooltipContent />} />
-  const MetricCard = ({ title, value, subtitle, icon: Icon, trend }: {
+                    <Bar dataKey="documents" fill="hsl(var(--primary))" />
+                    <Bar dataKey="primaryDocs" fill="hsl(var(--destructive))" />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Law Violations</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => exportChartData('Law Violations', reportData.lawsData)}
+                >
+                  <Download className="h-3 w-3" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    documents: { label: 'Documents', color: 'hsl(var(--accent))' },
+                    evidence: { label: 'Evidence Docs', color: 'hsl(var(--primary))' }
+                  }}
+                  className="h-80"
+                >
+                  <BarChart data={reportData.lawsData.slice(0, 8)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0}
+                    />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="documents" fill="hsl(var(--accent))" />
+                    <Bar dataKey="evidence" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Version Control Activity</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportChartData('Version Activity', reportData.versionData)}
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  created: { label: 'Created', color: 'hsl(var(--accent))' },
+                  edited: { label: 'Edited', color: 'hsl(var(--primary))' },
+                  imported: { label: 'Imported', color: 'hsl(var(--muted-foreground))' }
+                }}
+                className="h-80"
+              >
                 <BarChart data={reportData.versionData}>
                   <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
                   <YAxis />
-    icon: any
-    trend?: 'up' | 'down' | 'neutral'
+                  <ChartTooltip 
+                    content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload
                         return (
                           <div className="bg-background border rounded-lg p-3 shadow-lg">
                             <p className="font-medium">{label}</p>
                             <p className="text-sm">Total Changes: {data.changes}</p>
-            <p className="text-2xl font-bold">{value}</p>
+                            <p className="text-sm">Created: {data.created}</p>
+                            <p className="text-sm">Edited: {data.edited}</p>
+                            <p className="text-sm">Imported: {data.imported}</p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
                   <Bar dataKey="created" stackId="a" fill="hsl(var(--accent))" />
                   <Bar dataKey="edited" stackId="a" fill="hsl(var(--primary))" />
                   <Bar dataKey="imported" stackId="a" fill="hsl(var(--muted-foreground))" />
@@ -245,56 +669,53 @@ b.documents - a.documents)
             <MetricCard
               title="Total Versions"
               value={reportData.summary.totalVersions}
-      {/* Header with Controls */}
+              subtitle="Across all documents"
               icon={Clock}
             />
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
-            Justice Analytics Report
-          </h2>
-          <p className="text-muted-foreground">
-            Comprehensive analysis and insights for document management and compliance
-          </p>
+            <MetricCard
+              title="Most Active Month"
+              value={reportData.versionData.length > 0 
+                ? reportData.versionData.reduce((max, curr) =>
+                    curr.changes > max.changes ? curr : max
+                  ).month
+                : 'N/A'
               }
               subtitle={reportData.versionData.length > 0 
-          <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+                ? reportData.versionData.reduce((max, curr) =>
                     curr.changes > max.changes ? curr : max
+                  ).changes + ' changes'
                 : 'No data'
               }
               icon={TrendUp}
             />
-              <SelectItem value="1m">Last Month</SelectItem>
-              <SelectItem value="3m">Last 3 Months</SelectItem>
-              <SelectItem value="6m">Last 6 Months</SelectItem>
-              <SelectItem value="1y">Last Year</SelectItem>
+            <MetricCard
+              title="Peak Upload Month"
+              value={reportData.timelineData.length > 0 
+                ? reportData.timelineData.reduce((max, curr) =>
                     curr.documents > max.documents ? curr : max
                   ).month
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-40">
-              <SelectValue /> 
-            </SelectTrigger>
-            <SelectContent>ax.documents ? curr : max
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Primary">Primary Only</SelectItem>
-              <SelectItem value="Supporting">Supporting Only</SelectItem>
-              <SelectItem value="External">External Only</SelectItem>
-              <SelectItem value="No">Excluded Only</SelectItem>
-            </SelectContent>
-          </Select>ore"
-          <Button onClick={() => onExportReport(reportData)} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />educe((sum, item) => sum + item.complianceScore, 0) / reportData.complianceData.length) + '%'
-            Export Report
-          </Button>
-        </div>
-      <Tabs defaultValue="overview" className="w-full">        <TabsList className="grid w-full grid-cols-5">          <TabsTrigger value="overview">Overview</TabsTrigger>          <TabsTrigger value="timeline">Timeline</TabsTrigger>          <TabsTrigger value="compliance">Compliance</TabsTrigger>          <TabsTrigger value="evidence">Evidence</TabsTrigger>          <TabsTrigger value="activity">Activity</TabsTrigger>        </TabsList>        <TabsContent value="overview" className="space-y-6">          {/* Key Metrics */}          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">            <MetricCard              title="Total Documents"              value={reportData.summary.totalDocuments}              subtitle={`${reportData.summary.includedDocuments} included`}              icon={FileText}            />            <MetricCard              title="Primary Evidence"              value={reportData.summary.primaryEvidence}              subtitle={`${Math.round((reportData.summary.primaryEvidence / Math.max(reportData.summary.totalDocuments, 1)) * 100)}% of total`}              icon={Shield}            />            <MetricCard              title="Children Involved"              value={reportData.summary.childrenInvolved}              subtitle={`${reportData.childrenData.length} unique names`}              icon={Users}            />            <MetricCard              title="Laws Violated"              value={reportData.summary.lawsViolated}              subtitle={`${reportData.lawsData.length} distinct violations`}              icon={Scale}            />          </div>          {/* Category Distribution */}                <CardTitle>Document Categories</CardTitle>                <ChartContainer                  config={{                    primary: { label: 'Primary', color: 'hsl(var(--destructive))' },                    supporting: { label: 'Supporting', color: 'hsl(var(--primary))' },                    external: { label: 'External', color: 'hsl(var(--accent))' },                    excluded: { label: 'Excluded', color: 'hsl(var(--muted-foreground))' }                  }}
-                  className="h-80"
-                >
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      fill="#8884d8"
-                        <Cell key={`cell-${index}`} fill={entry.color} />                <CardTitle>Document Status</CardTitle>                  onClick={() => exportChartData('Document Status', [                    { status: 'Included', count: reportData.summary.includedDocuments },                    { status: 'Excluded', count: reportData.summary.totalDocuments - reportData.summary.includedDocuments },                    { status: 'Master File Ready', count: reportData.summary.masterFileReady },                    { status: 'Oversight Ready', count: reportData.summary.oversightReady }                  ])}                <div className="space-y-4">                  <div className="flex justify-between items-center">                    <span className="text-sm font-medium">Inclusion Rate</span>                    <span className="text-sm text-muted-foreground">                      {Math.round((reportData.summary.includedDocuments / Math.max(reportData.summary.totalDocuments, 1)) * 100)}%                    </span>                  </div>                  <Progress                     value={(reportData.summary.includedDocuments / Math.max(reportData.summary.totalDocuments, 1)) * 100}                     className="h-2"                  />                                    <div className="flex justify-between items-center">                    <span className="text-sm font-medium">Master File Readiness</span>                    <span className="text-sm text-muted-foreground">                      {Math.round((reportData.summary.masterFileReady / Math.max(reportData.summary.totalDocuments, 1)) * 100)}%                    </span>                  </div>                  <Progress                     value={(reportData.summary.masterFileReady / Math.max(reportData.summary.totalDocuments, 1)) * 100}                     className="h-2"                  />                                    <div className="flex justify-between items-center">                    <span className="text-sm font-medium">Oversight Packet Readiness</span>                    <span className="text-sm text-muted-foreground">                      {Math.round((reportData.summary.oversightReady / Math.max(reportData.summary.totalDocuments, 1)) * 100)}%                    </span>                  </div>                  <Progress                     value={(reportData.summary.oversightReady / Math.max(reportData.summary.totalDocuments, 1)) * 100}                     className="h-2"                  />                </div>        </TabsContent>        <TabsContent value="timeline" className="space-y-6">
-              <CardTitle>Document Upload Timeline</CardTitle>                onClick={() => exportChartData('Upload Timeline', reportData.timelineData)}              <ChartContainer                config={{                  documents: { label: 'Total Documents', color: 'hsl(var(--primary))' },                  primary: { label: 'Primary', color: 'hsl(var(--destructive))' },                  supporting: { label: 'Supporting', color: 'hsl(var(--accent))' },                  external: { label: 'External', color: 'hsl(var(--muted-foreground))' }                }}                className="h-80"              >                <AreaChart data={reportData.timelineData}>                  <CartesianGrid strokeDasharray="3 3" />                  <XAxis dataKey="month" />                  <ChartTooltip content={<ChartTooltipContent />} />                  <Area                     type="monotone"                     dataKey="primary"                     stackId="1"                    stroke="hsl(var(--destructive))"                     fill="hsl(var(--destructive))"                    fillOpacity={0.6}                  />                  <Area                     type="monotone"                     dataKey="supporting"                     stackId="1"                    stroke="hsl(var(--accent))"                     fill="hsl(var(--accent))"                    fillOpacity={0.6}                  />                  <Area                     type="monotone"                     dataKey="external"                     stackId="1"                    stroke="hsl(var(--muted-foreground))"                     fill="hsl(var(--muted-foreground))"                    fillOpacity={0.6}                </AreaChart>        <TabsContent value="compliance" className="space-y-6">              <CardTitle>Compliance Score Over Time</CardTitle>                onClick={() => exportChartData('Compliance Score', reportData.complianceData)}              <ChartContainer                config={{                  complianceScore: { label: 'Compliance Score', color: 'hsl(var(--accent))' }                }}                className="h-80"                <AreaChart data={reportData.complianceData}>                        const data = payload[0].payload                        const score = data.complianceScore
-        </TabsContent>        <TabsContent value="evidence" className="space-y-6">          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">            <Card>              <CardHeader className="flex flex-row items-center justify-between">                <CardTitle>Children Involvement</CardTitle>                <Button                  variant="outline"                  size="sm"                  onClick={() => exportChartData('Children Involvement', reportData.childrenData)}                >                  <Download className="h-3 w-3" />                </Button>              </CardHeader>              <CardContent>                <ChartContainer                  config={{                    documents: { label: 'Documents', color: 'hsl(var(--primary))' },                    primaryDocs: { label: 'Primary Evidence', color: 'hsl(var(--destructive))' }                  }}                  className="h-80"                >                  <BarChart data={reportData.childrenData.slice(0, 10)}>                    <CartesianGrid strokeDasharray="3 3" />                    <XAxis dataKey="name" />                    <YAxis />                    <ChartTooltip content={<ChartTooltipContent />} />                    <Bar dataKey="documents" fill="hsl(var(--primary))" />                    <Bar dataKey="primaryDocs" fill="hsl(var(--destructive))" />                  </BarChart>                </ChartContainer>              <CardHeader className="flex flex-row items-center justify-between">                <CardTitle>Law Violations</CardTitle>                <Button                  variant="outline"                  size="sm"                  onClick={() => exportChartData('Law Violations', reportData.lawsData)}                >                  <Download className="h-3 w-3" />                </Button>              </CardHeader>              <CardContent>                <ChartContainer                  config={{                    documents: { label: 'Documents', color: 'hsl(var(--accent))' },                    evidence: { label: 'Evidence Docs', color: 'hsl(var(--primary))' }                  }}                  className="h-80"                >                  <BarChart data={reportData.lawsData.slice(0, 8)}>                    <CartesianGrid strokeDasharray="3 3" />                    <XAxis                       dataKey="name"                       angle={-45}                      textAnchor="end"                      height={100}                      interval={0}                    />                    <YAxis />                    <ChartTooltip content={<ChartTooltipContent />} />                    <Bar dataKey="documents" fill="hsl(var(--accent))" />                    <Bar dataKey="evidence" fill="hsl(var(--primary))" />                  </BarChart>                </ChartContainer>        <TabsContent value="activity" className="space-y-6">              <CardTitle>Version Control Activity</CardTitle>                onClick={() => exportChartData('Version Activity', reportData.versionData)}              <ChartContainer                config={{                  created: { label: 'Created', color: 'hsl(var(--accent))' },                  edited: { label: 'Edited', color: 'hsl(var(--primary))' },                  imported: { label: 'Imported', color: 'hsl(var(--muted-foreground))' }                }}                className="h-80"
-              >
-                <BarChart data={reportData.versionData}>
-                  <XAxis dataKey="month" />                  <YAxis />                            <p className="font-medium">{label}</p>                            <p className="text-sm">Total Changes: {data.changes}</p>                            <p className="text-sm">Created: {data.created}</p>                            <p className="text-sm">Edited: {data.edited}</p>                            <p className="text-sm">Imported: {data.imported}</p>                  <Bar dataKey="created" stackId="a" fill="hsl(var(--accent))" />                  <Bar dataKey="edited" stackId="a" fill="hsl(var(--primary))" />                  <Bar dataKey="imported" stackId="a" fill="hsl(var(--muted-foreground))" />                </BarChart>              </ChartContainer>          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">            <MetricCard              title="Total Versions"              value={reportData.summary.totalVersions}              subtitle="Across all documents"              icon={Clock}            />            <MetricCard              title="Most Active Month"              value={reportData.versionData.length > 0                 ? reportData.versionData.reduce((max, curr) =>                     curr.changes > max.changes ? curr : max                  ).month                : 'N/A'              }              subtitle={reportData.versionData.length > 0                 ? reportData.versionData.reduce((max, curr) =>                     curr.changes > max.changes ? curr : max                  ).changes + ' changes'                : 'No data'              }              icon={TrendUp}            />            <MetricCard              title="Peak Upload Month"              value={reportData.timelineData.length > 0                 ? reportData.timelineData.reduce((max, curr) =>                     curr.documents > max.documents ? curr : max                  ).month                : 'N/A'              }              subtitle={reportData.timelineData.length > 0                 ? reportData.timelineData.reduce((max, curr) =>                     curr.documents > max.documents ? curr : max                  ).documents + ' documents'                : 'No data'              }              icon={Calendar}            />            <MetricCard              title="Avg Compliance Score"              value={reportData.complianceData.length > 0                 ? Math.round(reportData.complianceData.reduce((sum, item) => sum + item.complianceScore, 0) / reportData.complianceData.length) + '%'                : 'N/A'              }              subtitle="Last 12 months"              icon={Target}            />
+                : 'N/A'
+              }
+              subtitle={reportData.timelineData.length > 0 
+                ? reportData.timelineData.reduce((max, curr) =>
+                    curr.documents > max.documents ? curr : max
+                  ).documents + ' documents'
+                : 'No data'
+              }
+              icon={Calendar}
+            />
+            <MetricCard
+              title="Avg Compliance Score"
+              value={reportData.complianceData.length > 0 
+                ? Math.round(reportData.complianceData.reduce((sum, item) => sum + item.complianceScore, 0) / reportData.complianceData.length) + '%'
+                : 'N/A'
+              }
+              subtitle="Last 12 months"
+              icon={Target}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
