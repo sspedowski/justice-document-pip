@@ -1220,25 +1220,25 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
               </ChartContainer>
             </CardContent>
           </Card>
-
-          {/* Version History Timeline with Change Types */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Document Changes Timeline</CardTitle>
-              <Button
+          <Card>
+              <Buttonw items-center justify-between">
                 variant="outline"
                 size="sm"
-                onClick={() => exportChartData('Version Timeline', reportData.versionData)}
+                onClick={() => exportChartData('Children Involvement', reportData.childrenData)}
               >
                 <Download className="h-3 w-3" />
               </Button>
             </CardHeader>
             <CardContent>
               <ChartContainer config={{
+            <CardContent>
+              <ChartContainer config={{
                 created: { label: 'Created', color: 'hsl(var(--accent))' },
-                edited: { label: 'Edited', color: 'hsl(var(--primary))' },
+              }}>d', color: 'hsl(var(--primary))' },
                 imported: { label: 'Imported', color: 'hsl(var(--muted-foreground))' }
-              }}>
+                  <CartesianGrid strokeDasharray="3 3" />
                 <BarChart data={reportData.versionData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
@@ -1263,26 +1263,26 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   <Bar dataKey="created" stackId="a" fill="hsl(var(--accent))" />
                   <Bar dataKey="edited" stackId="a" fill="hsl(var(--primary))" />
                   <Bar dataKey="imported" stackId="a" fill="hsl(var(--muted-foreground))" />
-                  <ChartLegend content={<ChartLegendContent />} />
+                  />hartLegendContent />} />
+                </BarChart>
                 </BarChart>
               </ChartContainer>
             </CardContent>
           </Card>
 
-          {/* Timeline Summary Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
+          <Card>
+            <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Peak Upload Month</p>
+            </CardHeader>
+            <CardContent>d">Peak Upload Month</p>
                     <p className="text-lg font-bold">
-                      {reportData.timelineData.length > 0 
+                {reportData.childrenData.map((child, index) => (
                         ? reportData.timelineData.reduce((max, curr) => 
                             curr.documents > max.documents ? curr : max
                           ).month
                         : 'N/A'
-                      }
+                          {index + 1}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {reportData.timelineData.length > 0 
@@ -1300,15 +1300,15 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
 
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+                        </div>
+                      </div>
                     <p className="text-sm font-medium text-muted-foreground">Best Compliance Month</p>
                     <p className="text-lg font-bold">
                       {reportData.timelineData.length > 0 
                         ? reportData.timelineData.reduce((max, curr) => 
                             curr.complianceScore > max.complianceScore ? curr : max
-                          ).month
-                        : 'N/A'
+                    </div>
+                    
                       }
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -1347,17 +1347,17 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Average Monthly Documents</p>
-                    <p className="text-lg font-bold">
-                      {reportData.timelineData.length > 0 
-                        ? (reportData.timelineData.reduce((sum, curr) => sum + curr.documents, 0) / reportData.timelineData.length).toFixed(1)
+                  </div>-bold">
+                ))}   {reportData.timelineData.length > 0 
+                {reportData.childrenData.length === 0 && (
                         : '0'
-                      }
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Per month average
-                    </p>
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No children identified in documents</p>
                   </div>
-                  <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
+            </CardContent>
+          </Card>
                 </div>
               </CardContent>
             </Card>
@@ -1456,7 +1456,148 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                   />
                   <Bar dataKey="documents" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
-              </ChartContainer>
+        </TabsContent>
+
+        <TabsContent value="compliance" className="space-y-6">
+          {/* Compliance Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Evidence Collection</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Primary Evidence</span>
+                    <Badge variant="default">{reportData.metrics.primaryEvidence}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Supporting Documents</span>
+                    <Badge variant="secondary">
+                      {reportData.categoryData.find(c => c.name === 'Supporting')?.value || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">External Sources</span>
+                    <Badge variant="outline">
+                      {reportData.categoryData.find(c => c.name === 'External')?.value || 0}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Legal Documentation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Brady Violations</span>
+                    <Badge variant="destructive">
+                      {reportData.lawData.find(l => l.fullName === 'Brady v. Maryland')?.value || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Due Process Issues</span>
+                    <Badge variant="destructive">
+                      {reportData.lawData.find(l => l.fullName === 'Due Process (14th Amendment)')?.value || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Evidence Tampering</span>
+                    <Badge variant="destructive">
+                      {reportData.lawData.find(l => l.fullName === 'Evidence Tampering')?.value || 0}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Oversight Readiness</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Packet Ready</span>
+                    <Badge variant="default">{reportData.metrics.oversightReady}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Master File</span>
+                    <Badge variant="secondary">
+                      {reportData.placementData.find(p => p.name === 'Master File')?.value || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Quality Control</span>
+                    <Badge variant="outline">{reportData.metrics.totalVersions} versions</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Compliance Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Document Processing Compliance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div>
+                      <div className="font-medium">Document Classification</div>
+                      <div className="text-sm text-muted-foreground">All documents categorized</div>
+                    </div>
+                  </div>
+                  <Badge variant="default">100%</Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div>
+                      <div className="font-medium">Legal Analysis</div>
+                      <div className="text-sm text-muted-foreground">Law violations identified</div>
+                    </div>
+                  </div>
+                  <Badge variant="default">{reportData.metrics.lawsViolated} laws</Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div>
+                      <div className="font-medium">Version Tracking</div>
+                      <div className="text-sm text-muted-foreground">Change history maintained</div>
+                    </div>
+                  </div>
+                  <Badge variant="default">{reportData.metrics.avgVersionsPerDoc} avg/doc</Badge>
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <div className="font-medium">Oversight Preparation</div>
+                      <div className="text-sm text-muted-foreground">Documents ready for review</div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary">{reportData.metrics.oversightReady} packets</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}              </ChartContainer>
             </CardContent>
           </Card>
 
