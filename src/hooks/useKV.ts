@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 /**
  * React hook for persistent key-value storage using localStorage as fallback for development

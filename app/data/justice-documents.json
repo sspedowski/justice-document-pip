@@ -1,1 +1,77 @@
-[]
+[
+  {
+    "file_name": "Police_Incident_Report_2024_001.pdf",
+    "title": "Police Incident Report - Child Abuse Investigation",
+    "category": "Primary",
+    "children": ["Josh", "Jace", "Nicholas"],
+    "laws": ["Brady v. Maryland", "Due Process (14th Amendment)", "CAPTA"],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Police incident report documenting investigation into allegations of child abuse. Contains witness statements, evidence collection notes, and references to potential Brady material that should be disclosed to defense counsel.",
+    "metadata_path": "output/metadata/Police_Incident_Report_2024_001.json"
+  },
+  {
+    "file_name": "Medical_Examination_Report_DrMitchell.pdf",
+    "title": "Medical Examination Report - Multiple Minors",
+    "category": "Primary",
+    "children": ["Nicholas", "Peyton", "Owen"],
+    "laws": ["CAPTA"],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Comprehensive medical examination report for multiple minor children. Documents physical findings consistent with abuse allegations and provides forensic evidence collected in accordance with established protocols.",
+    "metadata_path": "output/metadata/Medical_Examination_Report_DrMitchell.json"
+  },
+  {
+    "file_name": "Court_Notice_Hearing_Schedule.pdf",
+    "title": "Notice of Hearing - Family Court",
+    "category": "No",
+    "children": ["John", "Joshua"],
+    "laws": ["Due Process (14th Amendment)"],
+    "include": "NO",
+    "placement": {
+      "masterFile": false,
+      "exhibitBundle": false,
+      "oversightPacket": false
+    },
+    "description": "Administrative notice scheduling court hearing. Contains procedural information but limited substantive content relevant to the primary case evidence.",
+    "metadata_path": "output/metadata/Court_Notice_Hearing_Schedule.json"
+  },
+  {
+    "file_name": "Witness_Statement_SchoolPersonnel.pdf",
+    "title": "Witness Statement - School Staff Observations",
+    "category": "Supporting",
+    "children": ["Josh", "Jace"],
+    "laws": ["CAPTA", "Evidence Tampering"],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Witness statement from school personnel documenting concerning observations about children's condition and behavior. Provides timeline of incidents and supporting evidence for main allegations.",
+    "metadata_path": "output/metadata/Witness_Statement_SchoolPersonnel.json"
+  },
+  {
+    "file_name": "News_Article_LocalCoverage.pdf",
+    "title": "Local News Coverage - Court Case Proceedings",
+    "category": "External",
+    "children": ["Josh", "Jace", "Nicholas", "Peyton", "Owen", "John"],
+    "laws": ["Brady v. Maryland", "Due Process (14th Amendment)"],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": false,
+      "oversightPacket": false
+    },
+    "description": "News article covering the ongoing court case and highlighting due process concerns. Provides external perspective on procedural violations and evidence handling issues in the case.",
+    "metadata_path": "output/metadata/News_Article_LocalCoverage.json"
+  }
+]
