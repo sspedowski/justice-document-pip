@@ -1,423 +1,376 @@
-/**
- * Sample documents with temporal patterns for testing tampering detection
- * These simulate different versions of documents with intentional alterations
- */
+import type { Document } from '@/lib/types'
 
-export const sampleDocumentsWithDates = [
+export const sampleDocumentsWithDates: Document[] = [
   {
-    id: 'doc-incident-001-original',
-    fileName: 'incident_report_001_original.pdf',
-    title: 'Initial Incident Report - Case #2024-001',
-    description: 'Original incident report filed on January 15, 2024. Contains initial witness statements and evidence documentation.',
-    category: 'Primary' as const,
-    children: ['Noel', 'Josh'],
-    laws: ['Due Process (14th Amendment)', 'CAPTA'],
+    id: 'sample-medical-exam-03102024',
+    fileName: 'Medical_Exam_03102024.pdf',
+    title: 'Medical Examination Report - March 10, 2024',
+    description: 'Comprehensive medical examination of Josh Anderson conducted by Dr. Williams at Children\'s Hospital.',
+    category: 'Primary',
+    children: ['Josh'],
+    laws: ['CAPTA'],
     misconduct: [
       {
-        law: 'Due Process (14th Amendment)',
-        page: '2',
-        paragraph: '3',
-        notes: 'Initial violation documented'
-      }
-    ],
-    include: 'YES' as const,
-    placement: {
-      masterFile: true,
-      exhibitBundle: true,
-      oversightPacket: true
-    },
-    uploadedAt: '2024-01-15T09:30:00.000Z',
-    lastModified: '2024-01-15T09:30:00.000Z',
-    lastModifiedBy: 'Officer Martinez',
-    currentVersion: 1,
-    textContent: `INCIDENT REPORT #2024-001
-Date: January 15, 2024
-Time: 09:30 AM
-Reporting Officer: Officer Martinez
-Badge #: 4521
-
-INCIDENT DETAILS:
-Location: 123 Maple Street, Anytown
-Date of Incident: January 14, 2024
-Time of Incident: 6:30 PM
-
-INVOLVED PARTIES:
-Primary: Noel Anderson (DOB: 05/12/2010)
-Witness: Josh Thompson (DOB: 03/08/2009)
-Guardian: Sarah Anderson (Mother)
-
-NARRATIVE:
-Initial report indicates possible neglect situation involving minor Noel Anderson. Witness Josh Thompson provided statement regarding conditions at residence. Evidence collected includes photographs of living conditions and initial medical examination results.
-
-EVIDENCE COLLECTED:
-- Photo Set A: Living conditions (Evidence #E2024-001-A)
-- Medical Exam: Dr. Wilson (Evidence #E2024-001-B)
-- Witness Statement: Josh Thompson (Evidence #E2024-001-C)
-
-INITIAL ASSESSMENT:
-Situation requires immediate intervention. Child appears undernourished and showing signs of neglect. Recommend immediate protective custody and full investigation.
-
-STATUS: ACTIVE - INVESTIGATION ONGOING
-Next Action: Schedule follow-up interview with Noel Anderson
-Supervisor Review: Pending
-
-Signed: Officer Martinez
-Badge #4521
-Date: 01/15/2024`
-  },
-  
-  {
-    id: 'doc-incident-001-altered',
-    fileName: 'incident_report_001_revised.pdf',
-    title: 'Revised Incident Report - Case #2024-001',
-    description: 'Revised incident report with updated information and corrected details.',
-    category: 'Primary' as const,
-    children: ['Nicholas', 'Josh'], // Changed Noel to Nicholas
-    laws: ['Due Process (14th Amendment)'], // Removed CAPTA
-    misconduct: [
-      {
-        law: 'Due Process (14th Amendment)',
-        page: '2',
-        paragraph: '3',
-        notes: 'Updated assessment - reduced severity'
-      }
-    ],
-    include: 'YES' as const,
-    placement: {
-      masterFile: true,
-      exhibitBundle: true,
-      oversightPacket: true
-    },
-    uploadedAt: '2024-01-15T14:20:00.000Z', // Same date, later time
-    lastModified: '2024-01-16T10:15:00.000Z', // Modified next day
-    lastModifiedBy: 'Supervisor Johnson',
-    currentVersion: 2,
-    textContent: `INCIDENT REPORT #2024-001 (REVISED)
-Date: January 15, 2024  
-Time: 09:30 AM
-Reporting Officer: Officer Martinez
-Badge #: 4521
-
-INCIDENT DETAILS:
-Location: 123 Maple Street, Anytown
-Date of Incident: January 14, 2024
-Time of Incident: 6:30 PM
-
-INVOLVED PARTIES:
-Primary: Nicholas Anderson (DOB: 05/12/2010)
-Witness: Josh Thompson (DOB: 03/08/2009)
-Guardian: Sarah Anderson (Mother)
-
-NARRATIVE:
-Upon further review, incident appears to be minor housekeeping issue rather than neglect. Nicholas Anderson appears well-cared for with adequate nutrition and supervision. Witness Josh Thompson's statement has been re-evaluated as potentially exaggerated.
-
-EVIDENCE COLLECTED:
-- Photo Set A: Living conditions (Evidence #E2024-001-A)
-- Medical Exam: Dr. Wilson - RESULTS NORMAL (Evidence #E2024-001-B)
-- Witness Statement: Josh Thompson - CLARIFICATION NEEDED (Evidence #E2024-001-C)
-
-REVISED ASSESSMENT:
-Situation does not meet threshold for intervention. Child appears healthy and well-cared for. Family cooperation noted. No immediate action required.
-
-STATUS: RESOLVED - NO FURTHER ACTION
-Case Disposition: UNFOUNDED
-Supervisor Review: APPROVED
-
-REVISION NOTES:
-- Corrected subject name from previous error
-- Updated medical findings after complete review
-- Clarified witness statement accuracy
-
-Revised by: Supervisor Johnson
-Date: 01/16/2024
-Original Officer: Officer Martinez`
-  },
-
-  {
-    id: 'doc-followup-002',
-    fileName: 'followup_interview_002.pdf',
-    title: 'Follow-up Interview Report - Case #2024-002',
-    description: 'Follow-up interview conducted one week after initial incident.',
-    category: 'Supporting' as const,
-    children: ['Noel', 'Jace', 'Owen'],
-    laws: ['Brady v. Maryland', 'Evidence Tampering'],
-    misconduct: [
-      {
-        law: 'Brady v. Maryland',
-        page: '1',
-        paragraph: '2',
-        notes: 'Potential exculpatory evidence suppression'
-      }
-    ],
-    include: 'YES' as const,
-    placement: {
-      masterFile: true,
-      exhibitBundle: false,
-      oversightPacket: true
-    },
-    uploadedAt: '2024-01-22T11:45:00.000Z',
-    lastModified: '2024-01-22T11:45:00.000Z',
-    lastModifiedBy: 'Detective Williams',
-    currentVersion: 1,
-    textContent: `FOLLOW-UP INTERVIEW REPORT
-Case #: 2024-002 (Related to #2024-001)
-Date: January 22, 2024
-Time: 11:45 AM
-Interviewer: Detective Williams
-Badge #: 7834
-
-INTERVIEW SUBJECTS:
-Primary: Noel Anderson (Age 13)
-Additional: Jace Miller (Age 14, neighbor)
-Additional: Owen Davis (Age 12, friend)
-
-INTERVIEW LOCATION:
-Child Advocacy Center, 456 Oak Avenue
-
-SUMMARY:
-Follow-up interview reveals additional details not captured in initial report. Noel Anderson provided detailed account of ongoing situation. Witnesses Jace Miller and Owen Davis corroborate key elements of Noel's statement.
-
-KEY FINDINGS:
-- Noel confirms identity (not Nicholas as in revised report)
-- Multiple witnesses describe concerning patterns
-- Timeline of events differs from official record
-- Evidence of potential suppression of witness statements
-
-WITNESS STATEMENTS:
-Jace Miller: "Noel told us about problems at home for months"
-Owen Davis: "We saw Noel asking for food at school regularly"
-Noel Anderson: "I don't understand why they changed my name in the report"
-
-EVIDENCE REFERENCES:
-- Original Statement: Evidence #E2024-001-C (Josh Thompson)
-- New Statements: Evidence #E2024-002-A (Jace Miller)
-- New Statements: Evidence #E2024-002-B (Owen Davis)
-- Audio Recording: Evidence #E2024-002-C (Interview)
-
-DISCREPANCIES NOTED:
-1. Subject name changed from Noel to Nicholas in revised report
-2. Medical findings contradicted by current physical examination
-3. Witness credibility questioned without apparent basis
-4. Case status changed from ACTIVE to RESOLVED prematurely
-
-RECOMMENDATIONS:
-- Review all evidence handling procedures
-- Interview Officer Martinez regarding initial report
-- Question Supervisor Johnson about revision process
-- Forensic examination of all documentation
-
-STATUS: UNDER REVIEW
-Supervisor: Captain Rodriguez
-Date: 01/22/2024
-
-Signed: Detective Williams
-Badge #7834`
-  },
-
-  {
-    id: 'doc-medical-003',
-    fileName: 'medical_examination_003.pdf',
-    title: 'Independent Medical Examination - Case #2024-003',
-    description: 'Independent medical examination conducted by external physician.',
-    category: 'Primary' as const,
-    children: ['Noel'],
-    laws: ['CAPTA', 'Evidence Tampering'],
-    misconduct: [
-      {
-        law: 'Evidence Tampering',
+        law: 'CAPTA',
         page: '3',
-        paragraph: '1',
-        notes: 'Conflicting medical findings suggest document alteration'
+        paragraph: '2',
+        notes: 'Medical evidence of potential abuse documented'
       }
     ],
-    include: 'YES' as const,
+    include: 'YES',
     placement: {
       masterFile: true,
       exhibitBundle: true,
       oversightPacket: true
     },
-    uploadedAt: '2024-01-25T16:20:00.000Z',
-    lastModified: '2024-01-25T16:20:00.000Z',
-    lastModifiedBy: 'Dr. Sarah Chen',
-    currentVersion: 1,
-    textContent: `INDEPENDENT MEDICAL EXAMINATION REPORT
-Case Reference: 2024-003 (Related to Cases #2024-001, #2024-002)
-Date: January 25, 2024
-Time: 4:20 PM
-Examining Physician: Dr. Sarah Chen, MD
-License: MD-12345
-
-PATIENT INFORMATION:
-Name: Noel Anderson
-DOB: May 12, 2010
-Age: 13 years old
-Guardian: Sarah Anderson (Mother)
+    uploadedAt: '2024-03-10T14:30:00Z',
+    textContent: `MEDICAL EXAMINATION REPORT
+Date: March 10, 2024
+Patient: Josh Anderson (Age 8)
+Physician: Dr. Emily Williams, MD
+Hospital: Children's Medical Center
 
 EXAMINATION PURPOSE:
-Independent medical evaluation requested due to conflicting reports regarding patient's health status and welfare.
+Court-ordered medical evaluation following CPS referral for suspected child abuse.
 
 PHYSICAL EXAMINATION FINDINGS:
-Height: 4'8" (Below 10th percentile for age)
-Weight: 72 lbs (Below 5th percentile for age)
-BMI: 15.2 (Significantly underweight)
+- Multiple contusions on arms and back in various stages of healing
+- Pattern consistent with non-accidental trauma
+- Patient exhibited anxiety and fear during examination
+- Developmental assessment shows regression in social skills
 
-CLINICAL OBSERVATIONS:
-- Evidence of chronic malnutrition
-- Poor dental hygiene with multiple cavities
-- Old healing bruises on arms and back (estimated 2-3 weeks old)
-- Patient appears anxious and withdrawn
-- Delayed physical development consistent with nutritional deficiency
+PATIENT DEMEANOR:
+Josh appeared withdrawn and fearful throughout the examination. He was reluctant to make eye contact and showed signs of anxiety when discussing home environment.
 
-PATIENT INTERVIEW:
-Noel confirms identity and provides consistent account of living conditions. Patient states: "I'm always hungry at home" and "Sometimes there's no food for days."
+DIAGNOSTIC TESTS:
+- X-rays revealed no fractures
+- Blood work within normal limits
+- Psychological assessment recommended
 
-COMPARISON WITH PREVIOUS REPORTS:
-This examination directly contradicts the "RESULTS NORMAL" notation in Evidence #E2024-001-B. The physical findings are inconsistent with a healthy, well-nourished child.
-
-PHOTOGRAPHIC DOCUMENTATION:
-- Evidence #E2024-003-A: Height/weight measurements
-- Evidence #E2024-003-B: Nutritional assessment markers
-- Evidence #E2024-003-C: Documented injuries (healed)
-
-PROFESSIONAL OPINION:
-The physical evidence strongly supports concerns of neglect and possible abuse. The prior medical clearance appears to be erroneous or potentially falsified.
+MEDICAL OPINION:
+Based on physical findings and behavioral observations, injuries are consistent with non-accidental trauma. Pattern and location of contusions suggest deliberate infliction.
 
 RECOMMENDATIONS:
-1. Immediate nutritional intervention
-2. Psychological evaluation
-3. Review of all previous medical documentation
-4. Investigation into discrepant medical findings
+1. Immediate safety assessment required
+2. Psychological evaluation and trauma counseling
+3. Regular medical follow-up appointments
+4. Coordination with child protective services
 
-CONCERN FOR EVIDENCE INTEGRITY:
-The significant discrepancy between this examination and prior medical findings (Evidence #E2024-001-B) raises serious questions about document authenticity or potential tampering.
+Physician: Dr. Emily Williams, MD
+License: MD-7821
+Medical Center Case #: MC-2024-0310-001
 
-Signed: Dr. Sarah Chen, MD
-License: MD-12345
-Date: January 25, 2024
-
-COPY TO: Child Protective Services, District Attorney's Office`
+This report contains sensitive medical information protected by HIPAA regulations.
+End of Medical Report`,
+    currentVersion: 1,
+    lastModified: '2024-03-10T14:30:00Z',
+    lastModifiedBy: 'Medical Records',
+    fingerprint: {
+      fileHash: 'med-exam-03-10-2024',
+      fileSize: 2134,
+      pageCount: 4,
+      firstPageHash: 'med-first-page'
+    },
+    fileHash: 'med-exam-03-10-2024',
+    fileSize: 2134,
+    pageCount: 4,
+    firstPageHash: 'med-first-page'
   },
-
   {
-    id: 'doc-witness-004',
-    fileName: 'witness_statement_supplemental.pdf',
-    title: 'Supplemental Witness Statement - Josh Thompson',
-    description: 'Additional witness statement clarifying previous testimony.',
-    category: 'Supporting' as const,
-    children: ['Noel', 'Josh'],
-    laws: ['Brady v. Maryland', 'Perjury'],
+    id: 'sample-court-order-03122024',
+    fileName: 'Court_Order_03122024.pdf',
+    title: 'Emergency Court Order - March 12, 2024',
+    description: 'Emergency protective order issued by Judge Thompson following medical examination findings.',
+    category: 'Primary',
+    children: ['Josh'],
+    laws: ['Due Process (14th Amendment)'],
     misconduct: [
       {
-        law: 'Perjury',
-        page: '2',
+        law: 'Due Process (14th Amendment)',
+        page: '1',
         paragraph: '4',
-        notes: 'Witness recants parts of previous statement'
+        notes: 'Court intervention based on medical evidence'
       }
     ],
-    include: 'YES' as const,
+    include: 'YES',
     placement: {
       masterFile: true,
       exhibitBundle: true,
       oversightPacket: true
     },
-    uploadedAt: '2024-01-28T13:15:00.000Z',
-    lastModified: '2024-01-28T13:15:00.000Z',
-    lastModifiedBy: 'Josh Thompson',
+    uploadedAt: '2024-03-12T10:15:00Z',
+    textContent: `EMERGENCY PROTECTIVE ORDER
+Case Number: FC-2024-0312-001
+Date: March 12, 2024
+Judge: Honorable Michael Thompson
+
+IN THE MATTER OF: Josh Anderson (Minor Child)
+
+EMERGENCY FINDINGS:
+Based on medical examination report dated March 10, 2024, and testimony from Dr. Emily Williams, this Court finds:
+
+1. Clear and convincing evidence of physical abuse
+2. Imminent danger to the welfare of the minor child
+3. Emergency intervention necessary to ensure child safety
+
+ORDERS:
+1. Josh Anderson is hereby placed in emergency protective custody
+2. Temporary placement with certified foster family arranged
+3. Supervised visitation only for Noel Anderson
+4. Psychological evaluation ordered for all parties
+5. CPS to maintain active supervision
+6. Review hearing scheduled for March 26, 2024
+
+RESTRICTIONS:
+- No unsupervised contact between Noel Anderson and Josh Anderson
+- All visits must be supervised by qualified CPS personnel
+- Location and details of foster placement remain confidential
+
+This order is effective immediately and shall remain in force until modified or terminated by further order of this Court.
+
+Issued this 12th day of March, 2024
+Judge Michael Thompson
+Family Court Division
+Seal of the Court`,
     currentVersion: 1,
-    textContent: `SUPPLEMENTAL WITNESS STATEMENT
-Case Reference: 2024-001 and related cases
-Date: January 28, 2024
-Time: 1:15 PM
-Witness: Josh Thompson
-DOB: March 8, 2009
-Age: 14 years old
+    lastModified: '2024-03-12T10:15:00Z',
+    lastModifiedBy: 'Court Records',
+    fingerprint: {
+      fileHash: 'court-order-03-12-2024',
+      fileSize: 1876,
+      pageCount: 2,
+      firstPageHash: 'court-first-page'
+    },
+    fileHash: 'court-order-03-12-2024',
+    fileSize: 1876,
+    pageCount: 2,
+    firstPageHash: 'court-first-page'
+  },
+  {
+    id: 'sample-witness-statement-03082024',
+    fileName: 'Witness_Statement_Mary_Johnson_03082024.pdf',
+    title: 'Witness Statement - Mary Johnson - March 8, 2024',
+    description: 'Detailed witness statement from neighbor Mary Johnson describing concerning observations.',
+    category: 'Supporting',
+    children: ['Josh', 'Noel'],
+    laws: [],
+    misconduct: [],
+    include: 'YES',
+    placement: {
+      masterFile: true,
+      exhibitBundle: true,
+      oversightPacket: true
+    },
+    uploadedAt: '2024-03-08T11:20:00Z',
+    textContent: `WITNESS STATEMENT
+Date: March 8, 2024
+Witness: Mary Johnson
+Address: 125 Main Street (Neighbor)
+Interview Conducted by: Detective Sarah Lopez
 
-STATEMENT GIVEN TO:
-Detective Williams, Badge #7834
-Child Advocacy Specialist: Maria Santos
+WITNESS INFORMATION:
+Mary Johnson, age 52, has lived at 125 Main Street for 8 years. She is employed as a school nurse and has known the Anderson family since they moved in approximately 3 years ago.
 
-PURPOSE:
-Clarification of previous statement regarding Noel Anderson and observed conditions.
+STATEMENT:
+"I've been concerned about Josh for several months now. I often see him playing alone in the yard, and he always seems sad. There have been multiple occasions where I've heard shouting coming from their house, usually Noel's voice.
 
-SUPPLEMENTAL STATEMENT:
-I want to clarify my previous statement about Noel Anderson. I've been friends with Noel for three years, and I need to correct some things that might have been misunderstood.
+Last week, on March 1st, I saw Josh outside with what appeared to be bruises on his arms. When I asked him about it, he just said he fell down, but the marks didn't look like typical playground injuries.
 
-CORRECTIONS TO PREVIOUS STATEMENT:
-1. Noel's name: It's definitely Noel, not Nicholas. I've known Noel since we were in 5th grade together.
+I've also noticed that Josh often appears hungry. He's asked me for snacks several times when he's been playing in our shared yard area. This seems unusual for a child his age.
 
-2. Home conditions: I have been to Noel's house many times. There often isn't enough food, and Noel frequently asks other kids for lunch money or food.
+On March 5th, I heard loud arguing around 9 PM, followed by what sounded like crying. I considered calling the police but wasn't sure if I should get involved.
 
-3. Physical appearance: Noel is much thinner than other kids our age and often seems tired and hungry.
+I work with children professionally, and Josh's behavior and appearance have raised red flags for me. He seems withdrawn and fearful, which is very different from how he was when the family first moved in."
 
-CLARIFICATION REGARDING STATEMENT REVISION:
-Someone told me that my statement was being questioned as "potentially exaggerated." I want to be clear that everything I said was true. I saw:
-- Empty refrigerator multiple times
-- Noel eating ketchup packets for lunch
-- Noel wearing the same clothes for weeks
-- Bruises on Noel's arms that Noel said were from "accidents"
+ADDITIONAL OBSERVATIONS:
+- Witness provided detailed timeline of concerning incidents
+- Professional background in child welfare adds credibility
+- Has documentation of some incidents (photos, diary entries)
+- Willing to testify if required
 
-WHY I'M SPEAKING UP AGAIN:
-After hearing that the case was marked "RESOLVED" and "UNFOUNDED," I became worried. Noel is my friend, and the problems at home are real. I don't understand how they could say everything is fine.
+Statement reviewed and signed by witness.
 
-ADDITIONAL WITNESSES:
-Other kids at school have noticed the same things:
-- Jace Miller (neighbor)
-- Owen Davis (classmate)
-- Peyton Lee (sits next to Noel in math class)
+Mary Johnson (Signature)
+Detective Sarah Lopez, Badge #2847`,
+    currentVersion: 1,
+    lastModified: '2024-03-08T11:20:00Z',
+    lastModifiedBy: 'Police Records',
+    fingerprint: {
+      fileHash: 'witness-mary-03-08-2024',
+      fileSize: 2234,
+      pageCount: 3,
+      firstPageHash: 'witness-first-page'
+    },
+    fileHash: 'witness-mary-03-08-2024',
+    fileSize: 2234,
+    pageCount: 3,
+    firstPageHash: 'witness-first-page'
+  },
+  {
+    id: 'sample-social-worker-notes-03142024',
+    fileName: 'Social_Worker_Notes_03142024.pdf',
+    title: 'Social Worker Case Notes - March 14, 2024',
+    description: 'Detailed case notes from social worker following emergency custody placement.',
+    category: 'Supporting',
+    children: ['Josh'],
+    laws: ['CAPTA'],
+    misconduct: [
+      {
+        law: 'CAPTA',
+        page: '2',
+        paragraph: '1',
+        notes: 'Documentation of child welfare concerns and intervention'
+      }
+    ],
+    include: 'YES',
+    placement: {
+      masterFile: true,
+      exhibitBundle: true,
+      oversightPacket: true
+    },
+    uploadedAt: '2024-03-14T16:45:00Z',
+    textContent: `SOCIAL WORKER CASE NOTES
+Date: March 14, 2024
+Case Worker: Linda Rodriguez, LCSW
+Case Number: CPS-2024-001
+Child: Josh Anderson
 
-ADULT WITNESSES:
-- Mrs. Rodriguez (school counselor) - has given Noel extra food
-- Mr. Kim (teacher) - noticed Noel falling asleep in class from hunger
+PLACEMENT UPDATE:
+Josh has been in emergency foster care with the Williams family for 2 days following court order dated March 12, 2024. Initial placement appears to be going well.
 
-CONCERN ABOUT ORIGINAL INVESTIGATION:
-I'm confused about why my original statement was labeled as unreliable. Everything I said was true. I'm worried that someone doesn't want people to know about Noel's situation.
+CHILD'S ADJUSTMENT:
+- Josh initially very quiet and withdrawn
+- Gradually becoming more responsive to foster parents
+- Eating well and sleeping through the night
+- Has not asked about returning home
+- Shows signs of relief rather than distress about placement
 
-I understand this is serious, and I promise I'm telling the truth.
+BEHAVIORAL OBSERVATIONS:
+During my visit today, Josh appeared more relaxed than in previous encounters. He made eye contact more readily and even smiled when talking about his new school. This is a significant improvement from his previous demeanor.
 
-Signed: Josh Thompson
-Date: January 28, 2024
-Witnessed by: Detective Williams, Badge #7834
-Witnessed by: Maria Santos, Child Advocacy Specialist`
+FOSTER FAMILY REPORT:
+The Williams family reports that Josh is adjusting well. He follows house rules without issue and interacts appropriately with their other foster child. They note he seems "grateful" for basic care and attention.
+
+THERAPEUTIC NEEDS:
+- Trauma-informed therapy initiated with Dr. Patricia Chen
+- First session scheduled for March 18, 2024
+- Play therapy approach recommended given child's age
+- Regular psychological assessments to monitor progress
+
+VISITS WITH BIOLOGICAL FAMILY:
+Supervised visit with Noel Anderson scheduled for March 16, 2024 at CPS office. Noel has been cooperative with visit arrangements and has completed required parenting assessment.
+
+NEXT STEPS:
+1. Continue weekly therapeutic sessions
+2. Monitor adjustment in foster placement
+3. Prepare for court review hearing on March 26, 2024
+4. Coordinate with medical team for follow-up examination
+
+Case Worker: Linda Rodriguez, LCSW
+License: SW-4429
+Date: March 14, 2024`,
+    currentVersion: 1,
+    lastModified: '2024-03-14T16:45:00Z',
+    lastModifiedBy: 'Social Services',
+    fingerprint: {
+      fileHash: 'social-notes-03-14-2024',
+      fileSize: 2087,
+      pageCount: 3,
+      firstPageHash: 'social-first-page'
+    },
+    fileHash: 'social-notes-03-14-2024',
+    fileSize: 2087,
+    pageCount: 3,
+    firstPageHash: 'social-first-page'
+  },
+  {
+    id: 'sample-psychological-eval-03182024',
+    fileName: 'Psychological_Evaluation_Josh_03182024.pdf',
+    title: 'Psychological Evaluation - Josh Anderson - March 18, 2024',
+    description: 'Professional psychological evaluation conducted by Dr. Patricia Chen to assess trauma and therapeutic needs.',
+    category: 'Primary',
+    children: ['Josh'],
+    laws: ['CAPTA'],
+    misconduct: [
+      {
+        law: 'CAPTA',
+        page: '4',
+        paragraph: '3',
+        notes: 'Psychological evidence supporting abuse allegations'
+      }
+    ],
+    include: 'YES',
+    placement: {
+      masterFile: true,
+      exhibitBundle: true,
+      oversightPacket: true
+    },
+    uploadedAt: '2024-03-18T13:30:00Z',
+    textContent: `PSYCHOLOGICAL EVALUATION REPORT
+Date: March 18, 2024
+Client: Josh Anderson (Age 8)
+Psychologist: Dr. Patricia Chen, PhD
+License: PSY-3421
+
+REFERRAL INFORMATION:
+Josh Anderson was referred for psychological evaluation following emergency custody placement due to suspected physical abuse. Evaluation requested by Child Protective Services and Family Court.
+
+BACKGROUND INFORMATION:
+Josh is an 8-year-old boy who was removed from his home on March 12, 2024, following medical evidence of physical abuse. He is currently in foster care placement.
+
+ASSESSMENT METHODS:
+- Clinical interview with child
+- Play therapy session
+- Psychological testing (age-appropriate instruments)
+- Behavioral observations
+- Consultation with foster parents and social worker
+
+BEHAVIORAL OBSERVATIONS:
+Josh presented as a quiet, watchful child who initially showed signs of hypervigilance. He checked the door multiple times during our session and startled at unexpected sounds. After 20 minutes, he became more engaged in play activities.
+
+CLINICAL FINDINGS:
+Josh exhibits symptoms consistent with trauma exposure:
+- Hypervigilance and startle response
+- Sleep disturbances (reported by foster family)
+- Regression in some developmental areas
+- Difficulty trusting adult figures initially
+- Somatic complaints (headaches, stomach aches)
+
+PSYCHOLOGICAL TESTING RESULTS:
+- Intelligence within normal range
+- Elevated scores on trauma symptom indicators
+- Drawings show themes of fear and powerlessness
+- Significant anxiety in family-related assessments
+
+TRAUMA INDICATORS:
+Josh's presentation is highly consistent with child physical abuse trauma. He shows classic symptoms including hypervigilance, regression, and somatic complaints. His artwork and play themes consistently involve themes of danger and protection.
+
+RECOMMENDATIONS:
+1. Continued trauma-informed therapy (recommended weekly sessions)
+2. Maintain stable foster placement to build trust and security
+3. Gradual exposure therapy when appropriate
+4. Family therapy only when safety can be assured
+5. Regular psychological monitoring and assessment
+
+PROGNOSIS:
+With appropriate therapeutic intervention and stable placement, Josh has a good prognosis for recovery. Children his age are generally resilient with proper support.
+
+Dr. Patricia Chen, PhD
+Licensed Clinical Psychologist
+License #PSY-3421
+March 18, 2024`,
+    currentVersion: 1,
+    lastModified: '2024-03-18T13:30:00Z',
+    lastModifiedBy: 'Clinical Records',
+    fingerprint: {
+      fileHash: 'psych-eval-03-18-2024',
+      fileSize: 2567,
+      pageCount: 5,
+      firstPageHash: 'psych-first-page'
+    },
+    fileHash: 'psych-eval-03-18-2024',
+    fileSize: 2567,
+    pageCount: 5,
+    firstPageHash: 'psych-first-page'
   }
 ]
-
-// Additional metadata for enhanced tampering detection
-export const documentMetadata = {
-  'doc-incident-001-original': {
-    originalHash: 'a1b2c3d4e5f6',
-    creationTimestamp: '2024-01-15T09:30:00.000Z',
-    lastAccessLog: ['Officer Martinez', 'Supervisor Johnson'],
-    versionHistory: ['v1.0 - Initial report']
-  },
-  'doc-incident-001-altered': {
-    originalHash: 'a1b2c3d4e5f6',  // Same hash indicates same base content
-    currentHash: 'x9y8z7w6v5u4',   // Different hash indicates alteration
-    creationTimestamp: '2024-01-15T09:30:00.000Z',
-    revisionTimestamp: '2024-01-16T10:15:00.000Z',
-    lastAccessLog: ['Officer Martinez', 'Supervisor Johnson', 'Unknown User'],
-    versionHistory: ['v1.0 - Initial report', 'v2.0 - Revised by Supervisor Johnson'],
-    alterationFlags: ['name_change', 'status_change', 'conclusion_modification']
-  },
-  'doc-followup-002': {
-    originalHash: 'b2c3d4e5f6g7',
-    creationTimestamp: '2024-01-22T11:45:00.000Z',
-    lastAccessLog: ['Detective Williams', 'Captain Rodriguez'],
-    versionHistory: ['v1.0 - Follow-up interview'],
-    crossReferences: ['doc-incident-001-original', 'doc-incident-001-altered']
-  },
-  'doc-medical-003': {
-    originalHash: 'c3d4e5f6g7h8',
-    creationTimestamp: '2024-01-25T16:20:00.000Z',
-    lastAccessLog: ['Dr. Sarah Chen'],
-    versionHistory: ['v1.0 - Independent medical examination'],
-    crossReferences: ['doc-incident-001-altered'],
-    contradictoryFindings: ['Evidence #E2024-001-B']
-  },
-  'doc-witness-004': {
-    originalHash: 'd4e5f6g7h8i9',
-    creationTimestamp: '2024-01-28T13:15:00.000Z',
-    lastAccessLog: ['Josh Thompson', 'Detective Williams', 'Maria Santos'],
-    versionHistory: ['v1.0 - Supplemental witness statement'],
-    crossReferences: ['doc-incident-001-original', 'doc-incident-001-altered', 'doc-followup-002']
-  }
-}

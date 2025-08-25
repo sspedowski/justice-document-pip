@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useKV } from '@/hooks/useKV'
 import { ErrorBoundary, useErrorHandler } from '@/components/ErrorBoundary'
-import { ApplicationError, ErrorHandler, safeAsync, Validator, ERROR_CODES } from '@/lib/errorHandler'
+import { ApplicationError, ErrorHandler, safeAsync, Validator, ERROR_CODES, type Result } from '@/lib/errorHandler'
 import type { 
   Document, 
   DocumentVersion, 
@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine, GitCompare, AlertTriangle, RefreshCw } from '@phosphor-icons/react'
+import { FileText, Upload, Scales, Shield, Users, Download, Funnel, MagnifyingGlass, Eye, PencilSimple, GitBranch, TextT, X, Clock, User, FileArrowUp, ChartLine, GitMerge, Warning, ArrowClockwise } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import { 
@@ -113,13 +113,15 @@ async function loadProcessedDocuments(): Promise<Result<Document[]>> {
 }
 
 function App() {
+  // Error handler - must be first
   const { handleError } = useErrorHandler()
   
+  // All hooks must be called unconditionally and in the same order every time
   // Initialize useKV hooks with proper error handling - simplified usage
-  const [documents, setDocuments, deleteDocuments] = useKV<Document[]>('justice-documents', [])
-  const [documentVersions, setDocumentVersions, deleteDocumentVersions] = useKV<DocumentVersion[]>('document-versions', [])
+  const [documents, setDocuments] = useKV<Document[]>('justice-documents', [])
+  const [documentVersions, setDocumentVersions] = useKV<DocumentVersion[]>('document-versions', [])
   
-  // Additional state variables
+  // All useState hooks must be declared before any other logic
   const [processedDocs, setProcessedDocs] = useState<Document[]>([])
   const [processing, setProcessing] = useState<ProcessingDocument[]>([])
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
@@ -154,15 +156,19 @@ function App() {
 
   // Load processed documents from GitHub Actions pipeline on component mount with error handling
   useEffect(() => {
+    let mounted = true
+    
     const loadData = async () => {
+      if (!mounted) return
       setIsLoadingProcessed(true)
       
       try {
         const result = await loadProcessedDocuments()
         
+        if (!mounted) return
+        
         if (!result.success) {
           console.log('Failed to load processed documents:', result.error)
-          // Don't show error toast for this as it's expected for new installations
           setProcessedDocs([])
           return
         }
@@ -170,47 +176,27 @@ function App() {
         const processed = result.data
         setProcessedDocs(processed)
         
-        // Create initial version entries for processed documents that don't have them
-        const processedVersions: DocumentVersion[] = []
-        processed.forEach(doc => {
-          const existingVersions = documentVersions.filter(v => v.documentId === doc.id)
-          if (existingVersions.length === 0) {
-            const initialVersion = createDocumentVersion(doc, 'imported', 'Document imported from pipeline processing')
-            processedVersions.push(initialVersion)
-          }
-        })
-        
-        if (processedVersions.length > 0) {
-          setDocumentVersions(prev => [...prev, ...processedVersions])
-        }
-        
-        // Merge with locally uploaded documents, avoiding duplicates
-        const existingFileNames = new Set(processed.map(doc => doc.fileName))
-        const localOnly = documents.filter(doc => !existingFileNames.has(doc.fileName))
-        
         if (processed.length > 0) {
           toast.success(`Loaded ${processed.length} processed documents from pipeline`)
-        } else if (localOnly.length > 0) {
-          toast.info(`Found ${localOnly.length} local documents. Add PDFs to input/ directory to use pipeline processing.`)
         } else {
           console.log('No documents found - ready to upload new PDFs')
         }
       } catch (error) {
-        handleError(
-          error instanceof ApplicationError ? error : new ApplicationError(
-            ERROR_CODES.UNKNOWN_ERROR,
-            'Unexpected error during data loading',
-            { cause: error instanceof Error ? error : new Error('Unknown error') }
-          ),
-          'loadData'
-        )
+        if (!mounted) return
+        console.error('Error loading processed documents:', error)
       } finally {
-        setIsLoadingProcessed(false)
+        if (mounted) {
+          setIsLoadingProcessed(false)
+        }
       }
     }
     
     loadData()
-  }, []) // Removed documents dependency to prevent infinite loop
+    
+    return () => {
+      mounted = false
+    }
+  }, []) // Empty dependency array - run once on mount
 
   // Combine processed and local documents - use useMemo to prevent recalculation on every render
   const allDocuments = useMemo(() => {
@@ -226,7 +212,7 @@ function App() {
   }, [processedDocs, documents])
 
   // Advanced content search function
-  const searchInDocuments = (query: string): SearchResult[] => {
+  const searchInDocuments = useCallback((query: string): SearchResult[] => {
     if (!query.trim() || allDocuments.length === 0) return []
     
     const results: SearchResult[] = []
@@ -270,7 +256,7 @@ function App() {
     })
     
     return results
-  }
+  }, [allDocuments])
 
   // Effect to update search results when content search term changes
   useEffect(() => {
@@ -280,18 +266,10 @@ function App() {
     } else {
       setSearchResults([])
     }
-  }, [contentSearchTerm, allDocuments])
-
-  // Separate effect to handle search results update when documents change
-  useEffect(() => {
-    if (contentSearchTerm.trim() && allDocuments.length > 0) {
-      const results = searchInDocuments(contentSearchTerm)
-      setSearchResults(results)
-    }
-  }, [allDocuments])
+  }, [contentSearchTerm, searchInDocuments])
 
   // Version management functions
-  const createDocumentVersion = (doc: Document, changeType: DocumentVersion['changeType'], notes?: string): DocumentVersion => {
+  const createDocumentVersion = useCallback((doc: Document, changeType: DocumentVersion['changeType'], notes?: string): DocumentVersion => {
     const version = (doc.currentVersion || 0) + 1
     return {
       id: `${doc.id}-v${version}-${Date.now()}`,
@@ -310,9 +288,9 @@ function App() {
       changeNotes: notes,
       changeType
     }
-  }
+  }, [])
 
-  const saveDocumentWithVersion = (updatedDoc: Document, changeType: DocumentVersion['changeType'], notes?: string) => {
+  const saveDocumentWithVersion = useCallback((updatedDoc: Document, changeType: DocumentVersion['changeType'], notes?: string) => {
     // Create version history entry
     const version = createDocumentVersion(updatedDoc, changeType, notes)
     
@@ -339,13 +317,13 @@ function App() {
         doc.id === updatedDoc.id ? docWithVersion : doc
       ))
     }
-  }
+  }, [createDocumentVersion, processedDocs, setDocuments, setDocumentVersions])
 
-  const getDocumentVersions = (documentId: string): DocumentVersion[] => {
+  const getDocumentVersions = useCallback((documentId: string): DocumentVersion[] => {
     return documentVersions
       .filter(v => v.documentId === documentId)
       .sort((a, b) => b.version - a.version)
-  }
+  }, [documentVersions])
 
   const showVersionHistory = (doc: Document) => {
     const versions = getDocumentVersions(doc.id)
@@ -853,7 +831,7 @@ function App() {
     setChangeNotes('')
   }
 
-  const handleDuplicateAction = (action: 'skip' | 'replace' | 'keep-both') => {
+  const handleDuplicateDialogAction = (action: 'skip' | 'replace' | 'keep-both') => {
     const { result, newFile, processingDoc } = duplicateDialog
     
     if (!result || !newFile || !processingDoc) {
@@ -862,29 +840,20 @@ function App() {
       return
     }
 
-    handleDuplicateAction(
-      action,
-      { fileName: newFile.name }, // Temporary doc object
-      result.existingDocument,
-      // onReplace
-      (oldDoc, newDoc) => {
-        toast.info('Replacing existing document...')
-        // Continue processing the file but replace the existing document
-        continueProcessingAfterDuplicate(newFile, processingDoc, oldDoc.id)
-      },
-      // onKeepBoth  
-      (newDoc) => {
-        toast.info('Keeping both documents...')
-        // Continue processing with modified filename
-        continueProcessingAfterDuplicate(newFile, processingDoc)
-      },
-      // onSkip
-      (existingDoc) => {
-        toast.info(`Skipped upload - keeping existing: ${existingDoc.fileName}`)
-        // Remove from processing queue
-        setProcessing(prev => prev.filter(p => p.fileName !== newFile.name))
-      }
-    )
+    // Handle the duplicate action using the imported function
+    if (action === 'replace') {
+      toast.info('Replacing existing document...')
+      // Continue processing the file but replace the existing document
+      continueProcessingAfterDuplicate(newFile, processingDoc, result.existingDocument.id)
+    } else if (action === 'keep-both') {
+      toast.info('Keeping both documents...')
+      // Continue processing with modified filename
+      continueProcessingAfterDuplicate(newFile, processingDoc)
+    } else if (action === 'skip') {
+      toast.info(`Skipped upload - keeping existing: ${result.existingDocument.fileName}`)
+      // Remove from processing queue
+      setProcessing(prev => prev.filter(p => p.fileName !== newFile.name))
+    }
 
     // Close dialog
     setDuplicateDialog({ isOpen: false, result: null, newFile: null, processingDoc: null })
@@ -1151,6 +1120,7 @@ function App() {
             lastModified: new Date().toISOString(),
             lastModifiedBy: 'Text Import',
             fingerprint: {
+              fileName: fileName,
               fileHash: `text-${fileName}`,
               fileSize: textContent.length,
               pageCount: 1,
@@ -1460,7 +1430,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Scale className="h-8 w-8 text-primary" />
+              <Scales className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Justice Document Manager</h1>
                 <p className="text-sm text-muted-foreground">
@@ -1505,7 +1475,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 size="sm"
                 className="text-red-700 border-red-200 hover:bg-red-50"
               >
-                <AlertTriangle className="h-4 w-4 mr-2" />
+                <Warning className="h-4 w-4 mr-2" />
                 Advanced Pattern Analysis
               </Button>
               <Button 
@@ -1514,7 +1484,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 size="sm"
                 className="text-orange-700 border-orange-200 hover:bg-orange-50"
               >
-                <AlertTriangle className="h-4 w-4 mr-2" />
+                <Warning className="h-4 w-4 mr-2" />
                 Detect Tampering
                 <span className="ml-2 text-xs opacity-70">(Ctrl+T)</span>
               </Button>
@@ -1533,7 +1503,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 size="sm"
                 className="text-purple-700 border-purple-200 hover:bg-purple-50"
               >
-                <GitCompare className="h-4 w-4 mr-2" />
+                <GitMerge className="h-4 w-4 mr-2" />
                 Test Date Comparison
               </Button>
               <Button onClick={generateOversightPackets} size="sm">
@@ -1545,7 +1515,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                <GitCompare className="h-4 w-4 mr-2" />
+                <GitMerge className="h-4 w-4 mr-2" />
                 Quick Tampering Analysis
               </Button>
             </div>
@@ -1683,7 +1653,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <Warning className="h-5 w-5 text-red-600" />
                   Advanced Evidence Pattern Analysis
                 </CardTitle>
               </CardHeader>
@@ -1713,7 +1683,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                         onClick={() => setShowAdvancedAnalyzer(true)}
                         className="w-full bg-red-600 hover:bg-red-700 text-white"
                       >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        <Warning className="h-4 w-4 mr-2" />
                         Launch Advanced Analysis
                         <span className="ml-2 text-xs opacity-70">(Ctrl+Shift+A)</span>
                       </Button>
@@ -1723,7 +1693,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                         variant="outline"
                         className="w-full border-red-200 text-red-700 hover:bg-red-50"
                       >
-                        <GitCompare className="h-4 w-4 mr-2" />
+                        <GitMerge className="h-4 w-4 mr-2" />
                         Quick Demo Analysis
                       </Button>
                     </div>
@@ -1740,7 +1710,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
+                  <Warning className="h-5 w-5" />
                   Tampering Detection Testing
                 </CardTitle>
               </CardHeader>
@@ -1782,7 +1752,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <GitCompare className="h-5 w-5" />
+                  <GitMerge className="h-5 w-5" />
                   Date-Based Comparison Testing
                 </CardTitle>
               </CardHeader>
@@ -1820,7 +1790,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                         variant="outline"
                         className="w-full"
                       >
-                        <GitCompare className="h-4 w-4 mr-2" />
+                        <GitMerge className="h-4 w-4 mr-2" />
                         View Test Algorithm
                         <span className="ml-2 text-xs opacity-70">(Ctrl+Shift+T)</span>
                       </Button>
@@ -1868,7 +1838,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                         variant="outline"
                         className="w-full"
                       >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        <Warning className="h-4 w-4 mr-2" />
                         Interactive Analysis
                       </Button>
                       
@@ -1963,7 +1933,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                       <div className="text-muted-foreground">Contributors</div>
                     </div>
                   </div>
-                  {useMemo(() => {
+                  {(() => {
                     const sevenDaysAgo = new Date()
                     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
                     const recentVersions = documentVersions.filter(v => new Date(v.changedAt) >= sevenDaysAgo)
@@ -1978,7 +1948,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                         </div>
                       </div>
                     )
-                  }, [documentVersions])}
+                  })()}
                 </CardContent>
               </Card>
             )}
@@ -1987,7 +1957,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search documents by title, description, children, laws... (Ctrl+K)"
                     value={searchTerm}
@@ -1997,7 +1967,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 </div>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
+                    <Funnel className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2206,7 +2176,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                       
                       {(doc.laws && doc.laws.length > 0) && (
                         <div className="flex items-center gap-1 flex-wrap">
-                          <Scale className="h-3 w-3 text-muted-foreground" />
+                          <Scales className="h-3 w-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">{doc.laws.length} law(s)</span>
                         </div>
                       )}
@@ -2237,14 +2207,14 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                             onClick={() => showVersionComparison(doc)}
                             title="Compare Versions (Ctrl+D)"
                           >
-                            <GitCompare className="h-3 w-3" />
+                            <GitMerge className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEditDocument(doc)}
                           >
-                            <Edit className="h-3 w-3" />
+                            <PencilSimple className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -2285,14 +2255,6 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                     Clear content search
                   </Button>
                 )}
-              </div>
-            )}
-
-            {/* Loading state for processed documents */}
-            {isLoadingProcessed && !isLoadingProcessed && (
-              <div className="text-center py-12">
-                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading processed documents...</p>
               </div>
             )}
           </TabsContent>
@@ -2591,7 +2553,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                               </Badge>
                               <Badge variant="outline" className="text-xs">
                                 {version.changeType === 'created' && <FileArrowUp className="h-3 w-3 mr-1" />}
-                                {version.changeType === 'edited' && <Edit className="h-3 w-3 mr-1" />}
+                                {version.changeType === 'edited' && <PencilSimple className="h-3 w-3 mr-1" />}
                                 {version.changeType === 'imported' && <GitBranch className="h-3 w-3 mr-1" />}
                                 {version.changeType}
                               </Badge>
@@ -2619,7 +2581,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                                   showVersionComparison(viewingVersionHistory)
                                 }}
                               >
-                                <GitCompare className="h-3 w-3 mr-1" />
+                                <GitMerge className="h-3 w-3 mr-1" />
                                 Compare
                               </Button>
                             </div>
@@ -2703,7 +2665,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
         onClose={() => setDuplicateDialog({ isOpen: false, result: null, newFile: null, processingDoc: null })}
         duplicateResult={duplicateDialog.result}
         newFileName={duplicateDialog.newFile?.name || ''}
-        onAction={handleDuplicateAction}
+        onAction={handleDuplicateDialogAction}
       />
 
       {/* Advanced Tampering Analyzer Dialog */}
@@ -2726,7 +2688,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <GitCompare className="h-5 w-5" />
+              <GitMerge className="h-5 w-5" />
               Date-Based Document Comparison Test
             </DialogTitle>
           </DialogHeader>
