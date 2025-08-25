@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertTriangle, FileText, GitCompare, Eye, Download, Clock, TrendingUp, Shield, Database, ChartLine } from '@phosphor-icons/react'
-import { analyzeAdvancedTampering, exportForensicReport, type TamperingReport } from '@/lib/advancedTamperingDetector'
+import { analyzeTampering, generateTamperingReport, type TamperingReport } from '@/lib/advancedTamperingDetector'
 import { sampleDocumentsWithDates, documentMetadata } from '@/data/sampleDocumentsWithDates'
 import { toast } from 'sonner'
 
@@ -70,7 +70,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
       setAnalysisProgress(30)
       
       // Run the advanced tampering analysis
-      const report = analyzeAdvancedTampering(analyzeData)
+      const report = analyzeTampering(analyzeData)
       
       setAnalysisProgress(70)
       await new Promise(resolve => setTimeout(resolve, 300))
@@ -102,29 +102,42 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
     if (!currentReport) return
     
     try {
-      const { executiveReport, technicalReport, evidenceLog } = exportForensicReport(currentReport)
+      const executiveReport = generateTamperingReport(currentReport, documents)
       const timestamp = new Date().toISOString().split('T')[0]
       
-      // Export Executive Summary
-      const execBlob = new Blob([executiveReport], { type: 'text/plain' })
+      // Export Executive Summary/Report
+      const execBlob = new Blob([executiveReport], { type: 'text/markdown' })
       const execUrl = URL.createObjectURL(execBlob)
       const execLink = document.createElement('a')
       execLink.href = execUrl
-      execLink.download = `EXECUTIVE-SUMMARY-Tampering-${timestamp}.txt`
+      execLink.download = `COMPREHENSIVE-TAMPERING-REPORT-${timestamp}.md`
       execLink.click()
       URL.revokeObjectURL(execUrl)
       
-      // Export Technical Report
-      const techBlob = new Blob([technicalReport], { type: 'text/plain' })
-      const techUrl = URL.createObjectURL(techBlob)
-      const techLink = document.createElement('a')
-      techLink.href = techUrl
-      techLink.download = `TECHNICAL-REPORT-Tampering-${timestamp}.txt`
-      techLink.click()
-      URL.revokeObjectURL(techUrl)
+      // Export JSON data for further analysis
+      const jsonData = JSON.stringify(currentReport, null, 2)
+      const jsonBlob = new Blob([jsonData], { type: 'application/json' })
+      const jsonUrl = URL.createObjectURL(jsonBlob)
+      const jsonLink = document.createElement('a')
+      jsonLink.href = jsonUrl
+      jsonLink.download = `TAMPERING-ANALYSIS-DATA-${timestamp}.json`
+      jsonLink.click()
+      URL.revokeObjectURL(jsonUrl)
       
       // Export Evidence Log CSV
-      const csvBlob = new Blob([evidenceLog], { type: 'text/csv' })
+      const csvHeaders = ['Pattern Type', 'Severity', 'Confidence', 'Description', 'Evidence Count']
+      const csvRows = currentReport.patternsDetected.map(p => [
+        p.type,
+        p.severity,
+        p.confidence.toString(),
+        p.description,
+        p.evidence.length.toString()
+      ])
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+        .join('\n')
+      
+      const csvBlob = new Blob([csvContent], { type: 'text/csv' })
       const csvUrl = URL.createObjectURL(csvBlob)
       const csvLink = document.createElement('a')
       csvLink.href = csvUrl
