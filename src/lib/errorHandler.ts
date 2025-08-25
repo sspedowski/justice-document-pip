@@ -6,6 +6,9 @@
 import { toast } from 'sonner'
 import { AppError, ErrorCode, ErrorSeverity, ERROR_CODES } from './types'
 
+// Re-export ERROR_CODES for convenience
+export { ERROR_CODES }
+
 /**
  * Custom application error class with enhanced context
  */
