@@ -1,9 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import '@testing-library/jest-dom'
 
-// Mock dependencies that might not be available in test environment
-vi.mock('@github/spark/hooks', () => ({
+// Mock all missing components and dependencies
+vi.mock('@/components/ReportGenerator', () => ({
+  ReportGenerator: ({ children }: any) => <div data-testid="report-generator">{children}</div>
+}))
+
+vi.mock('@/components/DocumentComparison', () => ({
+  DocumentComparison: ({ children }: any) => <div data-testid="document-comparison">{children}</div>
+}))
+
+vi.mock('@/hooks/useKV', () => ({
   useKV: (key: string, initial: any) => {
     const [state, setState] = useState(initial)
     return [state, setState, () => setState(initial)]
@@ -28,9 +37,33 @@ vi.mock('sonner', () => ({
   }
 }))
 
-import { useState } from 'react'
-import { vi } from 'vitest'
-import App from '../src/App'
+// Mock @phosphor-icons/react
+vi.mock('@phosphor-icons/react', () => {
+  const MockIcon = ({ children, ...props }: any) => <span data-testid="icon" {...props}>{children}</span>
+  return {
+    FileText: MockIcon,
+    Upload: MockIcon, 
+    Scale: MockIcon,
+    Shield: MockIcon,
+    Users: MockIcon,
+    Download: MockIcon,
+    Filter: MockIcon,
+    Search: MockIcon,
+    Eye: MockIcon,
+    Edit: MockIcon,
+    GitBranch: MockIcon,
+    MagnifyingGlass: MockIcon,
+    TextT: MockIcon,
+    X: MockIcon,
+    Clock: MockIcon,
+    User: MockIcon,
+    FileArrowUp: MockIcon,
+    ChartLine: MockIcon,
+    GitCompare: MockIcon
+  }
+})
+
+import App from '../App'
 
 describe('App Component', () => {
   beforeEach(() => {

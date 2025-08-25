@@ -92,8 +92,9 @@ const fallbackLLM = {
 // Initialize fallback if Spark is not available
 if (typeof window !== 'undefined' && !window.spark) {
   window.spark = {
-    ...fallbackLLM,
-    ...fallbackUser,
+    llmPrompt: fallbackLLM.llmPrompt,
+    llm: fallbackLLM.llm,
+    user: fallbackUser.user,
     kv: fallbackKV
   }
 }
