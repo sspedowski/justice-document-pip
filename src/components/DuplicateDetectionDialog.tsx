@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, FileText, Hash, Users, Scale, Copy, Replace, SkipForward } from '@phosphor-icons/react'
+import { AlertTriangle, FileText, Hash, Users, Scale, Copy, Replace, SkipForward, Calendar, Clock } from '@phosphor-icons/react'
 import { DuplicateResult } from '@/lib/duplicateDetection'
 
 interface DuplicateDetectionDialogProps {
@@ -31,6 +31,7 @@ export function DuplicateDetectionDialog({
       case 'rename': return <FileText className="h-4 w-4" />
       case 'content': return <FileText className="h-4 w-4" />
       case 'partial': return <Copy className="h-4 w-4" />
+      case 'date-based': return <Calendar className="h-4 w-4" />
       default: return <AlertTriangle className="h-4 w-4" />
     }
   }
@@ -84,6 +85,31 @@ export function DuplicateDetectionDialog({
                 <div className="bg-white rounded p-3 border">
                   <span className="text-sm font-medium text-muted-foreground">Reason:</span>
                   <p className="text-sm mt-1">{reason}</p>
+                </div>
+              )}
+
+              {/* Date-based duplicate information */}
+              {duplicateResult.dateMatch && (
+                <div className="bg-blue-50 rounded p-3 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-700">Date-Based Detection</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Shared Date:</span>
+                      <span className="ml-2">{duplicateResult.dateMatch.sharedDate}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Documents on this date:</span>
+                      <span className="ml-2">{duplicateResult.dateMatch.otherDocuments.length}</span>
+                    </div>
+                    {duplicateResult.dateMatch.requiresComparison && (
+                      <div className="text-blue-700 text-xs">
+                        💡 This suggests potential document versions or duplicates that need comparison
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>

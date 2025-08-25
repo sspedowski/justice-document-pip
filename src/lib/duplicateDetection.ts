@@ -17,10 +17,15 @@ export interface FileFingerprint {
 
 export interface DuplicateResult {
   isDuplicate: boolean
-  matchType: 'exact' | 'rename' | 'partial' | 'content' | 'none'
+  matchType: 'exact' | 'rename' | 'partial' | 'content' | 'date-based' | 'none'
   confidence: number // 0-100
   existingDocument?: any
   reason?: string
+  dateMatch?: {
+    sharedDate: string
+    otherDocuments: any[]
+    requiresComparison: boolean
+  }
 }
 
 /**
@@ -89,11 +94,18 @@ export function detectDuplicate(
     return { isDuplicate: false, matchType: 'none', confidence: 0 }
   }
 
+  // First check for standard duplicates (exact, rename, content, etc.)
   for (const doc of existingDocuments) {
     const result = compareFingerprints(newFingerprint, doc)
     if (result.isDuplicate) {
       return result
     }
+  }
+
+  // Then check for date-based duplicates
+  const dateResult = checkDateBasedDuplicate(newFingerprint, existingDocuments)
+  if (dateResult.isDuplicate) {
+    return dateResult
   }
 
   return { isDuplicate: false, matchType: 'none', confidence: 0 }
@@ -193,6 +205,165 @@ function extractDocumentFingerprint(doc: any): Partial<FileFingerprint> {
 }
 
 /**
+ * Extract potential date from filename or text content
+ */
+function extractDocumentDate(fileName: string, textContent?: string): string | null {
+  // Date patterns
+  const datePatterns = [
+    // MM/DD/YYYY or M/D/YYYY
+    /\b(0?[1-9]|1[0-2])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-](20\d{2}|19\d{2})\b/,
+    // Month DD, YYYY
+    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+([12]?\d|3[01]),\s*(20\d{2}|19\d{2})\b/,
+    // YYYY-MM-DD
+    /\b(20\d{2}|19\d{2})-(0?[1-9]|1[0-2])-(0?[1-9]|[12]\d|3[01])\b/,
+  ]
+  
+  const filenameDatePatterns = [
+    // 12.10.20 or 1.5.2016
+    /\b(0?[1-9]|1[0-2])[.\-](0?[1-9]|[12]\d|3[01])[.\-]((?:20)?\d{2})\b/,
+    // 2020-02-26
+    /\b(20\d{2}|19\d{2})[-_](0?[1-9]|1[0-2])[-_](0?[1-9]|[12]\d|3[01])\b/,
+  ]
+
+  const toISODate = (match: RegExpMatchArray, patternIndex: number): string | null => {
+    try {
+      if (patternIndex === 0) {
+        // MM/DD/YYYY
+        const [, month, day, year] = match
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString().split('T')[0]
+      } else if (patternIndex === 1) {
+        // Month DD, YYYY
+        const [, monthName, day, year] = match
+        const monthMap: Record<string, number> = {
+          'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
+          'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+        }
+        return new Date(parseInt(year), monthMap[monthName], parseInt(day)).toISOString().split('T')[0]
+      } else if (patternIndex === 2) {
+        // YYYY-MM-DD
+        const [, year, month, day] = match
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString().split('T')[0]
+      }
+    } catch {
+      return null
+    }
+    return null
+  }
+
+  const toISOFromFilename = (match: RegExpMatchArray, pattern: RegExp): string | null => {
+    try {
+      if (pattern === filenameDatePatterns[0]) {
+        let [, month, day, year] = match
+        if (year.length === 2) year = '20' + year
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString().split('T')[0]
+      } else if (pattern === filenameDatePatterns[1]) {
+        const [, year, month, day] = match
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toISOString().split('T')[0]
+      }
+    } catch {
+      return null
+    }
+    return null
+  }
+
+  // 1. Try extracting from text content first
+  if (textContent) {
+    for (let i = 0; i < datePatterns.length; i++) {
+      const match = textContent.match(datePatterns[i])
+      if (match) {
+        const date = toISODate(match, i)
+        if (date) return date
+      }
+    }
+  }
+
+  // 2. Try extracting from filename
+  for (const pattern of filenameDatePatterns) {
+    const match = fileName.match(pattern)
+    if (match) {
+      const date = toISOFromFilename(match, pattern)
+      if (date) return date
+    }
+  }
+
+  return null
+}
+
+/**
+ * Check for date-based duplicates
+ */
+function checkDateBasedDuplicate(
+  newFingerprint: FileFingerprint,
+  existingDocuments: any[]
+): DuplicateResult {
+  const newDate = extractDocumentDate(newFingerprint.fileName, newFingerprint.contentPreview)
+  
+  if (!newDate) {
+    return { isDuplicate: false, matchType: 'none', confidence: 0 }
+  }
+
+  // Find documents with the same date
+  const samePageDocs = existingDocuments.filter(doc => {
+    const docDate = extractDocumentDate(doc.fileName, doc.textContent)
+    return docDate === newDate
+  })
+
+  if (samePageDocs.length > 0) {
+    // Check if these are potential duplicates with content similarity
+    let bestMatch = null
+    let highestSimilarity = 0
+
+    for (const doc of samePageDocs) {
+      if (newFingerprint.contentPreview && doc.textContent) {
+        const similarity = calculateTextSimilarity(
+          newFingerprint.contentPreview, 
+          doc.textContent.substring(0, 500)
+        )
+        
+        if (similarity > highestSimilarity) {
+          highestSimilarity = similarity
+          bestMatch = doc
+        }
+      }
+    }
+
+    // If we found significant content similarity on the same date, it's likely a duplicate
+    if (highestSimilarity > 0.7) { // 70% similarity threshold
+      return {
+        isDuplicate: true,
+        matchType: 'date-based',
+        confidence: Math.round(highestSimilarity * 100),
+        existingDocument: bestMatch,
+        reason: `Same date (${newDate}) with ${Math.round(highestSimilarity * 100)}% content similarity`,
+        dateMatch: {
+          sharedDate: newDate,
+          otherDocuments: samePageDocs,
+          requiresComparison: true
+        }
+      }
+    }
+
+    // Even with lower similarity, flag for review if multiple docs exist for same date
+    if (samePageDocs.length >= 2 || highestSimilarity > 0.4) {
+      return {
+        isDuplicate: true,
+        matchType: 'date-based',
+        confidence: Math.round(Math.max(40, highestSimilarity * 100)),
+        existingDocument: bestMatch || samePageDocs[0],
+        reason: `Multiple documents found for date ${newDate} - requires manual review`,
+        dateMatch: {
+          sharedDate: newDate,
+          otherDocuments: samePageDocs,
+          requiresComparison: true
+        }
+      }
+    }
+  }
+
+  return { isDuplicate: false, matchType: 'none', confidence: 0 }
+}
+
+/**
  * Calculate text similarity using Jaccard index
  */
 function calculateTextSimilarity(text1: string, text2: string): number {
@@ -250,9 +421,19 @@ export function getDuplicatePreventionRules(): Array<{
       confidence: 85
     },
     {
+      type: 'Date-Based Match',
+      description: 'Same document date with high content similarity',
+      confidence: 80
+    },
+    {
       type: 'Size + Pages',
       description: 'Same file size and page count (possible rescan)',
       confidence: 60
+    },
+    {
+      type: 'Date Conflict',
+      description: 'Multiple documents with same date (requires review)',
+      confidence: 50
     }
   ]
 }

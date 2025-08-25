@@ -1160,6 +1160,11 @@ function App() {
                         {proc.status === 'duplicate-found' && proc.duplicateResult && (
                           <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded">
                             {proc.duplicateResult.confidence}% match - {proc.duplicateResult.reason}
+                            {proc.duplicateResult.matchType === 'date-based' && proc.duplicateResult.dateMatch && (
+                              <div className="mt-1 text-blue-700">
+                                📅 Same date ({proc.duplicateResult.dateMatch.sharedDate}) with {proc.duplicateResult.dateMatch.otherDocuments.length} other docs
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
