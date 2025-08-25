@@ -1,44 +1,43 @@
 {
-  "description": "Sample documents with intentional tampering for testing date-based comparison",
   "document_groups": [
-    {
-      "date": "2023-12-15",
-      "description": "Police Report - Original vs Revised",
-      "documents": [
-        "PoliceReport_12.15.2023_Original.txt",
-        "PoliceReport_12.15.2023_Revised.txt"
-      ],
+      "date": "2023-12
+     
+        "PoliceReport_12.15
       "key_changes": [
-        "Witness name: Noel Johnson → Neil Johnson",
-        "Photo count: 12 → 8 photographs",
-        "Conclusion: substantiated → unsubstantiated",
+        "Photo count
         "Details: consistent → inconsistent",
-        "Case status: ACTIVE → CLOSED"
       ]
-    },
     {
-      "date": "2024-01-08",
-      "description": "CPS Report - Initial vs Amended",
-      "documents": [
+      "description": "
         "CPS_Report_01.08.2024_Initial.txt",
-        "CPS_Report_01.08.2024_Amended.txt"
       ],
-      "key_changes": [
-        "Child name: Nicholas Williams → Owen Williams",
-        "Noel Johnson statement removed",
+        "Child name: Nicholas Williams → Owen Williams
         "Risk assessment: LOW → MODERATE",
-        "Services: Voluntary → Mandatory",
         "Review date: Feb 15 → Jan 22"
-      ]
     },
-    {
-      "date": "2024-03-10",
-      "description": "Medical Report - Single document",
-      "documents": [
-        "Medical_Exam_03.10.2024.txt"
+      
+     
       ],
-      "key_changes": []
     }
-  ],
-  "target_names": ["Noel", "Andy Maki", "Banister", "Russell", "Verde", "Josh", "Jace", "Nicholas", "Owen", "Peyton", "John"]
-}
+  "target_names": ["
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
