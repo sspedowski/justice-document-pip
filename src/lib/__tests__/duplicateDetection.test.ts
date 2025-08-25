@@ -6,19 +6,27 @@ import {
   getDuplicatePreventionRules
 } from '@/lib/duplicateDetection'
 
-// Mock CryptoJS
-vi.mock('crypto-js', () => ({
-  default: {
-    SHA256: vi.fn(() => ({
-      toString: () => 'mock-hash-123'
-    })),
-    lib: {
-      WordArray: {
-        create: vi.fn(() => ({}))
-      }
+// Mock Web Crypto API for consistent hashing in tests
+const mockHashBuffer = new ArrayBuffer(32)
+const mockHashArray = new Uint8Array(mockHashBuffer)
+mockHashArray.fill(171) // Fill with 0xAB to get 'abab...' hex string
+
+Object.defineProperty(global, 'crypto', {
+  value: {
+    subtle: {
+      digest: vi.fn().mockResolvedValue(mockHashBuffer)
     }
   }
-}))
+})
+
+// Mock TextEncoder for consistent text hashing
+Object.defineProperty(global, 'TextEncoder', {
+  value: class TextEncoder {
+    encode(text: string) {
+      return new Uint8Array(Buffer.from(text, 'utf-8'))
+    }
+  }
+})
 
 // Mock File API
 const createMockFile = (name: string, size: number, content: string = '') => {

@@ -2,7 +2,6 @@
  * Enhanced duplicate detection system with comprehensive error handling and type safety
  */
 
-import CryptoJS from 'crypto-js'
 import { ApplicationError, ErrorFactory, safeAsync, Validator, ERROR_CODES } from './errorHandler'
 import type { Result, AsyncResult } from './errorHandler'
 import type { FileFingerprint, DuplicateResult, Document } from './types'
@@ -34,7 +33,7 @@ export async function generateFileFingerprint(
       try {
         const textToHash = extractedText.substring(0, 2000).trim()
         if (textToHash) {
-          firstPageHash = CryptoJS.SHA256(textToHash).toString()
+          firstPageHash = await calculateTextHash(textToHash)
         }
       } catch (hashError) {
         console.warn('Failed to generate first page hash:', hashError)
@@ -86,18 +85,11 @@ export async function calculateFileHash(file: File): AsyncResult<string> {
   }
 
   return await safeAsync(async (): Promise<string> => {
-    // Use a smaller chunk size for large files to prevent memory issues
-    const chunkSize = 64 * 1024 // 64KB chunks
-    const hasher = CryptoJS.algo.SHA256.create()
-    
-    for (let offset = 0; offset < file.size; offset += chunkSize) {
-      const chunk = file.slice(offset, Math.min(offset + chunkSize, file.size))
-      const arrayBuffer = await chunk.arrayBuffer()
-      const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer)
-      hasher.update(wordArray)
-    }
-    
-    return hasher.finalize().toString()
+    // Use Web Crypto API for better browser compatibility
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
   }, (error) => 
     ErrorFactory.fileError(
       ERROR_CODES.FILE_CORRUPTED,
@@ -105,6 +97,17 @@ export async function calculateFileHash(file: File): AsyncResult<string> {
       error instanceof Error ? error : new Error('Failed to calculate file hash')
     )
   )
+}
+
+/**
+ * Calculate SHA-256 hash of text using Web Crypto API
+ */
+async function calculateTextHash(text: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(text)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 /**
