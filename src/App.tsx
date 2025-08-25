@@ -999,6 +999,19 @@ function App() {
       toast.info('Sample tampering data already loaded')
     }
   }
+
+  const runComparisonAnalysis = () => {
+    // Quick analysis using the new tampering detector
+    const docsWithContent = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100)
+    
+    if (docsWithContent.length < 2) {
+      toast.error('Need at least 2 documents with text content to run comparison analysis')
+      return
+    }
+    
+    toast.success(`Running comparison analysis on ${docsWithContent.length} documents...`)
+    setShowTamperingDetector(true)
+  }
     setIsLoadingProcessed(true)
     try {
       const processed = await loadProcessedDocuments()
@@ -1063,6 +1076,15 @@ function App() {
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Detect Tampering
                 <span className="ml-2 text-xs opacity-70">(Ctrl+T)</span>
+              </Button>
+              <Button 
+                onClick={runComparisonAnalysis}
+                variant="outline" 
+                size="sm"
+                className="text-purple-700 border-purple-200 hover:bg-purple-50"
+              >
+                <GitCompare className="h-4 w-4 mr-2" />
+                Run Comparison
               </Button>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
