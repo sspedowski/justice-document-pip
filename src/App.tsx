@@ -14,6 +14,15 @@ import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import { ReportGenerator } from '@/components/ReportGenerator'
 import { DocumentComparison } from '@/components/DocumentComparison'
+import { DuplicateDetectionDialog } from '@/components/DuplicateDetectionDialog'
+import { 
+  generateFileFingerprint, 
+  detectDuplicate, 
+  handleDuplicateAction,
+  getDuplicatePreventionRules,
+  type DuplicateResult,
+  type FileFingerprint
+} from '@/lib/duplicateDetection'
 import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
 
 interface DocumentVersion {
@@ -68,13 +77,20 @@ interface Document {
   currentVersion: number
   lastModified: string
   lastModifiedBy: string
+  // Duplicate detection fields
+  fingerprint?: FileFingerprint
+  fileHash?: string
+  fileSize?: number
+  pageCount?: number
+  firstPageHash?: string
 }
 
 interface ProcessingDocument {
   fileName: string
   progress: number
-  status: 'validating' | 'uploading' | 'extracting' | 'analyzing' | 'complete' | 'error'
+  status: 'validating' | 'uploading' | 'extracting' | 'analyzing' | 'checking-duplicates' | 'complete' | 'error' | 'duplicate-found'
   error?: string
+  duplicateResult?: DuplicateResult
 }
 
 interface SearchResult {
@@ -146,6 +162,19 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [documentSearchTerm, setDocumentSearchTerm] = useState('')
   const [isLoadingProcessed, setIsLoadingProcessed] = useState(true)
+  
+  // Duplicate detection state
+  const [duplicateDialog, setDuplicateDialog] = useState<{
+    isOpen: boolean
+    result: DuplicateResult | null
+    newFile: File | null
+    processingDoc: ProcessingDocument | null
+  }>({
+    isOpen: false,
+    result: null,
+    newFile: null,
+    processingDoc: null
+  })
 
   // Load processed documents from GitHub Actions pipeline on component mount
   useEffect(() => {
@@ -516,10 +545,41 @@ function App() {
       updateProgress(25, 'extracting')
       const pdfResult = await extractTextFromPDF(file, 50) // Limit to 50 pages for performance
       
+      updateProgress(50, 'analyzing')
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      // Step 3: Generate fingerprint for duplicate detection
+      updateProgress(60, 'checking-duplicates')
+      const fingerprint = await generateFileFingerprint(file, pdfResult.text, pdfResult.pageCount)
+      
+      // Step 4: Check for duplicates
+      const duplicateResult = detectDuplicate(fingerprint, allDocuments)
+      
+      if (duplicateResult.isDuplicate) {
+        // Stop processing and show duplicate dialog
+        updateProgress(60, 'duplicate-found')
+        setProcessing(prev => prev.map(p => 
+          p.fileName === file.name 
+            ? { ...p, duplicateResult }
+            : p
+        ))
+        
+        setDuplicateDialog({
+          isOpen: true,
+          result: duplicateResult,
+          newFile: file,
+          processingDoc: { ...processingDoc, duplicateResult }
+        })
+        
+        toast.warning(`Potential duplicate detected: ${file.name} (${duplicateResult.confidence}% confidence)`)
+        return // Stop processing until user decides
+      }
+      
+      // Step 5: Continue with normal processing
       updateProgress(70, 'analyzing')
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Step 3: Analyze content for children and laws
+      // Analyze content for children and laws
       const detectedChildren = CHILDREN_NAMES.filter(name => 
         pdfResult.text.toLowerCase().includes(name.toLowerCase())
       )
@@ -556,10 +616,16 @@ function App() {
           oversightPacket: ['Primary', 'Supporting'].includes(category)
         },
         uploadedAt: new Date().toISOString(),
-        textContent: pdfResult.text.substring(0, 50000), // Store first 50k chars for search (increased from 10k)
+        textContent: pdfResult.text.substring(0, 50000), // Store first 50k chars for search
         currentVersion: 1,
         lastModified: new Date().toISOString(),
-        lastModifiedBy: 'Current User'
+        lastModifiedBy: 'Current User',
+        // Store fingerprint data for future duplicate detection
+        fingerprint,
+        fileHash: fingerprint.fileHash,
+        fileSize: fingerprint.fileSize,
+        pageCount: fingerprint.pageCount,
+        firstPageHash: fingerprint.firstPageHash
       }
 
       updateProgress(100, 'complete')
@@ -679,7 +745,151 @@ function App() {
     setChangeNotes('')
   }
 
-  const exportToCSV = () => {
+  const handleDuplicateAction = (action: 'skip' | 'replace' | 'keep-both') => {
+    const { result, newFile, processingDoc } = duplicateDialog
+    
+    if (!result || !newFile || !processingDoc) {
+      toast.error('Missing duplicate dialog data')
+      setDuplicateDialog({ isOpen: false, result: null, newFile: null, processingDoc: null })
+      return
+    }
+
+    handleDuplicateAction(
+      action,
+      { fileName: newFile.name }, // Temporary doc object
+      result.existingDocument,
+      // onReplace
+      (oldDoc, newDoc) => {
+        toast.info('Replacing existing document...')
+        // Continue processing the file but replace the existing document
+        continueProcessingAfterDuplicate(newFile, processingDoc, oldDoc.id)
+      },
+      // onKeepBoth  
+      (newDoc) => {
+        toast.info('Keeping both documents...')
+        // Continue processing with modified filename
+        continueProcessingAfterDuplicate(newFile, processingDoc)
+      },
+      // onSkip
+      (existingDoc) => {
+        toast.info(`Skipped upload - keeping existing: ${existingDoc.fileName}`)
+        // Remove from processing queue
+        setProcessing(prev => prev.filter(p => p.fileName !== newFile.name))
+      }
+    )
+
+    // Close dialog
+    setDuplicateDialog({ isOpen: false, result: null, newFile: null, processingDoc: null })
+  }
+
+  const continueProcessingAfterDuplicate = async (
+    file: File, 
+    processingDoc: ProcessingDocument, 
+    replaceDocId?: string
+  ) => {
+    try {
+      // Continue from where we left off (after duplicate check)
+      const updateProgress = (progress: number, status: ProcessingDocument['status']) => {
+        setProcessing(prev => prev.map(p => 
+          p.fileName === file.name 
+            ? { ...p, progress, status }
+            : p
+        ))
+      }
+
+      updateProgress(70, 'analyzing')
+      
+      // Extract text again (we need it for processing)
+      const pdfResult = await extractTextFromPDF(file, 50)
+      const fingerprint = await generateFileFingerprint(file, pdfResult.text, pdfResult.pageCount)
+      
+      // Analyze content
+      const detectedChildren = CHILDREN_NAMES.filter(name => 
+        pdfResult.text.toLowerCase().includes(name.toLowerCase())
+      )
+      
+      const detectedLaws = LAWS.filter(law =>
+        law.keywords.some(keyword => 
+          pdfResult.text.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ).map(law => law.name)
+
+      const category = guessCategory(pdfResult.text)
+      const description = createDescription(pdfResult.text, pdfResult.metadata)
+      
+      const timestamp = Date.now()
+      const modifiedFileName = replaceDocId 
+        ? file.name 
+        : file.name.replace(/(\.[^.]+)$/, `_${timestamp}$1`)
+      
+      const newDoc: Document = {
+        id: replaceDocId || timestamp.toString(),
+        fileName: modifiedFileName,
+        title: pdfResult.metadata?.title || modifiedFileName.replace('.pdf', ''),
+        description,
+        category,
+        children: detectedChildren,
+        laws: detectedLaws,
+        misconduct: detectedLaws.map(law => ({
+          law,
+          page: '',
+          paragraph: '',
+          notes: ''
+        })),
+        include: category === 'No' ? 'NO' : 'YES',
+        placement: {
+          masterFile: category !== 'No',
+          exhibitBundle: ['Primary', 'Supporting'].includes(category),
+          oversightPacket: ['Primary', 'Supporting'].includes(category)
+        },
+        uploadedAt: new Date().toISOString(),
+        textContent: pdfResult.text.substring(0, 50000),
+        currentVersion: 1,
+        lastModified: new Date().toISOString(),
+        lastModifiedBy: 'Current User',
+        fingerprint,
+        fileHash: fingerprint.fileHash,
+        fileSize: fingerprint.fileSize,
+        pageCount: fingerprint.pageCount,
+        firstPageHash: fingerprint.firstPageHash
+      }
+
+      updateProgress(100, 'complete')
+      
+      if (replaceDocId) {
+        // Replace existing document
+        setDocuments(prev => prev.map(doc => 
+          doc.id === replaceDocId ? newDoc : doc
+        ))
+        // Also check processed docs
+        setProcessedDocs(prev => prev.map(doc => 
+          doc.id === replaceDocId ? newDoc : doc
+        ))
+        toast.success(`Replaced existing document: ${file.name}`)
+      } else {
+        // Add as new document
+        setDocuments(prev => [...prev, newDoc])
+        toast.success(`Added new document: ${modifiedFileName}`)
+      }
+      
+      // Create version entry
+      const initialVersion = createDocumentVersion(
+        newDoc, 
+        replaceDocId ? 'edited' : 'created', 
+        replaceDocId ? 'Document replaced via duplicate handling' : 'Initial document upload and processing'
+      )
+      setDocumentVersions(prev => [...prev, initialVersion])
+      
+      setTimeout(() => {
+        setProcessing(prev => prev.filter(p => p.fileName !== file.name))
+      }, 2000)
+
+    } catch (error) {
+      console.error('Error continuing processing after duplicate:', error)
+      toast.error(`Failed to continue processing: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setProcessing(prev => prev.filter(p => p.fileName !== file.name))
+    }
+  }
     const headers = [
       'File Name', 'Category', 'Children', 'Laws', 'Misconduct', 
       'Include', 'Master File', 'Exhibit Bundle', 'Oversight Packet', 
@@ -887,6 +1097,13 @@ function App() {
                   Local PDF Upload (Development)
                 </CardTitle>
               </CardHeader>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Local PDF Upload (Development)
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div
                   className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
@@ -923,18 +1140,68 @@ function App() {
                       <div key={index} className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="truncate max-w-xs">{proc.fileName}</span>
-                          <span className={`capitalize ${proc.status === 'error' ? 'text-destructive' : ''}`}>
-                            {proc.status === 'error' && proc.error ? `Error: ${proc.error}` : proc.status}
+                          <span className={`capitalize ${
+                            proc.status === 'error' ? 'text-destructive' : 
+                            proc.status === 'duplicate-found' ? 'text-orange-600' : ''
+                          }`}>
+                            {proc.status === 'error' && proc.error ? `Error: ${proc.error}` : 
+                             proc.status === 'duplicate-found' ? 'Duplicate Found - Awaiting Decision' :
+                             proc.status === 'checking-duplicates' ? 'Checking for Duplicates' :
+                             proc.status}
                           </span>
                         </div>
                         <Progress 
                           value={proc.progress} 
-                          className={`h-2 ${proc.status === 'error' ? 'bg-destructive/20' : ''}`} 
+                          className={`h-2 ${
+                            proc.status === 'error' ? 'bg-destructive/20' : 
+                            proc.status === 'duplicate-found' ? 'bg-orange-200' : ''
+                          }`} 
                         />
+                        {proc.status === 'duplicate-found' && proc.duplicateResult && (
+                          <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded">
+                            {proc.duplicateResult.confidence}% match - {proc.duplicateResult.reason}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Duplicate Detection Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Automatic Duplicate Prevention</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    The system automatically checks for duplicates using multiple detection methods:
+                  </p>
+                  
+                  <div className="space-y-2">
+                    {getDuplicatePreventionRules().map((rule, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span>{rule.description}</span>
+                        <Badge variant="outline" className={
+                          rule.confidence >= 90 ? 'bg-red-50 text-red-700' :
+                          rule.confidence >= 70 ? 'bg-orange-50 text-orange-700' :
+                          'bg-yellow-50 text-yellow-700'
+                        }>
+                          {rule.confidence}%
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    When duplicates are detected, you'll be prompted to skip, replace, or keep both files.
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1694,6 +1961,15 @@ function App() {
           onRevertToVersion={revertToVersion}
         />
       )}
+
+      {/* Duplicate Detection Dialog */}
+      <DuplicateDetectionDialog
+        isOpen={duplicateDialog.isOpen}
+        onClose={() => setDuplicateDialog({ isOpen: false, result: null, newFile: null, processingDoc: null })}
+        duplicateResult={duplicateDialog.result}
+        newFileName={duplicateDialog.newFile?.name || ''}
+        onAction={handleDuplicateAction}
+      />
     </div>
   )
 }
