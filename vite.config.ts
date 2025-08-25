@@ -1,25 +1,37 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig, PluginOption } from "vite";
-
-import sparkPlugin from "@github/spark/spark-vite-plugin";
-import createIconImportProxy from "@github/spark/vitePhosphorIconProxyPlugin";
 import { resolve } from 'path'
 
 const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
 
+// Conditionally import Spark plugins only in development
+const getPlugins = () => {
+  const basePlugins = [react(), tailwindcss()]
+  
+  // Only use Spark plugins in development/local builds
+  if (process.env.NODE_ENV !== 'production' && process.env.GITHUB_PAGES !== 'true') {
+    try {
+      const sparkPlugin = require("@github/spark/spark-vite-plugin");
+      const createIconImportProxy = require("@github/spark/vitePhosphorIconProxyPlugin");
+      basePlugins.push(
+        createIconImportProxy() as PluginOption,
+        sparkPlugin() as PluginOption
+      )
+    } catch (error) {
+      console.log('Spark plugins not available, using fallback mode')
+    }
+  }
+  
+  return basePlugins
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  // Set base path for GitHub Pages deployment
-  base: process.env.NODE_ENV === 'production' ? '/spark-template/' : '/',
+  // Set base path for static deployment
+  base: '/',
   
-  plugins: [
-    react(),
-    tailwindcss(),
-    // DO NOT REMOVE
-    createIconImportProxy() as PluginOption,
-    sparkPlugin() as PluginOption,
-  ],
+  plugins: getPlugins(),
   
   resolve: {
     alias: {

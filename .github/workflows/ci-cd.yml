@@ -1,0 +1,174 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: "ci-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results.xml
+          retention-days: 30
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build:prod
+        env:
+          NODE_ENV: production
+          GITHUB_PAGES: true
+
+      - name: Validate build output
+        run: |
+          echo "Validating build output..."
+          
+          # Check required files exist
+          test -f dist/index.html || { echo "❌ index.html missing"; exit 1; }
+          test -f dist/404.html || { echo "❌ 404.html missing"; exit 1; }
+          test -f dist/favicon.svg || { echo "❌ favicon.svg missing"; exit 1; }
+          test -d dist/assets || { echo "❌ assets directory missing"; exit 1; }
+          test -f dist/app/data/justice-documents.json || { echo "❌ justice-documents.json missing"; exit 1; }
+          
+          # Check index.html content
+          grep -q "Justice Document Manager" dist/index.html || { echo "❌ Title missing from index.html"; exit 1; }
+          
+          # Check for CSS and JS files
+          ls dist/assets/*.css >/dev/null 2>&1 || { echo "❌ CSS files missing"; exit 1; }
+          ls dist/assets/*.js >/dev/null 2>&1 || { echo "❌ JS files missing"; exit 1; }
+          
+          echo "✅ Build validation passed"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: dist/
+          retention-days: 30
+
+      - name: Setup Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Post deployment check
+        run: |
+          echo "🚀 Deployment completed!"
+          echo "📄 URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "⏰ Deployed at: $(date)"
+          
+          # Wait a moment for deployment to propagate
+          sleep 10
+          
+          # Basic health check (optional, might fail due to authentication)
+          echo "🔍 Running basic health check..."
+          curl -I "${{ steps.deployment.outputs.page_url }}" || echo "⚠️  Health check failed (this might be expected due to authentication)"
+
+  summary:
+    name: Summary
+    if: always()
+    needs: [test, build, deploy]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Summary
+        run: |
+          echo "## 📊 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.result == 'success' && '✅ Passed' || (needs.deploy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed') }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "🎉 **Deployment Successful!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📱 **Justice Document Manager** is now live and ready to use." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 Visit your application: [Justice Document Manager](https://spark-template--$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]').github.app)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ **Pipeline Failed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the failed jobs above and refer to the [Deployment Guide](./DEPLOYMENT-GUIDE.md) for troubleshooting." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -34,9 +34,10 @@ jobs:
         run: npm ci
 
       - name: Build for production
-        run: npm run build:github
+        run: npm run build:prod
         env:
           NODE_ENV: production
+          GITHUB_PAGES: true
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
