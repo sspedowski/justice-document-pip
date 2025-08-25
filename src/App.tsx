@@ -9,12 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine, GitCompare } from '@phosphor-icons/react'
+import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine, GitCompare, AlertTriangle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import { ReportGenerator } from '@/components/ReportGenerator'
 import { DocumentComparison } from '@/components/DocumentComparison'
 import { DuplicateDetectionDialog } from '@/components/DuplicateDetectionDialog'
+import { TamperingDetector } from '@/components/TamperingDetector'
 import { 
   generateFileFingerprint, 
   detectDuplicate, 
@@ -23,7 +24,7 @@ import {
   type DuplicateResult,
   type FileFingerprint
 } from '@/lib/duplicateDetection'
-import '@/lib/sparkFallback' // Initialize Spark fallback for environments without Spark runtime
+import { sampleDocumentsWithTampering } from '@/data/sampleTamperingData'
 
 interface DocumentVersion {
   id: string
@@ -153,6 +154,7 @@ function App() {
   const [editingDoc, setEditingDoc] = useState<Document | null>(null)
   const [viewingVersionHistory, setViewingVersionHistory] = useState<Document | null>(null)
   const [comparingVersions, setComparingVersions] = useState<Document | null>(null)
+  const [showTamperingDetector, setShowTamperingDetector] = useState(false)
   const [changeNotes, setChangeNotes] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [contentSearchTerm, setContentSearchTerm] = useState('')
@@ -444,6 +446,12 @@ function App() {
         setSelectedDoc(null)
       }
       
+      // Ctrl/Cmd + T to open tampering detector
+      if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+        e.preventDefault()
+        setShowTamperingDetector(true)
+      }
+      
       // Escape to close dialogs
       if (e.key === 'Escape') {
         if (comparingVersions) {
@@ -455,13 +463,15 @@ function App() {
           setChangeNotes('')
         } else if (selectedDoc) {
           setSelectedDoc(null)
+        } else if (showTamperingDetector) {
+          setShowTamperingDetector(false)
         }
       }
     }
     
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions])
+  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions, showTamperingDetector])
 
   const filteredDocuments = allDocuments.filter(doc => {
     if (!doc) return false
@@ -971,7 +981,24 @@ function App() {
     toast.success(`${eligibleDocs.length} documents ready for oversight packets. Use GitHub Actions to generate PDFs.`)
   }
 
-  const refreshProcessedData = async () => {
+  const loadSampleTamperingData = () => {
+    // Add sample documents to the existing documents
+    const newDocs = sampleDocumentsWithTampering.filter(sampleDoc => 
+      !allDocuments.some(existingDoc => existingDoc.id === sampleDoc.id)
+    )
+    
+    if (newDocs.length > 0) {
+      setDocuments(prev => [...prev, ...newDocs])
+      
+      // Create version entries for the sample documents
+      const newVersions = newDocs.map(doc => createDocumentVersion(doc, 'imported', 'Sample data for tampering detection testing'))
+      setDocumentVersions(prev => [...prev, ...newVersions])
+      
+      toast.success(`Loaded ${newDocs.length} sample documents for tampering detection testing`)
+    } else {
+      toast.info('Sample tampering data already loaded')
+    }
+  }
     setIsLoadingProcessed(true)
     try {
       const processed = await loadProcessedDocuments()
@@ -1026,6 +1053,16 @@ function App() {
               >
                 <ChartLine className="h-4 w-4 mr-2" />
                 Reports
+              </Button>
+              <Button 
+                onClick={() => setShowTamperingDetector(true)}
+                variant="outline" 
+                size="sm"
+                className="text-orange-700 border-orange-200 hover:bg-orange-50"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Detect Tampering
+                <span className="ml-2 text-xs opacity-70">(Ctrl+T)</span>
               </Button>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
@@ -1177,6 +1214,48 @@ function App() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Tampering Detection Testing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Sample Data for Testing</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Load sample documents with intentional discrepancies to test the tampering detection system.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="text-sm">
+                      <strong>Sample data includes:</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-muted-foreground">
+                        <li>Two versions of the same police report with altered details</li>
+                        <li>Changed name mentions (Noel, Josh, etc.)</li>
+                        <li>Modified evidence numbers and timestamps</li>
+                        <li>Removed witness statements and conclusions</li>
+                      </ul>
+                    </div>
+                    
+                    <Button 
+                      onClick={loadSampleTamperingData}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Load Sample Tampering Data
+                    </Button>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      After loading, use the "Detect Tampering" button to run analysis on the sample documents.
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
                   Duplicate Detection Settings
                 </CardTitle>
@@ -1254,7 +1333,7 @@ function App() {
                       <div className="mt-4 pt-3 border-t border-blue-200">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{recentVersions.length} changes in the last 7 days</span>
-                          <span>View detailed analytics in Reports → Versions. Press Ctrl+D to compare versions.</span>
+                          <span>View detailed analytics in Reports → Versions. Press Ctrl+D to compare versions, Ctrl+T for tampering detection.</span>
                         </div>
                       </div>
                     )
@@ -1974,6 +2053,14 @@ function App() {
         duplicateResult={duplicateDialog.result}
         newFileName={duplicateDialog.newFile?.name || ''}
         onAction={handleDuplicateAction}
+      />
+
+      {/* Tampering Detection Dialog */}
+      <TamperingDetector
+        documents={allDocuments}
+        documentVersions={documentVersions}
+        isOpen={showTamperingDetector}
+        onClose={() => setShowTamperingDetector(false)}
       />
     </div>
   )
