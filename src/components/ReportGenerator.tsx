@@ -302,12 +302,16 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="evidence">Evidence</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-1">
+            <Target className="h-3 w-3" />
+            Analysis
+          </TabsTrigger>
           <TabsTrigger value="versions" className="flex items-center gap-1">
             <GitBranch className="h-3 w-3" />
             Versions
@@ -723,6 +727,205 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
               icon={Target}
             />
           </div>
+        </TabsContent>
+
+        <TabsContent value="analysis" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Date-Based Document Comparison
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Detect Document Tampering</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Compare documents that share the same date to identify potential alterations, 
+                    inconsistencies, or tampering. This tool analyzes word-level differences and 
+                    tracks mentions of key individuals.
+                  </p>
+                  
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span>Text Extraction & Date Detection</span>
+                      <Badge variant="outline">Automated</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Word-Level Diff Analysis</span>
+                      <Badge variant="outline">Precise</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Name Mention Tracking</span>
+                      <Badge variant="outline">Target: Noel, Andy Maki, etc.</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Numerical Change Detection</span>
+                      <Badge variant="outline">Forensic</Badge>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      toast.info('Date comparison requires Python environment. Use: python scripts/compare_by_date.py')
+                      // In a real implementation, this could trigger a server-side process
+                    }}
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Run Date-Based Comparison
+                  </Button>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    <p><strong>Output:</strong></p>
+                    <ul className="list-disc list-inside ml-2 space-y-1">
+                      <li>HTML reports with inline diffs</li>
+                      <li>CSV summary of all changes</li>
+                      <li>Name mention deltas</li>
+                      <li>Numerical alterations</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Analysis Rules & Detection
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">High Priority Names</span>
+                      <Badge variant="destructive">Monitor</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>• Noel (Primary subject)</div>
+                      <div>• Andy Maki (Key witness)</div>
+                      <div>• Banister (Officer)</div>
+                      <div>• Russell (Medical examiner)</div>
+                      <div>• Verde (Authority figure)</div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Change Detection</span>
+                      <Badge variant="warning">Automatic</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>• Word additions/removals</div>
+                      <div>• Numerical modifications</div>
+                      <div>• Timeline inconsistencies</div>
+                      <div>• Context alterations</div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm">Report Output</span>
+                      <Badge variant="outline">Exportable</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>• Interactive HTML viewer</div>
+                      <div>• Structured CSV data</div>
+                      <div>• Highlighted differences</div>
+                      <div>• Confidence scoring</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    const instructions = `
+DATE-BASED COMPARISON INSTRUCTIONS:
+
+1. Ensure Python environment is set up:
+   pip install pdfplumber PyPDF2
+
+2. Place PDF documents in input/ directory
+
+3. Run the comparison script:
+   python scripts/compare_by_date.py --names "Noel,Andy Maki,Banister,Russell,Verde"
+
+4. View results in output/date_diffs/:
+   - index.html (overview)
+   - changes_summary.csv (data)
+   - YYYY-MM-DD/ (date-specific diffs)
+
+5. Look for:
+   - Added/removed text
+   - Name mention changes
+   - Numerical alterations
+   - Timeline inconsistencies
+                    `.trim()
+                    
+                    navigator.clipboard.writeText(instructions)
+                    toast.success('Instructions copied to clipboard!')
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Copy Setup Instructions
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Scale className="h-5 w-5" />
+                Potential Evidence of Tampering
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Warning className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-yellow-800 mb-2">What to Look For</h4>
+                    <div className="text-sm text-yellow-700 space-y-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <strong>Text Modifications:</strong>
+                          <ul className="list-disc list-inside ml-2 mt-1 space-y-0.5">
+                            <li>Changed conclusions or findings</li>
+                            <li>Altered witness statements</li>
+                            <li>Modified medical observations</li>
+                            <li>Updated incident descriptions</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <strong>Numerical Changes:</strong>
+                          <ul className="list-disc list-inside ml-2 mt-1 space-y-0.5">
+                            <li>Different ages or dates</li>
+                            <li>Changed case numbers</li>
+                            <li>Modified page references</li>
+                            <li>Altered measurement values</li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-yellow-300">
+                        <strong>Documentation Strategy:</strong> When differences are found, 
+                        export the HTML reports and CSV data as evidence. The word-level 
+                        highlighting makes it easy to identify exactly what was changed 
+                        and when specific individuals were mentioned differently.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="versions" className="space-y-6">

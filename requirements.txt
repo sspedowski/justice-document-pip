@@ -7,4 +7,3 @@ PyYAML==6.0.2
 # OCR and document processing (optional - install system packages)
 # sudo apt-get install tesseract-ocr poppler-utils
 # pip install pytesseract Pillow
-PyYAML==6.0.2

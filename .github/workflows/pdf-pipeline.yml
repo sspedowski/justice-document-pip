@@ -52,6 +52,20 @@ jobs:
           echo "Processing ${{ steps.check-pdfs.outputs.count }} PDF files..."
           python scripts/run_pipeline.py --config config.ci.yaml
 
+      - name: Run date-based comparison analysis
+        if: steps.check-pdfs.outputs.found == 'true'
+        run: |
+          echo "Running date-based document comparison..."
+          python scripts/compare_by_date.py --names "Noel,Andy Maki,Banister,Russell,Verde"
+          
+          # Check if any comparisons were generated
+          if [ -f "output/date_diffs/changes_summary.csv" ]; then
+            echo "Date comparison analysis completed"
+            wc -l output/date_diffs/changes_summary.csv
+          else
+            echo "No date-based comparisons found (no documents share the same date)"
+          fi
+
       - name: Upload processing artifacts
         if: steps.check-pdfs.outputs.found == 'true'
         uses: actions/upload-artifact@v4
@@ -62,6 +76,17 @@ jobs:
             output/PRINTABLE_Index.pdf
             output/MasterReview_INDEX.csv
             output/metadata/*.json
+            output/date_diffs/
+
+      - name: Upload date comparison artifacts
+        if: steps.check-pdfs.outputs.found == 'true' && hashFiles('output/date_diffs/changes_summary.csv') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: date-comparison-analysis
+          path: |
+            output/date_diffs/index.html
+            output/date_diffs/changes_summary.csv
+            output/date_diffs/*/diff_*.html
 
       - name: Commit processed data
         if: steps.check-pdfs.outputs.found == 'true'
@@ -73,17 +98,26 @@ jobs:
           git add app/data/justice-documents.json || echo "No justice-documents.json to add"
           git add output/PRINTABLE_Index.pdf output/MasterReview_INDEX.csv || echo "No output files to add"
           git add output/metadata/*.json || echo "No metadata files to add"
+          git add output/date_diffs/ || echo "No date comparison files to add"
           
           # Commit if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
+            # Check if date comparison was performed
+            COMPARISON_NOTE=""
+            if [ -f "output/date_diffs/changes_summary.csv" ]; then
+              COMPARISON_COUNT=$(tail -n +2 output/date_diffs/changes_summary.csv | wc -l)
+              COMPARISON_NOTE="
+            - Performed date-based comparison analysis ($COMPARISON_COUNT comparisons)"
+            fi
+            
             git commit -m "ci: processed ${{ steps.check-pdfs.outputs.count }} PDF files
             
             - Generated metadata and classification
             - Updated master index CSV
             - Created printable index PDF
-            - Generated oversight packets"
+            - Generated oversight packets$COMPARISON_NOTE"
             git push
           fi
 
