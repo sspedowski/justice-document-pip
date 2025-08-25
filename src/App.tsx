@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useKV } from '@/hooks/useKV'
+import { useKV } from '@github/spark/hooks'
 import { ErrorBoundary, useErrorHandler } from '@/components/ErrorBoundary'
 import { ApplicationError, ErrorHandler, safeAsync, Validator, ERROR_CODES } from '@/lib/errorHandler'
 import type { 
@@ -1004,40 +1004,6 @@ function App() {
       toast.error(`Failed to continue processing: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setProcessing(prev => prev.filter(p => p.fileName !== file.name))
     }
-  }
-    const headers = [
-      'File Name', 'Category', 'Children', 'Laws', 'Misconduct', 
-      'Include', 'Master File', 'Exhibit Bundle', 'Oversight Packet', 
-      'Title', 'Description'
-    ]
-    
-    const rows = allDocuments.filter(doc => doc).map(doc => [
-      doc.fileName || '',
-      doc.category || '',
-      (doc.children || []).join(', '),
-      (doc.laws || []).join(', '),
-      (doc.misconduct || []).map(m => `${m.law || ''} p${m.page || ''}/${m.paragraph || ''}`).join('; '),
-      doc.include || '',
-      (doc.placement?.masterFile || false).toString(),
-      (doc.placement?.exhibitBundle || false).toString(),
-      (doc.placement?.oversightPacket || false).toString(),
-      doc.title || '',
-      doc.description || ''
-    ])
-    
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n')
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'MasterReview_INDEX.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-    
-    toast.success('CSV exported successfully')
   }
 
   const handleExportReport = (reportData: any) => {
