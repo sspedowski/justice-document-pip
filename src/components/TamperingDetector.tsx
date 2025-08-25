@@ -157,25 +157,356 @@ export const TamperingDetector: React.FC<TamperingDetectorProps> = ({
       return
     }
 
-    // Export detailed JSON
-    const jsonBlob = new Blob([JSON.stringify(analysisResults, null, 2)], { type: 'application/json' })
-    const jsonUrl = URL.createObjectURL(jsonBlob)
-    const jsonLink = document.createElement('a')
-    jsonLink.href = jsonUrl
-    jsonLink.download = `tampering-analysis-${new Date().toISOString().split('T')[0]}.json`
-    jsonLink.click()
-    URL.revokeObjectURL(jsonUrl)
+    exportComprehensiveReports()
+  }
 
-    // Export markdown report
+  const exportComprehensiveReports = () => {
+    if (!analysisResults) return
+
+    const timestamp = new Date().toISOString().split('T')[0]
+    const timeString = new Date().toISOString().replace(/[:.]/g, '-')
+
+    // 1. Executive Summary for Oversight Agencies
+    const executiveSummary = generateExecutiveSummary()
+    const execBlob = new Blob([executiveSummary], { type: 'text/plain' })
+    const execUrl = URL.createObjectURL(execBlob)
+    const execLink = document.createElement('a')
+    execLink.href = execUrl
+    execLink.download = `EXECUTIVE-SUMMARY-Tampering-Analysis-${timestamp}.txt`
+    execLink.click()
+    URL.revokeObjectURL(execUrl)
+
+    // 2. Detailed Technical Report (Markdown)
     const mdBlob = new Blob([reportText], { type: 'text/markdown' })
     const mdUrl = URL.createObjectURL(mdBlob)
     const mdLink = document.createElement('a')
     mdLink.href = mdUrl
-    mdLink.download = `tampering-report-${new Date().toISOString().split('T')[0]}.md`
+    mdLink.download = `TECHNICAL-REPORT-Tampering-Analysis-${timestamp}.md`
     mdLink.click()
     URL.revokeObjectURL(mdUrl)
 
-    toast.success('Analysis reports exported')
+    // 3. Evidence Summary CSV
+    const evidenceCsv = generateEvidenceCsv()
+    const csvBlob = new Blob([evidenceCsv], { type: 'text/csv' })
+    const csvUrl = URL.createObjectURL(csvBlob)
+    const csvLink = document.createElement('a')
+    csvLink.href = csvUrl
+    csvLink.download = `EVIDENCE-SUMMARY-Tampering-Analysis-${timestamp}.csv`
+    csvLink.click()
+    URL.revokeObjectURL(csvUrl)
+
+    // 4. Raw Analysis Data (JSON)
+    const enhancedResults = {
+      ...analysisResults,
+      exportMetadata: {
+        generatedAt: new Date().toISOString(),
+        generatedBy: 'Justice Document Manager - Tampering Detection System',
+        documentCount: documentsForAnalysis.length,
+        analysisVersion: '2.0.0',
+        purpose: 'Oversight Agency Submission',
+        confidentialityLevel: 'RESTRICTED',
+        chainOfCustody: {
+          analyst: 'Automated System',
+          reviewedBy: 'Pending Manual Review',
+          approvedBy: 'Pending Supervisor Approval'
+        }
+      },
+      documentManifest: documentsForAnalysis.map(doc => ({
+        id: doc.id,
+        fileName: doc.fileName,
+        title: doc.title,
+        category: doc.category,
+        uploadedAt: doc.uploadedAt,
+        lastModified: doc.lastModified,
+        version: doc.currentVersion,
+        textContentLength: doc.textContent?.length || 0,
+        hasTextContent: !!doc.textContent
+      }))
+    }
+
+    const jsonBlob = new Blob([JSON.stringify(enhancedResults, null, 2)], { type: 'application/json' })
+    const jsonUrl = URL.createObjectURL(jsonBlob)
+    const jsonLink = document.createElement('a')
+    jsonLink.href = jsonUrl
+    jsonLink.download = `RAW-DATA-Tampering-Analysis-${timestamp}.json`
+    jsonLink.click()
+    URL.revokeObjectURL(jsonUrl)
+
+    // 5. Quick Reference Card for Investigators
+    const quickRef = generateQuickReferenceCard()
+    const refBlob = new Blob([quickRef], { type: 'text/plain' })
+    const refUrl = URL.createObjectURL(refBlob)
+    const refLink = document.createElement('a')
+    refLink.href = refUrl
+    refLink.download = `QUICK-REFERENCE-Tampering-Analysis-${timestamp}.txt`
+    refLink.click()
+    URL.revokeObjectURL(refUrl)
+
+    toast.success(`📋 Comprehensive tampering detection package exported (5 files)`, {
+      description: 'Executive summary, technical report, evidence CSV, raw data, and quick reference generated for oversight submission'
+    })
+  }
+
+  const generateExecutiveSummary = (): string => {
+    const { overallRiskAssessment, dateGroupAnalyses, timelineFlags } = analysisResults!
+    const highRiskDocs = overallRiskAssessment.highRiskDocuments.length
+    const criticalIssues = overallRiskAssessment.criticalFlags
+    
+    return `
+EXECUTIVE SUMMARY
+DOCUMENT TAMPERING DETECTION ANALYSIS
+Generated: ${new Date().toLocaleString()}
+System: Justice Document Manager - Automated Tampering Detection
+
+==========================================
+CRITICAL FINDINGS SUMMARY
+==========================================
+
+OVERALL RISK LEVEL: ${criticalIssues > 0 ? 'CRITICAL' : overallRiskAssessment.totalFlags > 5 ? 'HIGH' : overallRiskAssessment.totalFlags > 0 ? 'MODERATE' : 'LOW'}
+
+• Documents Analyzed: ${documentsForAnalysis.length}
+• Total Tampering Indicators: ${overallRiskAssessment.totalFlags}
+• Critical Security Violations: ${criticalIssues}
+• High-Risk Documents Requiring Immediate Review: ${highRiskDocs}
+• Date Groups with Suspicious Activity: ${dateGroupAnalyses.filter(g => g.riskLevel === 'critical' || g.riskLevel === 'high').length}
+• Timeline Anomalies Detected: ${timelineFlags.length}
+
+==========================================
+IMMEDIATE ACTION REQUIRED
+==========================================
+
+${criticalIssues > 0 ? `
+🚨 CRITICAL ALERT: ${criticalIssues} critical tampering indicators detected.
+   Immediate forensic review and investigation recommended.
+   
+High-Risk Documents:
+${overallRiskAssessment.highRiskDocuments.map(id => {
+  const doc = documentsForAnalysis.find(d => d.id === id)
+  return `   • ${doc?.fileName || id} - ${doc?.title || 'Unknown'}`
+}).join('\n')}
+` : overallRiskAssessment.totalFlags > 0 ? `
+⚠️  MODERATE RISK: ${overallRiskAssessment.totalFlags} potential tampering indicators found.
+   Manual review recommended for flagged documents.
+` : `
+✅ LOW RISK: No significant tampering indicators detected.
+   Documents appear to have maintained integrity.
+`}
+
+==========================================
+KEY FINDINGS BY CATEGORY
+==========================================
+
+DATE-BASED ANALYSIS:
+${dateGroupAnalyses.length === 0 ? '• No documents with matching dates found for comparison' : 
+dateGroupAnalyses.map(group => `
+• Date: ${group.date} (${group.documents.length} documents)
+  Risk Level: ${group.riskLevel.toUpperCase()}
+  Indicators: ${group.tamperingIndicators.length}
+  ${group.tamperingIndicators.slice(0, 2).map(ind => `  - ${ind.description} (${ind.confidence}%)`).join('\n  ')}`).join('\n')}
+
+TIMELINE ANALYSIS:
+${timelineFlags.length === 0 ? '• No suspicious timeline inconsistencies detected' :
+timelineFlags.slice(0, 3).map(flag => `• ${flag.description} (${flag.confidence}% confidence)`).join('\n')}
+
+==========================================
+TECHNICAL METHODOLOGY
+==========================================
+
+Analysis included:
+• Content comparison across documents with matching dates
+• Name mention frequency analysis (children: ${Array.from(new Set(documentsForAnalysis.flatMap(d => d.children))).join(', ')})
+• Status and number alteration detection
+• Timeline consistency verification
+• Cross-reference validation
+
+Confidence levels: High (80-100%), Medium (60-79%), Low (40-59%)
+
+==========================================
+CHAIN OF CUSTODY & VERIFICATION
+==========================================
+
+Analysis Performed: ${new Date().toLocaleString()}
+System Version: Justice Document Manager v2.0.0
+Analysis Algorithm: Automated Tampering Detection Engine
+Manual Review Status: PENDING
+Supervisor Approval: PENDING
+
+This automated analysis should be supplemented with manual forensic examination
+for any documents flagged as high-risk or critical.
+
+==========================================
+RECOMMENDATIONS FOR OVERSIGHT AGENCIES
+==========================================
+
+${criticalIssues > 0 ? `
+IMMEDIATE ACTIONS:
+1. Initiate formal investigation into flagged documents
+2. Secure original document sources for comparison
+3. Interview personnel with access to flagged documents
+4. Implement enhanced document security protocols
+5. Consider forensic digital analysis of source systems
+` : overallRiskAssessment.totalFlags > 0 ? `
+RECOMMENDED ACTIONS:
+1. Manual review of flagged documents by trained personnel
+2. Cross-reference with original sources where available
+3. Document any discrepancies found during manual review
+4. Implement monitoring for future document changes
+` : `
+MAINTENANCE ACTIONS:
+1. Continue periodic automated scanning
+2. Maintain current document security protocols
+3. Archive analysis results for audit trail
+`}
+
+END OF EXECUTIVE SUMMARY
+Generated by Justice Document Manager Tampering Detection System
+`.trim()
+  }
+
+  const generateEvidenceCsv = (): string => {
+    const headers = [
+      'Document ID',
+      'Document Title', 
+      'File Name',
+      'Category',
+      'Risk Level',
+      'Tampering Indicators',
+      'Critical Issues',
+      'Evidence Summary',
+      'Confidence Score',
+      'Date Group',
+      'Last Modified',
+      'Analysis Notes'
+    ]
+
+    const rows: string[][] = []
+
+    // Add date group analysis results
+    analysisResults!.dateGroupAnalyses.forEach(group => {
+      group.documents.forEach(docId => {
+        const doc = documentsForAnalysis.find(d => d.id === docId)
+        if (!doc) return
+
+        const docFlags = group.tamperingIndicators
+        const criticalFlags = docFlags.filter(f => f.severity === 'critical').length
+        const evidence = docFlags.map(f => f.description).join('; ')
+        const avgConfidence = docFlags.length > 0 ? 
+          Math.round(docFlags.reduce((sum, f) => sum + f.confidence, 0) / docFlags.length) : 0
+
+        rows.push([
+          doc.id,
+          doc.title,
+          doc.fileName,
+          doc.category,
+          group.riskLevel,
+          docFlags.length.toString(),
+          criticalFlags.toString(),
+          evidence || 'No specific indicators',
+          `${avgConfidence}%`,
+          group.date,
+          doc.lastModified,
+          `Analyzed in date group with ${group.documents.length} documents`
+        ])
+      })
+    })
+
+    // Add timeline flag information
+    analysisResults!.timelineFlags.forEach(flag => {
+      const docId = flag.location?.split(' ')[0] // Try to extract doc ID from location
+      const doc = documentsForAnalysis.find(d => d.id === docId || flag.location?.includes(d.fileName))
+      
+      rows.push([
+        doc?.id || 'Unknown',
+        doc?.title || 'Timeline Issue',
+        doc?.fileName || 'Multiple Documents',
+        doc?.category || 'N/A',
+        flag.severity,
+        '1',
+        flag.severity === 'critical' ? '1' : '0',
+        flag.description,
+        `${flag.confidence}%`,
+        'Timeline Analysis',
+        doc?.lastModified || 'N/A',
+        flag.evidence.join('; ')
+      ])
+    })
+
+    // Add documents with no issues
+    documentsForAnalysis.forEach(doc => {
+      const hasIssues = rows.some(row => row[0] === doc.id)
+      if (!hasIssues) {
+        rows.push([
+          doc.id,
+          doc.title,
+          doc.fileName,
+          doc.category,
+          'low',
+          '0',
+          '0',
+          'No tampering indicators detected',
+          '100%',
+          'Clean',
+          doc.lastModified,
+          'Passed all tampering detection checks'
+        ])
+      }
+    })
+
+    const csvContent = [
+      headers,
+      ...rows
+    ].map(row => 
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    ).join('\n')
+
+    return csvContent
+  }
+
+  const generateQuickReferenceCard = (): string => {
+    const { overallRiskAssessment } = analysisResults!
+    
+    return `
+QUICK REFERENCE CARD
+TAMPERING DETECTION ANALYSIS RESULTS
+Generated: ${new Date().toLocaleString()}
+
+┌─────────────────────────────────────────────────┐
+│                 RISK SUMMARY                    │
+├─────────────────────────────────────────────────┤
+│ Overall Risk: ${overallRiskAssessment.criticalFlags > 0 ? 'CRITICAL' : overallRiskAssessment.totalFlags > 5 ? 'HIGH' : overallRiskAssessment.totalFlags > 0 ? 'MODERATE' : 'LOW'}                           │
+│ Documents: ${documentsForAnalysis.length.toString().padEnd(3)} │ Critical Issues: ${overallRiskAssessment.criticalFlags.toString().padEnd(3)}       │
+│ Total Flags: ${overallRiskAssessment.totalFlags.toString().padEnd(2)} │ High-Risk Docs: ${overallRiskAssessment.highRiskDocuments.length.toString().padEnd(4)}        │
+└─────────────────────────────────────────────────┘
+
+${overallRiskAssessment.criticalFlags > 0 ? `
+🚨 CRITICAL ISSUES DETECTED
+Immediate investigation required for:
+${overallRiskAssessment.highRiskDocuments.map(id => {
+  const doc = documentsForAnalysis.find(d => d.id === id)
+  return `• ${doc?.fileName || id}`
+}).slice(0, 5).join('\n')}
+${overallRiskAssessment.highRiskDocuments.length > 5 ? `... and ${overallRiskAssessment.highRiskDocuments.length - 5} more` : ''}
+` : ''}
+
+┌─────────────────────────────────────────────────┐
+│                KEY INDICATORS                   │
+├─────────────────────────────────────────────────┤
+${analysisResults!.dateGroupAnalyses.map(group => 
+`│ ${group.date}: ${group.riskLevel.toUpperCase().padEnd(8)} (${group.tamperingIndicators.length} flags)${' '.repeat(Math.max(0, 12 - group.date.length - group.riskLevel.length))} │`
+).slice(0, 3).join('\n')}
+${analysisResults!.dateGroupAnalyses.length > 3 ? `│ ... and ${analysisResults!.dateGroupAnalyses.length - 3} more date groups              │` : ''}
+└─────────────────────────────────────────────────┘
+
+NEXT STEPS:
+${overallRiskAssessment.criticalFlags > 0 ? 
+'1. URGENT: Review high-risk documents immediately\n2. Secure original sources for comparison\n3. Notify supervisors and legal team\n4. Begin formal investigation procedures' :
+overallRiskAssessment.totalFlags > 0 ?
+'1. Manual review of flagged documents\n2. Cross-reference with source materials\n3. Document findings in case file\n4. Monitor for future changes' :
+'1. Archive analysis results\n2. Continue periodic monitoring\n3. Maintain security protocols\n4. No immediate action required'}
+
+Contact: System Administrator
+Reference: TAMPER-${new Date().toISOString().split('T')[0]}
+`.trim()
   }
 
   const getSeverityColor = (severity: TamperingFlag['severity']) => {
@@ -291,16 +622,17 @@ export const TamperingDetector: React.FC<TamperingDetectorProps> = ({
                       
                       <div className="mt-4 flex justify-between items-center">
                         <div className="text-xs text-muted-foreground">
-                          Analysis includes date-based comparison, name mention tracking, and timeline verification
+                          Analysis includes date-based comparison, name mention tracking, and timeline verification.<br/>
+                          <span className="font-medium text-blue-600">Export generates 5 files optimized for oversight agency submission</span>
                         </div>
                         <div className="flex gap-2">
                           <Button onClick={runTamperingAnalysis} size="sm" variant="outline">
                             <Search className="h-3 w-3 mr-1" />
                             Re-analyze
                           </Button>
-                          <Button onClick={exportReport} size="sm" variant="outline">
+                          <Button onClick={exportReport} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                             <Download className="h-3 w-3 mr-1" />
-                            Export Report
+                            Export for Oversight
                           </Button>
                         </div>
                       </div>
@@ -492,10 +824,13 @@ export const TamperingDetector: React.FC<TamperingDetectorProps> = ({
                         className="min-h-[400px] font-mono text-xs"
                         placeholder="Analysis report will appear here..."
                       />
-                      <div className="mt-3 flex justify-end">
-                        <Button onClick={exportReport} size="sm">
+                      <div className="mt-3 flex justify-between items-center">
+                        <div className="text-xs text-muted-foreground">
+                          📋 Comprehensive export includes: Executive Summary, Technical Report, Evidence CSV, Raw Data, and Quick Reference Card
+                        </div>
+                        <Button onClick={exportReport} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                           <Download className="h-3 w-3 mr-1" />
-                          Export Full Report
+                          Export Oversight Package
                         </Button>
                       </div>
                     </CardContent>

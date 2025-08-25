@@ -1022,6 +1022,176 @@ function App() {
     toast.success(`Running comparison analysis on ${docsWithContent.length} documents...`)
     setShowTamperingDetector(true)
   }
+
+  const exportTamperingReportsDirectly = async () => {
+    // Quick tampering analysis and direct export for oversight agencies
+    const docsWithContent = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100)
+    
+    if (docsWithContent.length < 2) {
+      toast.error('Need at least 2 documents with text content to generate tampering reports')
+      return
+    }
+
+    try {
+      // Import the tampering analyzer dynamically
+      const { analyzeTampering, generateTamperingReport } = await import('@/lib/tamperingAnalyzer')
+      
+      // Convert documents to analysis format
+      const documentsForAnalysis = allDocuments.map(doc => ({
+        id: doc.id,
+        fileName: doc.fileName,
+        title: doc.title,
+        description: doc.description,
+        textContent: doc.textContent,
+        uploadedAt: doc.uploadedAt,
+        category: doc.category,
+        children: doc.children,
+        laws: doc.laws,
+        lastModified: doc.lastModified,
+        lastModifiedBy: doc.lastModifiedBy,
+        currentVersion: doc.currentVersion || 1
+      }))
+
+      toast.info('Analyzing documents for tampering indicators...')
+      
+      // Run analysis
+      const analysisResults = analyzeTampering(documentsForAnalysis)
+      
+      // Generate comprehensive reports
+      const timestamp = new Date().toISOString().split('T')[0]
+      
+      // Executive Summary
+      const executiveSummary = generateExecutiveSummaryQuick(analysisResults, documentsForAnalysis)
+      const execBlob = new Blob([executiveSummary], { type: 'text/plain' })
+      const execUrl = URL.createObjectURL(execBlob)
+      const execLink = document.createElement('a')
+      execLink.href = execUrl
+      execLink.download = `EXECUTIVE-SUMMARY-Tampering-Analysis-${timestamp}.txt`
+      execLink.click()
+      URL.revokeObjectURL(execUrl)
+
+      // Evidence CSV
+      const evidenceCsv = generateEvidenceCsvQuick(analysisResults, documentsForAnalysis)
+      const csvBlob = new Blob([evidenceCsv], { type: 'text/csv' })
+      const csvUrl = URL.createObjectURL(csvBlob)
+      const csvLink = document.createElement('a')
+      csvLink.href = csvUrl
+      csvLink.download = `EVIDENCE-SUMMARY-Tampering-Analysis-${timestamp}.csv`
+      csvLink.click()
+      URL.revokeObjectURL(csvUrl)
+
+      // Technical Report
+      const technicalReport = generateTamperingReport(analysisResults, documentsForAnalysis)
+      const mdBlob = new Blob([technicalReport], { type: 'text/markdown' })
+      const mdUrl = URL.createObjectURL(mdBlob)
+      const mdLink = document.createElement('a')
+      mdLink.href = mdUrl
+      mdLink.download = `TECHNICAL-REPORT-Tampering-Analysis-${timestamp}.md`
+      mdLink.click()
+      URL.revokeObjectURL(mdUrl)
+
+      // Show results summary
+      const { overallRiskAssessment } = analysisResults
+      if (overallRiskAssessment.criticalFlags > 0) {
+        toast.error(`🚨 CRITICAL: ${overallRiskAssessment.criticalFlags} critical tampering indicators detected!`, {
+          description: `Reports exported for immediate oversight review. ${overallRiskAssessment.highRiskDocuments.length} high-risk documents identified.`
+        })
+      } else if (overallRiskAssessment.totalFlags > 0) {
+        toast.warning(`⚠️ ${overallRiskAssessment.totalFlags} potential tampering indicators found.`, {
+          description: 'Reports exported for oversight review. Manual examination recommended.'
+        })
+      } else {
+        toast.success('✅ No significant tampering indicators detected.', {
+          description: 'Clean bill of health reports exported. Documents appear to maintain integrity.'
+        })
+      }
+
+      toast.success(`📋 Comprehensive tampering analysis complete`, {
+        description: `3 specialized reports exported for oversight submission: Executive Summary, Technical Analysis, and Evidence Summary`
+      })
+      
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Failed to generate tampering reports: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  const generateExecutiveSummaryQuick = (analysisResults: any, documentsForAnalysis: any[]): string => {
+    const { overallRiskAssessment, dateGroupAnalyses, timelineFlags } = analysisResults
+    const highRiskDocs = overallRiskAssessment.highRiskDocuments.length
+    const criticalIssues = overallRiskAssessment.criticalFlags
+    
+    return `
+EXECUTIVE SUMMARY - DOCUMENT TAMPERING DETECTION ANALYSIS
+Generated: ${new Date().toLocaleString()}
+System: Justice Document Manager - Automated Tampering Detection
+
+OVERALL RISK LEVEL: ${criticalIssues > 0 ? 'CRITICAL' : overallRiskAssessment.totalFlags > 5 ? 'HIGH' : overallRiskAssessment.totalFlags > 0 ? 'MODERATE' : 'LOW'}
+
+SUMMARY STATISTICS:
+• Documents Analyzed: ${documentsForAnalysis.length}
+• Total Tampering Indicators: ${overallRiskAssessment.totalFlags}
+• Critical Security Violations: ${criticalIssues}
+• High-Risk Documents: ${highRiskDocs}
+• Date Groups with Issues: ${dateGroupAnalyses.filter((g: any) => g.riskLevel === 'critical' || g.riskLevel === 'high').length}
+• Timeline Anomalies: ${timelineFlags.length}
+
+${criticalIssues > 0 ? `
+🚨 CRITICAL ALERT: Immediate investigation required.
+High-Risk Documents:
+${overallRiskAssessment.highRiskDocuments.map((id: string) => {
+  const doc = documentsForAnalysis.find(d => d.id === id)
+  return `   • ${doc?.fileName || id} - ${doc?.title || 'Unknown'}`
+}).join('\n')}
+` : overallRiskAssessment.totalFlags > 0 ? `
+⚠️ MODERATE RISK: Manual review recommended for flagged documents.
+` : `
+✅ LOW RISK: Documents appear to have maintained integrity.
+`}
+
+Analysis includes content comparison, name mention tracking, and timeline verification.
+This automated analysis should be supplemented with manual forensic examination for any flagged documents.
+
+Generated by Justice Document Manager Tampering Detection System`.trim()
+  }
+
+  const generateEvidenceCsvQuick = (analysisResults: any, documentsForAnalysis: any[]): string => {
+    const headers = [
+      'Document ID', 'Document Title', 'File Name', 'Category', 'Risk Level',
+      'Tampering Indicators', 'Critical Issues', 'Evidence Summary', 'Confidence Score',
+      'Date Group', 'Last Modified', 'Analysis Notes'
+    ]
+
+    const rows: string[][] = []
+
+    // Add date group analysis results
+    analysisResults.dateGroupAnalyses.forEach((group: any) => {
+      group.documents.forEach((docId: string) => {
+        const doc = documentsForAnalysis.find(d => d.id === docId)
+        if (!doc) return
+
+        const docFlags = group.tamperingIndicators
+        const criticalFlags = docFlags.filter((f: any) => f.severity === 'critical').length
+        const evidence = docFlags.map((f: any) => f.description).join('; ')
+        const avgConfidence = docFlags.length > 0 ? 
+          Math.round(docFlags.reduce((sum: number, f: any) => sum + f.confidence, 0) / docFlags.length) : 0
+
+        rows.push([
+          doc.id, doc.title, doc.fileName, doc.category, group.riskLevel,
+          docFlags.length.toString(), criticalFlags.toString(),
+          evidence || 'No specific indicators', `${avgConfidence}%`,
+          group.date, doc.lastModified,
+          `Analyzed in date group with ${group.documents.length} documents`
+        ])
+      })
+    })
+
+    return [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+  }
+
+  const refreshProcessedData = async () => {
     setIsLoadingProcessed(true)
     try {
       const processed = await loadProcessedDocuments()
@@ -1032,6 +1202,42 @@ function App() {
     } finally {
       setIsLoadingProcessed(false)
     }
+  }
+
+  const exportToCSV = () => {
+    const headers = [
+      'File Name', 'Category', 'Children', 'Laws', 'Misconduct', 
+      'Include', 'Master File', 'Exhibit Bundle', 'Oversight Packet', 
+      'Title', 'Description'
+    ]
+    
+    const rows = allDocuments.filter(doc => doc).map(doc => [
+      doc.fileName || '',
+      doc.category || '',
+      (doc.children || []).join(', '),
+      (doc.laws || []).join(', '),
+      (doc.misconduct || []).map(m => `${m.law || ''} p${m.page || ''}/${m.paragraph || ''}`).join('; '),
+      doc.include || '',
+      (doc.placement?.masterFile || false).toString(),
+      (doc.placement?.exhibitBundle || false).toString(),
+      (doc.placement?.oversightPacket || false).toString(),
+      doc.title || '',
+      doc.description || ''
+    ])
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'MasterReview_INDEX.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    toast.success('CSV exported successfully')
   }
 
   const CategoryBadge = ({ category }: { category: Document['category'] | undefined }) => {
@@ -1086,6 +1292,15 @@ function App() {
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Detect Tampering
                 <span className="ml-2 text-xs opacity-70">(Ctrl+T)</span>
+              </Button>
+              <Button 
+                onClick={exportTamperingReportsDirectly}
+                variant="outline" 
+                size="sm"
+                className="text-blue-700 border-blue-200 hover:bg-blue-50"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Tampering Reports
               </Button>
               <Button 
                 onClick={() => setShowTamperingTest(true)}
@@ -1323,6 +1538,62 @@ function App() {
                     <div className="text-xs text-muted-foreground">
                       This test analyzes sample documents with known tampering to validate the detection algorithms.
                       Real documents from the input/ directory can be analyzed using the main "Detect Tampering" feature.
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Oversight Agency Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Comprehensive Tampering Detection Reports</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Export professional-grade tampering detection analysis suitable for oversight agency submission. 
+                    Reports automatically analyze document integrity and identify potential alterations.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="text-sm">
+                      <strong>Export package includes:</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-muted-foreground">
+                        <li><strong>Executive Summary</strong> - High-level findings for decision makers</li>
+                        <li><strong>Technical Report</strong> - Detailed analysis methodology and results</li>
+                        <li><strong>Evidence Summary CSV</strong> - Structured data for database import</li>
+                        <li><strong>Raw Analysis Data</strong> - Complete JSON dataset with metadata</li>
+                        <li><strong>Quick Reference Card</strong> - One-page summary for investigators</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Button 
+                        onClick={() => setShowTamperingDetector(true)}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Interactive Analysis
+                      </Button>
+                      
+                      <Button 
+                        onClick={exportTamperingReportsDirectly}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Quick Export Reports
+                      </Button>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground border-t pt-3">
+                      <strong>Analysis includes:</strong> Date-based document comparison, name mention frequency tracking, 
+                      evidence numbering consistency, timeline verification, and content change detection.
+                      Suitable for legal proceedings and regulatory compliance.
                     </div>
                   </div>
                 </div>
