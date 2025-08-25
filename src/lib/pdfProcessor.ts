@@ -1,167 +1,284 @@
 /**
- * PDF processing utilities for extracting text and metadata from PDF files
- * Uses PDF.js for browser-based PDF processing
+ * Enhanced PDF processing utilities with comprehensive error handling
+ * Uses PDF.js for browser-based PDF processing with type safety
  */
 import * as pdfjsLib from 'pdfjs-dist'
+import { ApplicationError, ErrorFactory, safeAsync, Validator, ERROR_CODES } from './errorHandler'
+import type { Result, AsyncResult } from './errorHandler'
+import type { PDFProcessingResult, PDFMetadata } from './types'
 
-// Configure PDF.js worker with proper paths for both dev and production
-const configureWorker = () => {
+// PDF.js worker configuration with error handling
+const configureWorker = (): Result<void> => {
   try {
-    // Try local worker first (should work in production)
     if (typeof window !== 'undefined') {
-      const workerUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}pdf.worker.min.js`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+      const baseUrl = window.location.origin + (import.meta.env.BASE_URL || '/')
+      const workerUrl = `${baseUrl}pdf.worker.min.js`
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
+      return { success: true, data: undefined }
     }
+    throw new Error('Window object not available')
   } catch (error) {
-    console.warn('Failed to configure local PDF worker, using CDN fallback:', error);
-    // Fallback to CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
-  }
-};
-
-// Initialize worker configuration
-configureWorker();
-
-interface PDFProcessingResult {
-  text: string
-  pageCount: number
-  metadata?: {
-    title?: string
-    author?: string
-    subject?: string
-    creator?: string
-    producer?: string
-    creationDate?: string
-    modificationDate?: string
+    console.warn('Failed to configure local PDF worker, using CDN fallback:', error)
+    
+    try {
+      // Fallback to CDN
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+      return { success: true, data: undefined }
+    } catch (fallbackError) {
+      return {
+        success: false,
+        error: ErrorFactory.storageError(
+          ERROR_CODES.FEATURE_NOT_AVAILABLE,
+          'configure PDF worker',
+          fallbackError instanceof Error ? fallbackError : new Error('Worker configuration failed')
+        )
+      }
+    }
   }
 }
 
+// Initialize worker configuration with error handling
+const workerConfig = configureWorker()
+if (!workerConfig.success) {
+  console.error('PDF worker configuration failed:', workerConfig.error)
+}
+
 /**
- * Validates if a file is a valid PDF
+ * Validates if a file is a valid PDF with comprehensive error handling
  */
-export async function validatePDF(file: File): Promise<boolean> {
-  try {
-    // Check file type
-    if (file.type !== 'application/pdf') {
-      return false
-    }
-    
-    // Check file size (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      return false
-    }
-    
+export async function validatePDF(file: File): AsyncResult<boolean> {
+  // First validate the file object itself
+  const fileValidation = Validator.isValidPDFFile(file)
+  if (!fileValidation.success) {
+    return fileValidation as AsyncResult<boolean>
+  }
+
+  return await safeAsync(async (): Promise<boolean> => {
     // Try to load with PDF.js to verify it's a valid PDF
     const arrayBuffer = await file.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
     
-    return pdf.numPages > 0
-  } catch (error) {
-    console.error('PDF validation error:', error)
-    return false
-  }
+    // Set a timeout for the loading operation
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('PDF loading timeout')), 10000)
+    })
+    
+    const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
+    
+    if (!pdf || pdf.numPages <= 0) {
+      throw new Error('PDF has no pages')
+    }
+    
+    return true
+  }, (error) => 
+    ErrorFactory.fileError(
+      ERROR_CODES.FILE_CORRUPTED,
+      file.name,
+      error instanceof Error ? error : new Error('PDF validation failed')
+    )
+  )
 }
 
 /**
  * Gets basic PDF information without full processing
  */
-export async function getPDFInfo(file: File): Promise<{ pageCount: number; size: number }> {
-  try {
+export async function getPDFInfo(file: File): AsyncResult<{ pageCount: number; size: number }> {
+  // Validate file first
+  const fileValidation = Validator.isValidPDFFile(file)
+  if (!fileValidation.success) {
+    return fileValidation as AsyncResult<{ pageCount: number; size: number }>
+  }
+
+  return await safeAsync(async () => {
     const arrayBuffer = await file.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
+    
+    // Set timeout for loading
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('PDF info extraction timeout')), 5000)
+    })
+    
+    const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
     
     return {
       pageCount: pdf.numPages,
       size: file.size
     }
-  } catch (error) {
-    console.error('PDF info extraction error:', error)
-    return { pageCount: 1, size: file.size }
-  }
+  }, (error) => 
+    ErrorFactory.fileError(
+      ERROR_CODES.PDF_EXTRACTION_FAILED,
+      file.name,
+      error instanceof Error ? error : new Error('PDF info extraction failed')
+    )
+  )
 }
 
 /**
- * Extracts text content from a PDF file using PDF.js
+ * Extracts text content from a PDF file using PDF.js with comprehensive error handling
  */
-export async function extractTextFromPDF(file: File, maxPages: number = 50): Promise<PDFProcessingResult> {
-  try {
+export async function extractTextFromPDF(
+  file: File, 
+  maxPages: number = 50
+): AsyncResult<PDFProcessingResult> {
+  // Validate inputs
+  const fileValidation = Validator.isValidPDFFile(file)
+  if (!fileValidation.success) {
+    return fileValidation as AsyncResult<PDFProcessingResult>
+  }
+
+  if (maxPages <= 0) {
+    return {
+      success: false,
+      error: ErrorFactory.validationError('maxPages', maxPages, 'maxPages must be greater than 0')
+    }
+  }
+
+  return await safeAsync(async (): Promise<PDFProcessingResult> => {
     const arrayBuffer = await file.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: arrayBuffer,
+      maxImageSize: 1024 * 1024, // 1MB max image size
+      disableFontFace: true, // Prevent font loading issues
+      isEvalSupported: false // Security measure
+    })
     
-    // Get metadata
-    const metadata = await pdf.getMetadata()
+    // Set timeout for PDF loading
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000)
+    })
     
-    // Extract text from pages
+    const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
+    
+    // Get metadata safely
+    let metadata: PDFMetadata = {}
+    try {
+      const pdfMetadata = await pdf.getMetadata()
+      metadata = {
+        title: pdfMetadata.info?.Title || file.name.replace('.pdf', ''),
+        author: pdfMetadata.info?.Author,
+        subject: pdfMetadata.info?.Subject,
+        creator: pdfMetadata.info?.Creator,
+        producer: pdfMetadata.info?.Producer,
+        creationDate: pdfMetadata.info?.CreationDate,
+        modificationDate: pdfMetadata.info?.ModDate
+      }
+    } catch (metadataError) {
+      console.warn('Failed to extract PDF metadata:', metadataError)
+      metadata = { title: file.name.replace('.pdf', '') }
+    }
+    
+    // Extract text from pages with proper error handling
     const textParts: string[] = []
     const pageLimit = Math.min(pdf.numPages, maxPages)
+    const errors: string[] = []
     
     for (let pageNum = 1; pageNum <= pageLimit; pageNum++) {
       try {
         const page = await pdf.getPage(pageNum)
-        const textContent = await page.getTextContent()
+        
+        // Set timeout for text extraction per page
+        const pageTimeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error(`Page ${pageNum} text extraction timeout`)), 5000)
+        })
+        
+        const textContent = await Promise.race([
+          page.getTextContent(),
+          pageTimeoutPromise
+        ])
         
         const pageText = textContent.items
-          .map((item: any) => item.str)
+          .filter((item: any) => item.str && typeof item.str === 'string')
+          .map((item: any) => item.str.trim())
+          .filter(text => text.length > 0)
           .join(' ')
         
         if (pageText.trim()) {
           textParts.push(pageText)
         }
+        
+        // Clean up page resources
+        page.cleanup()
       } catch (pageError) {
-        console.warn(`Error extracting text from page ${pageNum}:`, pageError)
-        // Continue with other pages
+        const errorMsg = `Failed to extract text from page ${pageNum}: ${pageError instanceof Error ? pageError.message : 'Unknown error'}`
+        errors.push(errorMsg)
+        console.warn(errorMsg)
+        // Continue with other pages instead of failing completely
       }
     }
     
-    // If we couldn't extract any real text, use simulated text based on filename
-    let finalText = textParts.join('\n\n')
-    if (!finalText.trim() || finalText.length < 100) {
-      console.warn('Limited text extracted, supplementing with simulated content')
-      finalText = generateSimulatedText(file.name, pdf.numPages) + '\n\n' + finalText
+    // Cleanup PDF document
+    pdf.cleanup()
+    
+    // Process extracted text
+    let finalText = textParts.join('\n\n').trim()
+    
+    // If extraction yielded little or no text, generate simulated content
+    if (!finalText || finalText.length < 100) {
+      console.warn(`Limited text extracted from ${file.name} (${finalText.length} chars), supplementing with simulated content`)
+      
+      const simulatedText = generateSimulatedText(file.name, pdf.numPages)
+      finalText = finalText ? `${simulatedText}\n\n--- EXTRACTED TEXT ---\n${finalText}` : simulatedText
     }
     
-    const result: PDFProcessingResult = {
-      text: finalText,
-      pageCount: pdf.numPages,
-      metadata: {
-        title: metadata.info?.Title || file.name.replace('.pdf', ''),
-        author: metadata.info?.Author,
-        subject: metadata.info?.Subject,
-        creator: metadata.info?.Creator,
-        producer: metadata.info?.Producer,
-        creationDate: metadata.info?.CreationDate,
-        modificationDate: metadata.info?.ModDate
-      }
+    if (errors.length > 0) {
+      console.warn(`PDF processing completed with ${errors.length} page errors:`, errors)
     }
-    
-    return result
-  } catch (error) {
-    console.error('PDF text extraction error:', error)
-    
-    // Fallback to simulated text if PDF.js fails
-    console.warn('PDF.js extraction failed, using simulated content')
-    const info = await getPDFInfo(file).catch(() => ({ pageCount: 1, size: file.size }))
     
     return {
-      text: generateSimulatedText(file.name, info.pageCount),
-      pageCount: info.pageCount,
-      metadata: {
-        title: file.name.replace('.pdf', ''),
-        creator: 'Unknown',
-        producer: 'Unknown'
-      }
+      text: finalText,
+      pageCount: pdf.numPages,
+      metadata
     }
-  }
+  }, (error) => {
+    // If extraction completely fails, try to generate fallback result
+    const fallbackError = ErrorFactory.fileError(
+      ERROR_CODES.PDF_EXTRACTION_FAILED,
+      file.name,
+      error instanceof Error ? error : new Error('PDF text extraction failed')
+    )
+    
+    console.warn('PDF.js extraction failed completely, attempting fallback:', fallbackError)
+    
+    // Return a result with simulated content rather than complete failure
+    try {
+      const fallbackResult: PDFProcessingResult = {
+        text: generateSimulatedText(file.name, 1),
+        pageCount: 1,
+        metadata: {
+          title: file.name.replace('.pdf', ''),
+          creator: 'Unknown (extraction failed)',
+          producer: 'Unknown (extraction failed)'
+        }
+      }
+      
+      // Still return success with fallback, but log the issue
+      console.error('Using fallback content due to extraction failure:', fallbackError)
+      return { success: true, data: fallbackResult }
+    } catch (fallbackGenerationError) {
+      // If even fallback fails, return the original error
+      throw fallbackError
+    }
+  })
 }
 
 /**
  * Generates simulated text content based on filename patterns
- * This helps demonstrate the classification system
+ * This helps demonstrate the classification system when PDF extraction fails
  */
 function generateSimulatedText(fileName: string, pageCount: number): string {
-  const lowerName = fileName.toLowerCase()
+  // Validate inputs
+  if (!fileName || typeof fileName !== 'string') {
+    fileName = 'unknown-document.pdf'
+  }
   
-  let baseText = `Document: ${fileName}\nThis is a ${pageCount}-page document. `
+  if (!pageCount || pageCount < 1) {
+    pageCount = 1
+  }
+  
+  const lowerName = fileName.toLowerCase()
+  const sanitizedFileName = fileName.replace(/[<>:"/\\|?*]/g, '_') // Sanitize for security
+  
+  let baseText = `Document: ${sanitizedFileName}\nThis is a ${pageCount}-page document generated for demonstration purposes. `
   
   // Add content based on filename patterns
   if (lowerName.includes('police') || lowerName.includes('report')) {

@@ -1,5 +1,18 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useKV } from '@/hooks/useKV'
+import { ErrorBoundary, useErrorHandler } from '@/components/ErrorBoundary'
+import { ApplicationError, ErrorHandler, safeAsync, Validator, ERROR_CODES } from '@/lib/errorHandler'
+import type { 
+  Document, 
+  DocumentVersion, 
+  ProcessingDocument, 
+  SearchResult, 
+  DuplicateResult,
+  DocumentCategory,
+  IncludeStatus,
+  ChangeType,
+  Result
+} from '@/lib/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,99 +25,23 @@ import { Progress } from '@/components/ui/progress'
 import { FileText, Upload, Scale, Shield, Users, Download, Filter, Search, Eye, Edit, GitBranch, MagnifyingGlass, TextT, X, Clock, User, FileArrowUp, ChartLine, GitCompare, AlertTriangle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
+import { 
+  generateFileFingerprint, 
+  detectDuplicate, 
+  handleDuplicateAction,
+  getDuplicatePreventionRules
+} from '@/lib/duplicateDetection'
 import { ReportGenerator } from '@/components/ReportGenerator'
 import { DocumentComparison } from '@/components/DocumentComparison'
 import { DuplicateDetectionDialog } from '@/components/DuplicateDetectionDialog'
 import { TamperingDetector } from '@/components/TamperingDetector'
 import TamperingDetectorTest from '@/components/TamperingDetectorTest'
 import AdvancedTamperingAnalyzer from '@/components/AdvancedTamperingAnalyzer'
-import { 
-  generateFileFingerprint, 
-  detectDuplicate, 
-  handleDuplicateAction,
-  getDuplicatePreventionRules,
-  type DuplicateResult,
-  type FileFingerprint
-} from '@/lib/duplicateDetection'
+
 import { sampleDocumentsWithTampering } from '@/data/sampleTamperingData'
 import { sampleDocumentsWithDates } from '@/data/sampleDocumentsWithDates'
 
-interface DocumentVersion {
-  id: string
-  documentId: string
-  version: number
-  title: string
-  description: string
-  category: 'Primary' | 'Supporting' | 'External' | 'No'
-  children: string[]
-  laws: string[]
-  misconduct: Array<{
-    law: string
-    page: string
-    paragraph: string
-    notes: string
-  }>
-  include: 'YES' | 'NO'
-  placement: {
-    masterFile: boolean
-    exhibitBundle: boolean
-    oversightPacket: boolean
-  }
-  changedBy: string
-  changedAt: string
-  changeNotes?: string
-  changeType: 'created' | 'edited' | 'imported'
-}
-
-interface Document {
-  id: string
-  fileName: string
-  title: string
-  description: string
-  category: 'Primary' | 'Supporting' | 'External' | 'No'
-  children: string[]
-  laws: string[]
-  misconduct: Array<{
-    law: string
-    page: string
-    paragraph: string
-    notes: string
-  }>
-  include: 'YES' | 'NO'
-  placement: {
-    masterFile: boolean
-    exhibitBundle: boolean
-    oversightPacket: boolean
-  }
-  uploadedAt: string
-  textContent?: string
-  currentVersion: number
-  lastModified: string
-  lastModifiedBy: string
-  // Duplicate detection fields
-  fingerprint?: FileFingerprint
-  fileHash?: string
-  fileSize?: number
-  pageCount?: number
-  firstPageHash?: string
-}
-
-interface ProcessingDocument {
-  fileName: string
-  progress: number
-  status: 'validating' | 'uploading' | 'extracting' | 'analyzing' | 'checking-duplicates' | 'complete' | 'error' | 'duplicate-found'
-  error?: string
-  duplicateResult?: DuplicateResult
-}
-
-interface SearchResult {
-  docId: string
-  matches: Array<{
-    text: string
-    context: string
-    position: number
-  }>
-}
+// Remove old interface definitions as they're now in types.ts
 
 const CHILDREN_NAMES = ['Jace', 'Josh', 'Joshua', 'Nicholas', 'John', 'Peyton', 'Owen']
 
@@ -116,14 +53,16 @@ const LAWS = [
   { name: 'Evidence Tampering', keywords: ['tamper', 'altered', 'fabricated', 'suppressed', 'omitted'] }
 ]
 
-// Load processed documents from GitHub Actions pipeline
-async function loadProcessedDocuments(): Promise<Document[]> {
-  try {
-    // Try relative path first
-    let response = await fetch('/app/data/justice-documents.json')
+// Load processed documents from GitHub Actions pipeline with proper error handling
+async function loadProcessedDocuments(): Promise<Result<Document[]>> {
+  return await safeAsync(async (): Promise<Document[]> => {
+    let response: Response
     
-    // If that fails, try absolute path from public folder
-    if (!response.ok) {
+    try {
+      // Try relative path first
+      response = await fetch('/app/data/justice-documents.json')
+    } catch (error) {
+      // If that fails, try absolute path from public folder
       response = await fetch('./app/data/justice-documents.json')
     }
     
@@ -133,24 +72,50 @@ async function loadProcessedDocuments(): Promise<Document[]> {
     }
     
     const data = await response.json()
-    const documents = Array.isArray(data) ? data : []
     
-    // Ensure all documents have version information
-    return documents.map(doc => ({
-      ...doc,
-      currentVersion: doc.currentVersion || 1,
-      lastModified: doc.lastModified || doc.uploadedAt || new Date().toISOString(),
-      lastModifiedBy: doc.lastModifiedBy || 'Pipeline Import'
-    }))
-  } catch (error) {
-    console.log('No processed documents found yet, using empty array:', error)
-    return []
-  }
+    // Validate that data is an array
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid processed documents format: expected array')
+    }
+    
+    // Filter and validate documents
+    const documents = data
+      .filter(doc => doc && typeof doc === 'object')
+      .map(doc => ({
+        ...doc,
+        currentVersion: doc.currentVersion || 1,
+        lastModified: doc.lastModified || doc.uploadedAt || new Date().toISOString(),
+        lastModifiedBy: doc.lastModifiedBy || 'Pipeline Import'
+      }))
+      .filter(doc => {
+        // Basic validation
+        return doc.id && 
+               typeof doc.id === 'string' && 
+               doc.fileName && 
+               typeof doc.fileName === 'string'
+      }) as Document[]
+    
+    return documents
+  }, (error) => 
+    ErrorHandler.handle(
+      new ApplicationError(
+        ERROR_CODES.NETWORK_ERROR,
+        'Failed to load processed documents',
+        {
+          severity: 'low', // This is expected for new installations
+          recoverable: true,
+          cause: error instanceof Error ? error : new Error('Unknown load error')
+        }
+      ),
+      'loadProcessedDocuments'
+    )
+  )
 }
 
 function App() {
-  const [documents, setDocuments] = useKV<Document[]>('justice-documents', [])
-  const [documentVersions, setDocumentVersions] = useKV<DocumentVersion[]>('document-versions', [])
+  const { handleError } = useErrorHandler()
+  const [documents, setDocuments, deleteDocuments, documentsState] = useKV<Document[]>('justice-documents', [])
+  const [documentVersions, setDocumentVersions, deleteDocumentVersions, versionsState] = useKV<DocumentVersion[]>('document-versions', [])
   const [processedDocs, setProcessedDocs] = useState<Document[]>([])
   const [processing, setProcessing] = useState<ProcessingDocument[]>([])
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
@@ -183,12 +148,22 @@ function App() {
     processingDoc: null
   })
 
-  // Load processed documents from GitHub Actions pipeline on component mount
+  // Load processed documents from GitHub Actions pipeline on component mount with error handling
   useEffect(() => {
     const loadData = async () => {
       setIsLoadingProcessed(true)
+      
       try {
-        const processed = await loadProcessedDocuments()
+        const result = await loadProcessedDocuments()
+        
+        if (!result.success) {
+          console.log('Failed to load processed documents:', result.error)
+          // Don't show error toast for this as it's expected for new installations
+          setProcessedDocs([])
+          return
+        }
+        
+        const processed = result.data
         setProcessedDocs(processed)
         
         // Create initial version entries for processed documents that don't have them
@@ -202,7 +177,18 @@ function App() {
         })
         
         if (processedVersions.length > 0) {
-          setDocumentVersions(prev => [...prev, ...processedVersions])
+          try {
+            await setDocumentVersions(prev => [...prev, ...processedVersions])
+          } catch (error) {
+            handleError(
+              new ApplicationError(
+                ERROR_CODES.STORAGE_OPERATION_FAILED,
+                'Failed to save document versions',
+                { cause: error instanceof Error ? error : new Error('Unknown error') }
+              ),
+              'loadData:setDocumentVersions'
+            )
+          }
         }
         
         // Merge with locally uploaded documents, avoiding duplicates
@@ -217,8 +203,14 @@ function App() {
           console.log('No documents found - ready to upload new PDFs')
         }
       } catch (error) {
-        console.error('Error loading processed documents:', error)
-        // Don't show error toast - this is expected for new installations
+        handleError(
+          error instanceof ApplicationError ? error : new ApplicationError(
+            ERROR_CODES.UNKNOWN_ERROR,
+            'Unexpected error during data loading',
+            { cause: error instanceof Error ? error : new Error('Unknown error') }
+          ),
+          'loadData'
+        )
       } finally {
         setIsLoadingProcessed(false)
       }
@@ -514,47 +506,98 @@ function App() {
   })
 
   const handleFileUpload = async (files: FileList) => {
-    const fileArray = Array.from(files)
-    
-    if (fileArray.length === 0) {
-      toast.error('Please select files to upload')
-      return
-    }
-
-    // Validate all files first
-    const validationResults = await Promise.all(
-      fileArray.map(async (file) => ({
-        file,
-        isValid: await validatePDF(file),
-        isPDF: file.type === 'application/pdf'
-      }))
-    )
-
-    const invalidFiles = validationResults.filter(r => !r.isValid)
-    const validFiles = validationResults.filter(r => r.isValid).map(r => r.file)
-
-    if (invalidFiles.length > 0) {
-      const invalidNames = invalidFiles.map(f => f.file.name).join(', ')
-      toast.error(`Invalid PDF files: ${invalidNames}`)
-    }
-
-    if (validFiles.length === 0) {
-      toast.error('No valid PDF files found')
-      return
-    }
-
-    // Process valid files
-    for (const file of validFiles) {
-      const processingDoc: ProcessingDocument = {
-        fileName: file.name,
-        progress: 0,
-        status: 'validating'
+    try {
+      const fileArray = Array.from(files)
+      
+      if (fileArray.length === 0) {
+        toast.error('Please select files to upload')
+        return
       }
-      
-      setProcessing(prev => [...prev, processingDoc])
-      
-      // Process each file (error handling is done within processRealPDF)
-      await processRealPDF(file, processingDoc)
+
+      // Validate all files first with proper error handling
+      const validationResults = await Promise.allSettled(
+        fileArray.map(async (file) => {
+          const validation = Validator.isValidPDFFile(file)
+          if (!validation.success) {
+            return { file, isValid: false, error: validation.error }
+          }
+          
+          const pdfValidation = await validatePDF(file)
+          return { 
+            file, 
+            isValid: pdfValidation.success, 
+            error: pdfValidation.success ? null : pdfValidation.error 
+          }
+        })
+      )
+
+      const processedValidations = validationResults.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return result.value
+        } else {
+          return {
+            file: fileArray[index],
+            isValid: false,
+            error: new ApplicationError(
+              ERROR_CODES.FILE_CORRUPTED,
+              'File validation failed',
+              { cause: new Error(result.reason) }
+            )
+          }
+        }
+      })
+
+      const invalidFiles = processedValidations.filter(r => !r.isValid)
+      const validFiles = processedValidations.filter(r => r.isValid).map(r => r.file)
+
+      if (invalidFiles.length > 0) {
+        const invalidNames = invalidFiles.map(f => f.file.name).join(', ')
+        const firstError = invalidFiles[0].error
+        
+        if (firstError) {
+          handleError(firstError, 'fileUpload:validation')
+        } else {
+          toast.error(`Invalid PDF files: ${invalidNames}`)
+        }
+      }
+
+      if (validFiles.length === 0) {
+        toast.error('No valid PDF files found')
+        return
+      }
+
+      // Process valid files with error handling
+      for (const file of validFiles) {
+        const processingDoc: ProcessingDocument = {
+          fileName: file.name,
+          progress: 0,
+          status: 'validating'
+        }
+        
+        setProcessing(prev => [...prev, processingDoc])
+        
+        try {
+          await processRealPDF(file, processingDoc)
+        } catch (error) {
+          handleError(
+            error instanceof ApplicationError ? error : new ApplicationError(
+              ERROR_CODES.PDF_EXTRACTION_FAILED,
+              `Failed to process ${file.name}`,
+              { cause: error instanceof Error ? error : new Error('Unknown processing error') }
+            ),
+            'fileUpload:processFile'
+          )
+        }
+      }
+    } catch (error) {
+      handleError(
+        error instanceof ApplicationError ? error : new ApplicationError(
+          ERROR_CODES.UNKNOWN_ERROR,
+          'File upload operation failed',
+          { cause: error instanceof Error ? error : new Error('Unknown upload error') }
+        ),
+        'handleFileUpload'
+      )
     }
   }
 
@@ -572,37 +615,49 @@ function App() {
       updateProgress(10, 'validating')
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // Step 2: Extract text from PDF
+      // Step 2: Extract text from PDF with proper error handling
       updateProgress(25, 'extracting')
       const pdfResult = await extractTextFromPDF(file, 50) // Limit to 50 pages for performance
+      
+      if (!pdfResult.success) {
+        throw pdfResult.error
+      }
       
       updateProgress(50, 'analyzing')
       await new Promise(resolve => setTimeout(resolve, 300))
       
       // Step 3: Generate fingerprint for duplicate detection
       updateProgress(60, 'checking-duplicates')
-      const fingerprint = await generateFileFingerprint(file, pdfResult.text, pdfResult.pageCount)
+      const fingerprintResult = await generateFileFingerprint(file, pdfResult.data.text, pdfResult.data.pageCount)
       
-      // Step 4: Check for duplicates
-      const duplicateResult = detectDuplicate(fingerprint, allDocuments)
+      if (!fingerprintResult.success) {
+        throw fingerprintResult.error
+      }
       
-      if (duplicateResult.isDuplicate) {
+      // Step 4: Check for duplicates with proper error handling
+      const duplicateResult = detectDuplicate(fingerprintResult.data, allDocuments)
+      
+      if (!duplicateResult.success) {
+        throw duplicateResult.error
+      }
+      
+      if (duplicateResult.data.isDuplicate) {
         // Stop processing and show duplicate dialog
         updateProgress(60, 'duplicate-found')
         setProcessing(prev => prev.map(p => 
           p.fileName === file.name 
-            ? { ...p, duplicateResult }
+            ? { ...p, duplicateResult: duplicateResult.data }
             : p
         ))
         
         setDuplicateDialog({
           isOpen: true,
-          result: duplicateResult,
+          result: duplicateResult.data,
           newFile: file,
-          processingDoc: { ...processingDoc, duplicateResult }
+          processingDoc: { ...processingDoc, duplicateResult: duplicateResult.data }
         })
         
-        toast.warning(`Potential duplicate detected: ${file.name} (${duplicateResult.confidence}% confidence)`)
+        toast.warning(`Potential duplicate detected: ${file.name} (${duplicateResult.data.confidence}% confidence)`)
         return // Stop processing until user decides
       }
       
@@ -610,6 +665,42 @@ function App() {
       updateProgress(70, 'analyzing')
       await new Promise(resolve => setTimeout(resolve, 500))
       
+      // Continue with document creation...
+      await createDocumentFromPDF(file, pdfResult.data, fingerprintResult.data, updateProgress)
+      
+    } catch (error) {
+      const appError = error instanceof ApplicationError ? error : new ApplicationError(
+        ERROR_CODES.PDF_EXTRACTION_FAILED,
+        `Processing failed for ${file.name}`,
+        { 
+          cause: error instanceof Error ? error : new Error('Unknown processing error'),
+          details: { fileName: file.name }
+        }
+      )
+      
+      handleError(appError, 'processRealPDF')
+      updateProgress(0, 'error')
+      setProcessing(prev => prev.map(p => 
+        p.fileName === file.name 
+          ? { 
+              ...p, 
+              status: 'error', 
+              progress: 0,
+              error: appError.userMessage
+            }
+          : p
+      ))
+    }
+  }
+
+  // Helper function to create document from PDF processing result
+  const createDocumentFromPDF = async (
+    file: File, 
+    pdfResult: any, 
+    fingerprint: any, 
+    updateProgress: (progress: number, status: ProcessingDocument['status']) => void
+  ) => {
+    try {
       // Analyze content for children and laws
       const detectedChildren = CHILDREN_NAMES.filter(name => 
         pdfResult.text.toLowerCase().includes(name.toLowerCase())
@@ -662,11 +753,11 @@ function App() {
       updateProgress(100, 'complete')
       
       // Save document and create initial version
-      setDocuments(prev => [...prev, newDoc])
+      await setDocuments(prev => [...prev, newDoc])
       
       // Create initial version entry
       const initialVersion = createDocumentVersion(newDoc, 'created', 'Initial document upload and processing')
-      setDocumentVersions(prev => [...prev, initialVersion])
+      await setDocumentVersions(prev => [...prev, initialVersion])
       
       setTimeout(() => {
         setProcessing(prev => prev.filter(p => p.fileName !== file.name))
@@ -674,24 +765,17 @@ function App() {
 
       toast.success(`Successfully processed ${file.name} (${pdfResult.pageCount} pages)`)
     } catch (error) {
-      console.error('Processing error:', error)
-      updateProgress(0, 'error')
-      setProcessing(prev => prev.map(p => 
-        p.fileName === file.name 
-          ? { 
-              ...p, 
-              status: 'error', 
-              progress: 0,
-              error: error instanceof Error ? error.message : 'Unknown error'
-            }
-          : p
-      ))
-      toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new ApplicationError(
+        ERROR_CODES.STORAGE_OPERATION_FAILED,
+        'Failed to save processed document',
+        { 
+          cause: error instanceof Error ? error : new Error('Unknown save error'),
+          details: { fileName: file.name }
+        }
+      )
     }
   }
-
   const createDescription = (text: string, metadata?: any): string => {
-    // Clean and truncate text for description
     const cleanText = text.replace(/\s+/g, ' ').trim()
     
     // Try to find a meaningful first sentence or paragraph
@@ -1290,7 +1374,10 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
   }
 
   return (
-    <div id="spark-app" className="min-h-screen bg-background">
+    <ErrorBoundary level="page" onError={(error, errorInfo) => {
+      console.error('App-level error caught:', error, errorInfo)
+    }}>
+      <div id="spark-app" className="min-h-screen bg-background">
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -2080,7 +2167,63 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
               })}
             </div>
 
-            {filteredDocuments.length === 0 && !isLoadingProcessed && (
+            {/* Loading state with error handling */}
+            {(documentsState.loading || versionsState.loading || isLoadingProcessed) && (
+              <div className="text-center py-12">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-muted-foreground">
+                  {documentsState.loading && 'Loading documents...'}
+                  {versionsState.loading && 'Loading version history...'}
+                  {isLoadingProcessed && 'Loading processed documents...'}
+                </p>
+              </div>
+            )}
+
+            {/* Error states */}
+            {(documentsState.error || versionsState.error) && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-2 text-destructive mb-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="font-medium">Storage Error</span>
+                </div>
+                {documentsState.error && (
+                  <p className="text-sm text-destructive/90 mb-2">
+                    Documents: {documentsState.error.userMessage || documentsState.error.message}
+                  </p>
+                )}
+                {versionsState.error && (
+                  <p className="text-sm text-destructive/90 mb-2">
+                    Versions: {versionsState.error.userMessage || versionsState.error.message}
+                  </p>
+                )}
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      documentsState.clearError()
+                      versionsState.clearError()
+                    }}
+                  >
+                    Dismiss
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      documentsState.reload()
+                      versionsState.reload()
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* No documents found state */}
+            {filteredDocuments.length === 0 && !isLoadingProcessed && !documentsState.loading && !versionsState.loading && (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No documents found</h3>
@@ -2105,7 +2248,8 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
               </div>
             )}
 
-            {isLoadingProcessed && (
+            {/* Loading state for processed documents */}
+            {isLoadingProcessed && !documentsState.loading && !versionsState.loading && (
               <div className="text-center py-12">
                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading processed documents...</p>
@@ -2551,7 +2695,8 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </ErrorBoundary>
   )
 }
 
