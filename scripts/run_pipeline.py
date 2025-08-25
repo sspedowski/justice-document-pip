@@ -61,10 +61,55 @@ def printable_index(json_files, out_pdf):
     c.showPage()
     c.save()
 
+def run_enhancement_pipeline(cfg_path):
+    """Run OCR, deduplication, and auto-tagging enhancements"""
+    print("Running enhancement pipeline...")
+    
+    # Check for duplicates
+    try:
+        subprocess.run([
+            sys.executable, (THIS/"enhance_pdfs.py").as_posix(),
+            "--config", cfg_path.as_posix(),
+            "--check-duplicates"
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Duplicate check failed: {e}")
+    
+    # Run OCR enhancement
+    try:
+        subprocess.run([
+            sys.executable, (THIS/"enhance_pdfs.py").as_posix(),
+            "--config", cfg_path.as_posix(),
+            "--ocr-enhance"
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: OCR enhancement failed: {e}")
+    
+    # Run auto-tagging
+    try:
+        subprocess.run([
+            sys.executable, (THIS/"auto_tag.py").as_posix(),
+            "--config", cfg_path.as_posix(),
+            "--create-review-queue"
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Auto-tagging failed: {e}")
+    
+    # Assign exhibit numbers
+    try:
+        subprocess.run([
+            sys.executable, (THIS/"enhance_pdfs.py").as_posix(),
+            "--config", cfg_path.as_posix(),
+            "--assign-exhibits"
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Exhibit assignment failed: {e}")
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", help="Path to YAML config", default=None)
+    parser.add_argument("--skip-enhancements", action="store_true", help="Skip OCR and auto-tagging")
     args = parser.parse_args()
 
     cfg, cfg_path = load_cfg(args.config)
@@ -88,6 +133,13 @@ def main():
             "--out", meta_dir.as_posix()
         ], text=True).strip()
         json_files.append(Path(out_json))
+
+    # 1.5) Run enhancement pipeline (OCR, auto-tagging, deduplication)
+    if not args.skip_enhancements and json_files:
+        run_enhancement_pipeline(cfg_path)
+        # Refresh json_files list after enhancements
+        json_files = sorted([p for p in meta_dir.glob("*.json") 
+                           if not p.name.startswith(('duplicates', 'review_queue', 'exhibit_mapping'))])
 
     # 2) Export Master CSV
     csv_path = out_dir / "MasterReview_INDEX.csv"

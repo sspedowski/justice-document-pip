@@ -1,70 +1,100 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useEffect, useState } from "react";
 
 /**
- * React hook for persistent key-value storage using Spark KV API with localStorage fallback
- * Automatically syncs with the Spark runtime when available
+ * Fallback useKV hook that mimics @github/spark/hooks functionality
+ * Uses localStorage for persistence when Spark runtime is not available
  */
-export function useKV<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void, () => void] {
-  const [value, setValue] = useState<T>(defaultValue)
-  const [isInitialized, setIsInitialized] = useState(false)
+export function useKV<T>(key: string, initial: T): [T, (value: T | ((prev: T) => T)) => void, () => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      // Try to get from Spark KV first
+      if (typeof window !== 'undefined' && window.spark?.kv) {
+        // Spark KV is async, but we need sync for initial state
+        // Fall back to localStorage for initial render
+      }
+      
+      // Use localStorage as fallback
+      const stored = localStorage.getItem(`kv:${key}`);
+      return stored ? (JSON.parse(stored) as T) : initial;
+    } catch (error) {
+      console.warn('Failed to load from storage:', error);
+      return initial;
+    }
+  });
 
-  // Initialize value from storage
+  // Effect to sync with Spark KV when available
   useEffect(() => {
-    const initializeValue = async () => {
+    const loadFromSparkKV = async () => {
       try {
         if (typeof window !== 'undefined' && window.spark?.kv) {
-          // Use Spark KV when available
-          const storedValue = await window.spark.kv.get<T>(key)
-          setValue(storedValue !== undefined ? storedValue : defaultValue)
-        } else {
-          // Fallback to localStorage
-          const item = localStorage.getItem(`spark-kv:${key}`)
-          setValue(item ? JSON.parse(item) : defaultValue)
+          const sparkValue = await window.spark.kv.get<T>(key);
+          if (sparkValue !== undefined) {
+            setValue(sparkValue);
+          }
         }
       } catch (error) {
-        console.error('Error loading from storage:', error)
-        setValue(defaultValue)
-      } finally {
-        setIsInitialized(true)
+        console.warn('Failed to load from Spark KV:', error);
       }
-    }
+    };
 
-    initializeValue()
-  }, [key, defaultValue])
+    loadFromSparkKV();
+  }, [key]);
 
-  const setStoredValue = useCallback(async (newValue: T | ((prev: T) => T)) => {
+  // Effect to persist changes
+  useEffect(() => {
+    const saveValue = async () => {
+      try {
+        // Save to Spark KV if available
+        if (typeof window !== 'undefined' && window.spark?.kv) {
+          await window.spark.kv.set(key, value);
+        }
+        
+        // Always save to localStorage as fallback
+        localStorage.setItem(`kv:${key}`, JSON.stringify(value));
+      } catch (error) {
+        console.warn('Failed to save to storage:', error);
+        // Try localStorage only
+        try {
+          localStorage.setItem(`kv:${key}`, JSON.stringify(value));
+        } catch (localError) {
+          console.error('Failed to save to localStorage:', localError);
+        }
+      }
+    };
+
+    saveValue();
+  }, [key, value]);
+
+  const updateValue = (newValue: T | ((prev: T) => T)) => {
+    setValue(prev => {
+      const computed = typeof newValue === 'function' ? (newValue as (prev: T) => T)(prev) : newValue;
+      return computed;
+    });
+  };
+
+  const deleteValue = async () => {
     try {
-      const valueToStore = newValue instanceof Function ? newValue(value) : newValue
-      setValue(valueToStore)
-      
+      // Delete from Spark KV if available
       if (typeof window !== 'undefined' && window.spark?.kv) {
-        // Use Spark KV when available
-        await window.spark.kv.set(key, valueToStore)
-      } else {
-        // Fallback to localStorage
-        localStorage.setItem(`spark-kv:${key}`, JSON.stringify(valueToStore))
+        await window.spark.kv.delete(key);
       }
-    } catch (error) {
-      console.error('Error saving to storage:', error)
-    }
-  }, [key, value])
-
-  const deleteValue = useCallback(async () => {
-    try {
-      setValue(defaultValue)
       
-      if (typeof window !== 'undefined' && window.spark?.kv) {
-        // Use Spark KV when available
-        await window.spark.kv.delete(key)
-      } else {
-        // Fallback to localStorage
-        localStorage.removeItem(`spark-kv:${key}`)
-      }
+      // Delete from localStorage
+      localStorage.removeItem(`kv:${key}`);
+      
+      // Reset to initial value
+      setValue(initial);
     } catch (error) {
-      console.error('Error deleting from storage:', error)
+      console.warn('Failed to delete from storage:', error);
+      // Try localStorage only
+      try {
+        localStorage.removeItem(`kv:${key}`);
+        setValue(initial);
+      } catch (localError) {
+        console.error('Failed to delete from localStorage:', localError);
+      }
     }
-  }, [key, defaultValue])
+  };
 
-  // Return default value until initialized to prevent hydration mismatches
-  return [isInitialized ? value : defaultValue, setStoredValue, deleteValue]
+  return [value, updateValue, deleteValue];
 }

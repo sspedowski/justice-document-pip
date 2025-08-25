@@ -1,0 +1,94 @@
+name: PDF Processing Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "input/**"
+      - "scripts/**"
+      - "config.ci.yaml"
+      - "requirements.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  process-pdfs:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check for PDF files
+        id: check-pdfs
+        run: |
+          if [ -d "input" ] && [ "$(find input -name '*.pdf' | wc -l)" -gt 0 ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "count=$(find input -name '*.pdf' | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run PDF processing pipeline
+        if: steps.check-pdfs.outputs.found == 'true'
+        run: |
+          echo "Processing ${{ steps.check-pdfs.outputs.count }} PDF files..."
+          python scripts/run_pipeline.py --config config.ci.yaml
+
+      - name: Upload processing artifacts
+        if: steps.check-pdfs.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-documents
+          path: |
+            output/packets/*.pdf
+            output/PRINTABLE_Index.pdf
+            output/MasterReview_INDEX.csv
+            output/metadata/*.json
+
+      - name: Commit processed data
+        if: steps.check-pdfs.outputs.found == 'true'
+        run: |
+          git config user.name "pdf-processor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          
+          # Add generated files
+          git add app/data/justice-documents.json || echo "No justice-documents.json to add"
+          git add output/PRINTABLE_Index.pdf output/MasterReview_INDEX.csv || echo "No output files to add"
+          git add output/metadata/*.json || echo "No metadata files to add"
+          
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "ci: processed ${{ steps.check-pdfs.outputs.count }} PDF files
+            
+            - Generated metadata and classification
+            - Updated master index CSV
+            - Created printable index PDF
+            - Generated oversight packets"
+            git push
+          fi
+
+      - name: No PDFs found
+        if: steps.check-pdfs.outputs.found == 'false'
+        run: |
+          echo "No PDF files found in input/ directory"
+          echo "Add PDF files to input/ directory to trigger processing"

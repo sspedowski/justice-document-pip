@@ -4,13 +4,23 @@
  */
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configure PDF.js worker - try multiple paths for better compatibility
-try {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
-} catch {
-  // Fallback for environments where worker loading fails
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
-}
+// Configure PDF.js worker with proper paths for both dev and production
+const configureWorker = () => {
+  try {
+    // Try local worker first (should work in production)
+    if (typeof window !== 'undefined') {
+      const workerUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+    }
+  } catch (error) {
+    console.warn('Failed to configure local PDF worker, using CDN fallback:', error);
+    // Fallback to CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+  }
+};
+
+// Initialize worker configuration
+configureWorker();
 
 interface PDFProcessingResult {
   text: string

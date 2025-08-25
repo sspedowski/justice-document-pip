@@ -3,3 +3,8 @@ PyPDF2==3.0.1
 reportlab==4.2.2
 pytz==2024.1
 PyYAML==6.0.2
+
+# OCR and document processing (optional - install system packages)
+# sudo apt-get install tesseract-ocr poppler-utils
+# pip install pytesseract Pillow
+PyYAML==6.0.2

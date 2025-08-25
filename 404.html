@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- GitHub Pages 404 redirect for SPA routing -->
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+    
+    <title>Justice Document Manager</title>
+    <meta name="description" content="Contact & Action Book — Master File System for document management and legal case tracking" />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    
+    <!-- CSS -->
+    <link href="/src/main.css" rel="stylesheet" />
+    
+    <!-- Vite preload for better performance -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+</head>
+
+<body>
+    <div id="root">
+        <!-- Loading fallback -->
+        <div style="
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #fafafa;
+        ">
+            <div style="text-align: center;">
+                <div style="
+                    width: 40px; 
+                    height: 40px; 
+                    border: 3px solid #e5e7eb; 
+                    border-top: 3px solid #3b82f6; 
+                    border-radius: 50%; 
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 16px;
+                "></div>
+                <h2 style="color: #374151; font-size: 18px; margin: 0 0 8px 0;">Loading Justice Document Manager</h2>
+                <p style="color: #6b7280; font-size: 14px; margin: 0;">Contact & Action Book — Master File System</p>
+            </div>
+        </div>
+        
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    </div>
+    
+    <!-- Main application script -->
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Error handling for missing scripts -->
+    <script>
+        // Fallback error handling
+        window.addEventListener('error', function(e) {
+            console.error('Application error:', e.error);
+            
+            const root = document.getElementById('root');
+            if (root && root.innerHTML.includes('Loading')) {
+                root.innerHTML = `
+                    <div style="
+                        min-height: 100vh; 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        font-family: 'Inter', system-ui, sans-serif;
+                        background: #fafafa;
+                        padding: 24px;
+                    ">
+                        <div style="
+                            max-width: 400px; 
+                            text-align: center; 
+                            background: white; 
+                            padding: 32px; 
+                            border-radius: 8px; 
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        ">
+                            <div style="color: #dc2626; font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                            <h2 style="color: #374151; font-size: 20px; margin: 0 0 12px 0;">Failed to Load Application</h2>
+                            <p style="color: #6b7280; font-size: 14px; margin: 0 0 20px 0;">
+                                The application encountered an error during startup. This might be due to:
+                            </p>
+                            <ul style="color: #6b7280; font-size: 14px; text-align: left; margin: 0 0 20px 0;">
+                                <li>Missing dependencies</li>
+                                <li>Network connectivity issues</li>
+                                <li>Browser compatibility problems</li>
+                            </ul>
+                            <button onclick="window.location.reload()" style="
+                                background: #3b82f6; 
+                                color: white; 
+                                border: none; 
+                                padding: 8px 16px; 
+                                border-radius: 4px; 
+                                cursor: pointer;
+                                font-size: 14px;
+                            ">
+                                Reload Page
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
