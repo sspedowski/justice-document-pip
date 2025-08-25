@@ -5,13 +5,13 @@ interface Props {
   children: ReactNode;
 }
 
-interface State {
-  hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
-}
+  public state: S
+  };
+  public static 
+  }
+ 
 
-export class ErrorBoundary extends Component<Props, State> {
+
   public state: State = {
     hasError: false
   };
@@ -26,34 +26,34 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReload = () => {
-    window.location.reload();
-  };
+                    </div>
+    
 
-  private handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
-  };
+            <div className="fle
+                onClick={this.handleReset}
+    
 
-  public render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-card border border-border rounded-lg p-6 text-center">
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-foreground mb-2">
-              Something went wrong
-            </h1>
-            <p className="text-muted-foreground text-sm mb-6">
-              The application encountered an unexpected error. This might be due to a missing dependency or configuration issue.
-            </p>
-            
-            {this.state.error && (
-              <details className="text-left mb-6 bg-muted/50 rounded p-3">
-                <summary className="text-xs font-medium cursor-pointer">Error Details</summary>
-                <pre className="text-xs mt-2 overflow-auto">
-                  {this.state.error.message}
-                  {this.state.error.stack && (
-                    <div className="mt-2 text-muted-foreground">
-                      {this.state.error.stack.split('\n').slice(0, 5).join('\n')}
+                onC
+              >
+              
+            </div>
+            <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-80
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Check if all dependencies are installed</li>
+                <li>Check browser 
+            </div
+        </div>
+    }
+    return this.
+}
+
+
+
+
+
+
+
+
                     </div>
                   )}
                 </pre>
