@@ -65,13 +65,20 @@ def sha256(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()[:16]
 
-def safe_read_pdf(path: Path) -> str:
-    """Extract text with pdfplumber; cache .txt by hash to speed re-runs."""
+def safe_read_document(path: Path) -> str:
+    """Extract text from PDF or read text file directly; cache .txt by hash to speed re-runs."""
+    
+    # If it's a text file, read directly
+    if path.suffix.lower() == '.txt':
+        return path.read_text(encoding="utf-8", errors="ignore")
+    
+    # For PDFs, use pdfplumber
     try:
         import pdfplumber  # type: ignore
     except Exception as e:
-        print("ERROR: pdfplumber is required. pip install pdfplumber", file=sys.stderr)
-        raise
+        print("ERROR: pdfplumber is required for PDF files. pip install pdfplumber", file=sys.stderr)
+        print(f"Skipping PDF file: {path}")
+        return ""
 
     key = f"{path.stem}.{sha256(path)}.txt"
     cache_path = CACHE_DIR / key
@@ -262,15 +269,17 @@ def main():
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    pdfs = sorted(in_dir.glob("**/*.pdf"))
+    pdfs = sorted(in_dir.glob("**/*.pdf")) + sorted(in_dir.glob("**/*.txt"))
     docs: List[Doc] = []
     for p in pdfs:
         try:
-            text = safe_read_pdf(p)
+            text = safe_read_document(p)
+            if not text.strip():  # Skip empty files
+                continue
         except Exception as e:
             print(f"[warn] could not read {p}: {e}", file=sys.stderr)
             continue
-        meta_date = pdf_creation_date(p)
+        meta_date = pdf_creation_date(p) if p.suffix.lower() == '.pdf' else None
         d = extract_date(text, p.name, meta_date)
         docs.append(Doc(path=p, text=text, date=d, mtime=p.stat().st_mtime))
 
@@ -288,7 +297,7 @@ def main():
 
     # Index heading
     index_body = [f"<h1>Date-based Diff Index</h1>",
-                  f"<p>Total PDFs scanned: <b>{len(pdfs)}</b>. Dated groups: <b>{len(groups)}</b>. Unknown date: <b>{len(unknowns)}</b>.</p>"]
+                  f"<p>Total documents scanned: <b>{len(pdfs)}</b> ({len([p for p in pdfs if p.suffix.lower() == '.pdf'])} PDFs, {len([p for p in pdfs if p.suffix.lower() == '.txt'])} text files). Dated groups: <b>{len(groups)}</b>. Unknown date: <b>{len(unknowns)}</b>.</p>"]
 
     # Process each date with 2+ documents
     for date, ds in sorted(groups.items()):

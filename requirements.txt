@@ -1,9 +1,18 @@
+# Document Processing and Tampering Detection Requirements
+
 pdfplumber==0.11.4
 PyPDF2==3.0.1
 reportlab==4.2.2
-pytz==2024.1
 PyYAML==6.0.2
-
-# OCR and document processing (optional - install system packages)
-# sudo apt-get install tesseract-ocr poppler-utils
-# pip install pytesseract Pillow
+difflib
+hashlib
+csv
+json
+pathlib
+datetime
+argparse
+re
+html
+os
+sys
+collections

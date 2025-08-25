@@ -16,6 +16,7 @@ import { ReportGenerator } from '@/components/ReportGenerator'
 import { DocumentComparison } from '@/components/DocumentComparison'
 import { DuplicateDetectionDialog } from '@/components/DuplicateDetectionDialog'
 import { TamperingDetector } from '@/components/TamperingDetector'
+import TamperingDetectorTest from '@/components/TamperingDetectorTest'
 import { 
   generateFileFingerprint, 
   detectDuplicate, 
@@ -155,6 +156,7 @@ function App() {
   const [viewingVersionHistory, setViewingVersionHistory] = useState<Document | null>(null)
   const [comparingVersions, setComparingVersions] = useState<Document | null>(null)
   const [showTamperingDetector, setShowTamperingDetector] = useState(false)
+  const [showTamperingTest, setShowTamperingTest] = useState(false)
   const [changeNotes, setChangeNotes] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [contentSearchTerm, setContentSearchTerm] = useState('')
@@ -452,6 +454,12 @@ function App() {
         setShowTamperingDetector(true)
       }
       
+      // Ctrl/Cmd + Shift + T to open tampering test
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') {
+        e.preventDefault()
+        setShowTamperingTest(true)
+      }
+      
       // Escape to close dialogs
       if (e.key === 'Escape') {
         if (comparingVersions) {
@@ -465,13 +473,15 @@ function App() {
           setSelectedDoc(null)
         } else if (showTamperingDetector) {
           setShowTamperingDetector(false)
+        } else if (showTamperingTest) {
+          setShowTamperingTest(false)
         }
       }
     }
     
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions, showTamperingDetector])
+  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions, showTamperingDetector, showTamperingTest])
 
   const filteredDocuments = allDocuments.filter(doc => {
     if (!doc) return false
@@ -1078,13 +1088,13 @@ function App() {
                 <span className="ml-2 text-xs opacity-70">(Ctrl+T)</span>
               </Button>
               <Button 
-                onClick={runComparisonAnalysis}
+                onClick={() => setShowTamperingTest(true)}
                 variant="outline" 
                 size="sm"
                 className="text-purple-700 border-purple-200 hover:bg-purple-50"
               >
                 <GitCompare className="h-4 w-4 mr-2" />
-                Run Comparison
+                Test Date Comparison
               </Button>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
@@ -1269,6 +1279,50 @@ function App() {
                     
                     <div className="text-xs text-muted-foreground">
                       After loading, use the "Detect Tampering" button to run analysis on the sample documents.
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GitCompare className="h-5 w-5" />
+                  Date-Based Comparison Testing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Test Document Tampering Detection</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Run the date-based comparison algorithm to detect potential document tampering. This test uses sample documents with intentional alterations to demonstrate the detection capabilities.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="text-sm">
+                      <strong>Test Features:</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-muted-foreground">
+                        <li>Groups documents by date and compares versions</li>
+                        <li>Detects name changes, number alterations, and status modifications</li>
+                        <li>Analyzes name mention frequency changes</li>
+                        <li>Calculates suspicion scores based on detected changes</li>
+                        <li>Highlights critical alterations that may indicate tampering</li>
+                      </ul>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => setShowTamperingTest(true)}
+                      className="w-full"
+                    >
+                      <GitCompare className="h-4 w-4 mr-2" />
+                      Run Date-Based Comparison Test
+                      <span className="ml-2 text-xs opacity-70">(Ctrl+Shift+T)</span>
+                    </Button>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      This test analyzes sample documents with known tampering to validate the detection algorithms.
+                      Real documents from the input/ directory can be analyzed using the main "Detect Tampering" feature.
                     </div>
                   </div>
                 </div>
@@ -2084,6 +2138,21 @@ function App() {
         isOpen={showTamperingDetector}
         onClose={() => setShowTamperingDetector(false)}
       />
+
+      {/* Tampering Detection Test Dialog */}
+      <Dialog open={showTamperingTest} onOpenChange={setShowTamperingTest}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitCompare className="h-5 w-5" />
+              Date-Based Document Comparison Test
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            <TamperingDetectorTest />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
