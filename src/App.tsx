@@ -37,6 +37,7 @@ import { DuplicateDetectionDialog } from '@/components/DuplicateDetectionDialog'
 import { TamperingDetector } from '@/components/TamperingDetector'
 import TamperingDetectorTest from '@/components/TamperingDetectorTest'
 import AdvancedTamperingAnalyzer from '@/components/AdvancedTamperingAnalyzer'
+import EvidenceAnalysisDisplay from '@/components/EvidenceAnalysisDisplay'
 
 import { sampleDocumentsWithTampering } from '@/data/sampleTamperingData'
 import { sampleDocumentsWithDates } from '@/data/sampleDocumentsWithDates'
@@ -131,6 +132,7 @@ function App() {
   const [showTamperingDetector, setShowTamperingDetector] = useState(false)
   const [showTamperingTest, setShowTamperingTest] = useState(false)
   const [showAdvancedAnalyzer, setShowAdvancedAnalyzer] = useState(false)
+  const [showEvidenceAnalysis, setShowEvidenceAnalysis] = useState(false)
   const [changeNotes, setChangeNotes] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [contentSearchTerm, setContentSearchTerm] = useState('')
@@ -455,13 +457,15 @@ function App() {
           setShowAdvancedAnalyzer(false)
         } else if (showTamperingTest) {
           setShowTamperingTest(false)
+        } else if (showEvidenceAnalysis) {
+          setShowEvidenceAnalysis(false)
         }
       }
     }
     
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions, showTamperingDetector, showAdvancedAnalyzer, showTamperingTest])
+  }, [selectedDoc, viewingVersionHistory, editingDoc, comparingVersions, showTamperingDetector, showAdvancedAnalyzer, showTamperingTest, showEvidenceAnalysis])
 
   const filteredDocuments = allDocuments.filter(doc => {
     if (!doc) return false
@@ -1202,7 +1206,7 @@ function App() {
   }
 
   const runImmediateTamperingAnalysis = async () => {
-    // Immediate analysis of YOUR REAL EVIDENCE FILES with specific contradiction detection
+    // REAL EVIDENCE ANALYSIS using your actual case files
     const docsWithContent = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100)
     
     if (docsWithContent.length === 0) {
@@ -1212,172 +1216,52 @@ function App() {
 
     if (docsWithContent.length < 2) {
       toast.warning(`Found only ${docsWithContent.length} evidence file. Loading additional documents for tampering comparison...`)
-      // Try to load more
       await loadTextFilesFromInput(false)
       return
     }
 
+    // Show the evidence analysis display immediately
+    setShowEvidenceAnalysis(true)
+    
     try {
-      // Import the tampering analyzer dynamically
-      const { analyzeTampering, generateTamperingReport } = await import('@/lib/tamperingAnalyzer')
+      // Import the REAL evidence analyzer
+      const { analyzeRealEvidence, generateTamperingExecutiveSummary } = await import('@/lib/realEvidenceAnalyzer')
       
-      toast.info(`🚨 ANALYZING ${allDocuments.length} REAL EVIDENCE FILES FOR TAMPERING...`, {
-        description: 'Scanning CPS reports, police reports, and medical exams for alterations',
+      toast.info(`🚨 ANALYZING ${allDocuments.length} REAL EVIDENCE FILES FOR SYSTEMATIC TAMPERING...`, {
+        description: 'Opening detailed analysis display with specific contradictions detected',
         duration: 4000
       })
       
-      // Convert documents to analysis format
-      const documentsForAnalysis = allDocuments.map(doc => ({
-        id: doc.id,
-        fileName: doc.fileName,
-        title: doc.title,
-        description: doc.description,
-        textContent: doc.textContent,
-        uploadedAt: doc.uploadedAt,
-        category: doc.category,
-        children: doc.children,
-        laws: doc.laws,
-        lastModified: doc.lastModified,
-        lastModifiedBy: doc.lastModifiedBy,
-        currentVersion: doc.currentVersion || 1
-      }))
+      // Run comprehensive analysis on your real documents
+      const tamperingReport = analyzeRealEvidence(allDocuments)
       
-      // Run comprehensive analysis
-      const analysisResults = analyzeTampering(documentsForAnalysis)
-      const { dateGroupAnalyses, timelineFlags, overallRiskAssessment } = analysisResults
+      // Display the specific contradictions we found
+      const contradictions = tamperingReport.specificContradictions
       
+      if (contradictions.length === 0) {
+        toast.info('No critical tampering detected in current documents. Analysis display will show detailed results.')
+        return
+      }
+
       // SHOW SPECIFIC CONTRADICTIONS FROM YOUR REAL FILES
       setTimeout(() => {
         toast.error(`🚨 CRITICAL EVIDENCE TAMPERING DETECTED`, {
-          description: `Your evidence files show clear alterations. Analyzing specific contradictions...`,
+          description: `${contradictions.length} critical violations found in your evidence files. Check the detailed analysis display.`,
           duration: 8000
         })
       }, 1000)
 
-      // NOEL -> NEIL NAME CHANGE (Police Reports)
-      setTimeout(() => {
-        toast.error(`🔍 NAME ALTERATION DETECTED: "Noel Johnson" → "Neil Johnson"`, {
-          description: `Police report witness name changed between original and revised versions. This is evidence tampering.`,
-          duration: 10000
-        })
-      }, 2500)
-
-      // NICHOLAS -> OWEN CHANGE (CPS Reports)
-      setTimeout(() => {
-        toast.error(`🔍 CHILD NAME ALTERATION: "Nicholas Williams" → "Owen Williams"`, {
-          description: `CPS report shows child's name changed between initial and amended versions. Major discrepancy.`,
-          duration: 10000
-        })
-      }, 4000)
-
-      // CASE STATUS CHANGE (Police Reports)
-      setTimeout(() => {
-        toast.error(`🔍 CASE STATUS MANIPULATION: "ACTIVE" → "CLOSED - INSUFFICIENT EVIDENCE"`, {
-          description: `Police report conclusion completely reversed between versions. Highly suspicious alteration.`,
-          duration: 10000
-        })
-      }, 5500)
-
-      // EVIDENCE COUNT CHANGE (Police Reports)
-      setTimeout(() => {
-        toast.error(`🔍 EVIDENCE COUNT DISCREPANCY: 12 photos → 8 photos`, {
-          description: `Physical evidence count reduced in revised police report. Evidence may have been suppressed.`,
-          duration: 10000
-        })
-      }, 7000)
-
-      // WITNESS STATEMENT REMOVAL (CPS Reports)
-      setTimeout(() => {
-        toast.error(`🔍 WITNESS STATEMENT REMOVED: Noel Johnson statement deleted`, {
-          description: `CPS report amended to remove neighbor witness statement. Critical evidence suppression.`,
-          duration: 10000
-        })
-      }, 8500)
-
-      // RISK ASSESSMENT CHANGE (CPS Reports)
-      setTimeout(() => {
-        toast.error(`🔍 RISK ASSESSMENT ALTERED: "LOW RISK" → "MODERATE RISK"`, {
-          description: `CPS risk assessment changed to increase intervention level. Potential child endangerment.`,
-          duration: 10000
-        })
-      }, 10000)
-
-      // COMPREHENSIVE RESULTS
-      const criticalIssues = overallRiskAssessment.criticalFlags
-      const highRiskDocs = overallRiskAssessment.highRiskDocuments.length
-      const totalFlags = overallRiskAssessment.totalFlags
-      
-      setTimeout(() => {
-        toast.error(`📊 TAMPERING ANALYSIS COMPLETE`, {
-          description: `${criticalIssues} critical violations detected across ${highRiskDocs} documents. This is systematic evidence tampering.`,
-          duration: 12000
-        })
-      }, 12000)
-
-      // SPECIFIC DOCUMENT ANALYSIS
-      setTimeout(() => {
-        const policeReports = documentsForAnalysis.filter(doc => doc.fileName.includes('PoliceReport'))
-        const cpsReports = documentsForAnalysis.filter(doc => doc.fileName.includes('CPS_Report'))
-        
-        if (policeReports.length >= 2) {
-          toast.error(`🚔 POLICE REPORT TAMPERING: Original vs Revised shows systematic alterations`, {
-            description: `Witness names, evidence counts, and case conclusions all changed. This indicates coordinated evidence suppression.`,
-            duration: 10000
-          })
-        }
-        
-        if (cpsReports.length >= 2) {
-          toast.error(`👶 CPS REPORT TAMPERING: Initial vs Amended shows child safety concerns`, {
-            description: `Child names, witness statements, and risk assessments altered. May indicate child protection failures.`,
-            duration: 10000
-          })
-        }
-      }, 14000)
-
-      // NEXT STEPS
-      setTimeout(() => {
-        toast.info('📋 RECOMMENDED ACTIONS', {
-          description: 'Export reports immediately for oversight submission. Click "Export Reports" for FBI/DOJ packages.',
-          duration: 15000
-        })
-      }, 16000)
-      
-      // Auto-generate detailed console report
-      console.group('🚨 CRITICAL EVIDENCE TAMPERING DETECTED IN YOUR FILES')
-      console.log('📊 Overall Assessment: SYSTEMATIC TAMPERING DETECTED')
-      console.log('📈 Total Flags:', totalFlags)
-      console.log('🚨 Critical Flags:', criticalIssues)
-      console.log('📋 High-Risk Documents:', overallRiskAssessment.highRiskDocuments.length)
-      
-      console.group('🔍 SPECIFIC CONTRADICTIONS FOUND:')
-      console.log('👤 NAME CHANGES:')
-      console.log('  • "Noel Johnson" → "Neil Johnson" (Police Report witness)')
-      console.log('  • "Nicholas Williams" → "Owen Williams" (CPS Report child)')
-      
-      console.log('📄 CONTENT ALTERATIONS:')
-      console.log('  • Case Status: "ACTIVE" → "CLOSED - INSUFFICIENT EVIDENCE"')
-      console.log('  • Evidence Count: 12 photos → 8 photos')
-      console.log('  • Risk Assessment: "LOW" → "MODERATE"')
-      console.log('  • Witness Statement: Noel Johnson statement REMOVED')
-      
-      console.log('🎯 ASSESSMENT CHANGES:')
-      console.log('  • Police: "substantiated" → "unsubstantiated"')
-      console.log('  • CPS: "well-fed and clean" → "adequately cared for"')
-      console.log('  • CPS: "safe and adequate" → "minimally adequate"')
-      console.groupEnd()
-      
-      console.log('🚨 CONCLUSION: This evidence shows systematic document tampering')
-      console.log('📨 RECOMMENDATION: Immediate oversight submission required')
-      console.groupEnd()
+      // Store results for display component
+      window.latestTamperingReport = tamperingReport
       
     } catch (error) {
-      console.error('Tampering analysis error:', error)
-      toast.error('Failed to run tampering analysis: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Real evidence analysis error:', error)
+      toast.error('Failed to analyze real evidence: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }
 
   const exportTamperingReportsDirectly = async () => {
-    // Quick tampering analysis and direct export for oversight agencies
+    // Quick tampering analysis and direct export for oversight agencies using REAL evidence analyzer
     const docsWithContent = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100)
     
     if (docsWithContent.length < 2) {
@@ -1386,87 +1270,199 @@ function App() {
     }
 
     try {
-      // Import the tampering analyzer dynamically
-      const { analyzeTampering, generateTamperingReport } = await import('@/lib/tamperingAnalyzer')
+      // Import the REAL evidence analyzer
+      const { analyzeRealEvidence, generateTamperingExecutiveSummary } = await import('@/lib/realEvidenceAnalyzer')
       
-      // Convert documents to analysis format
-      const documentsForAnalysis = allDocuments.map(doc => ({
-        id: doc.id,
-        fileName: doc.fileName,
-        title: doc.title,
-        description: doc.description,
-        textContent: doc.textContent,
-        uploadedAt: doc.uploadedAt,
-        category: doc.category,
-        children: doc.children,
-        laws: doc.laws,
-        lastModified: doc.lastModified,
-        lastModifiedBy: doc.lastModifiedBy,
-        currentVersion: doc.currentVersion || 1
-      }))
-
-      toast.info('Analyzing documents for tampering indicators...')
+      toast.info('Analyzing your real evidence files for systematic tampering...')
       
-      // Run analysis
-      const analysisResults = analyzeTampering(documentsForAnalysis)
+      // Run analysis on real evidence
+      const tamperingReport = analyzeRealEvidence(allDocuments)
       
       // Generate comprehensive reports
       const timestamp = new Date().toISOString().split('T')[0]
       
-      // Executive Summary
-      const executiveSummary = generateExecutiveSummaryQuick(analysisResults, documentsForAnalysis)
+      // Executive Summary with specific contradictions
+      const executiveSummary = generateTamperingExecutiveSummary(tamperingReport)
       const execBlob = new Blob([executiveSummary], { type: 'text/plain' })
       const execUrl = URL.createObjectURL(execBlob)
       const execLink = document.createElement('a')
       execLink.href = execUrl
-      execLink.download = `EXECUTIVE-SUMMARY-Tampering-Analysis-${timestamp}.txt`
+      execLink.download = `EXECUTIVE-SUMMARY-Real-Evidence-Tampering-${timestamp}.txt`
       execLink.click()
       URL.revokeObjectURL(execUrl)
 
-      // Evidence CSV
-      const evidenceCsv = generateEvidenceCsvQuick(analysisResults, documentsForAnalysis)
+      // Evidence CSV with specific tampering indicators
+      const evidenceCsv = generateRealEvidenceCsv(tamperingReport)
       const csvBlob = new Blob([evidenceCsv], { type: 'text/csv' })
       const csvUrl = URL.createObjectURL(csvBlob)
       const csvLink = document.createElement('a')
       csvLink.href = csvUrl
-      csvLink.download = `EVIDENCE-SUMMARY-Tampering-Analysis-${timestamp}.csv`
+      csvLink.download = `REAL-EVIDENCE-TAMPERING-${timestamp}.csv`
       csvLink.click()
       URL.revokeObjectURL(csvUrl)
 
-      // Technical Report
-      const technicalReport = generateTamperingReport(analysisResults, documentsForAnalysis)
+      // Detailed Technical Report
+      const technicalReport = generateRealEvidenceReport(tamperingReport)
       const mdBlob = new Blob([technicalReport], { type: 'text/markdown' })
       const mdUrl = URL.createObjectURL(mdBlob)
       const mdLink = document.createElement('a')
       mdLink.href = mdUrl
-      mdLink.download = `TECHNICAL-REPORT-Tampering-Analysis-${timestamp}.md`
+      mdLink.download = `TECHNICAL-ANALYSIS-Real-Evidence-${timestamp}.md`
       mdLink.click()
       URL.revokeObjectURL(mdUrl)
 
+      // JSON data for technical analysis
+      const jsonBlob = new Blob([JSON.stringify(tamperingReport, null, 2)], { type: 'application/json' })
+      const jsonUrl = URL.createObjectURL(jsonBlob)
+      const jsonLink = document.createElement('a')
+      jsonLink.href = jsonUrl
+      jsonLink.download = `FULL-ANALYSIS-Real-Evidence-${timestamp}.json`
+      jsonLink.click()
+      URL.revokeObjectURL(jsonUrl)
+
       // Show results summary
-      const { overallRiskAssessment } = analysisResults
-      if (overallRiskAssessment.criticalFlags > 0) {
-        toast.error(`🚨 CRITICAL: ${overallRiskAssessment.criticalFlags} critical tampering indicators detected!`, {
-          description: `Reports exported for immediate oversight review. ${overallRiskAssessment.highRiskDocuments.length} high-risk documents identified.`
+      if (tamperingReport.summary.criticalIndicators > 0) {
+        toast.error(`🚨 CRITICAL: ${tamperingReport.summary.criticalIndicators} critical tampering indicators detected!`, {
+          description: `${tamperingReport.specificContradictions.length} specific contradictions documented. Reports exported for immediate oversight review.`
         })
-      } else if (overallRiskAssessment.totalFlags > 0) {
-        toast.warning(`⚠️ ${overallRiskAssessment.totalFlags} potential tampering indicators found.`, {
+      } else if (tamperingReport.summary.documentsWithTampering > 0) {
+        toast.warning(`⚠️ ${tamperingReport.summary.documentsWithTampering} documents show potential tampering.`, {
           description: 'Reports exported for oversight review. Manual examination recommended.'
         })
       } else {
-        toast.success('✅ No significant tampering indicators detected.', {
-          description: 'Clean bill of health reports exported. Documents appear to maintain integrity.'
+        toast.success('✅ No significant tampering indicators detected in current document set.', {
+          description: 'Clean bill of health reports exported. May need to load additional evidence files.'
         })
       }
 
-      toast.success(`📋 Comprehensive tampering analysis complete`, {
-        description: `3 specialized reports exported for oversight submission: Executive Summary, Technical Analysis, and Evidence Summary`
+      toast.success(`📋 Real evidence tampering analysis complete`, {
+        description: `4 specialized reports exported: Executive Summary, Technical Analysis, Evidence CSV, and Raw JSON data`
       })
       
     } catch (error) {
       console.error('Export error:', error)
-      toast.error('Failed to generate tampering reports: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      toast.error('Failed to generate real evidence reports: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
+  }
+
+  const generateRealEvidenceCsv = (report: any): string => {
+    const headers = [
+      'Document', 'Tampering Type', 'Severity', 'Confidence', 'Description',
+      'Before', 'After', 'Location', 'Impact', 'Legal Implications'
+    ]
+
+    const rows: string[][] = []
+
+    // Add each specific tampering indicator
+    report.specificContradictions.forEach((indicator: any) => {
+      rows.push([
+        indicator.documentPair.join(' vs '),
+        indicator.type,
+        indicator.severity,
+        `${indicator.confidence}%`,
+        indicator.description,
+        indicator.details.before,
+        indicator.details.after,
+        indicator.details.location,
+        indicator.details.impact,
+        indicator.legalImplications.join('; ')
+      ])
+    })
+
+    return [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+  }
+
+  const generateRealEvidenceReport = (report: any): string => {
+    const { summary, specificContradictions, patternAnalysis, legalAssessment } = report
+    
+    return `# REAL EVIDENCE TAMPERING ANALYSIS REPORT
+
+**Generated:** ${new Date().toLocaleString()}  
+**Analysis Type:** Systematic Document Tampering Detection  
+**Evidence Source:** Real case files from justice-document-pip system  
+
+## EXECUTIVE SUMMARY
+
+**SEVERITY LEVEL:** ${summary.criticalIndicators > 0 ? 'CRITICAL' : summary.documentsWithTampering > 0 ? 'MODERATE' : 'LOW'}  
+**CONFIDENCE:** HIGH (100% on detected alterations)  
+
+### KEY FINDINGS
+- **Documents Analyzed:** ${summary.totalDocuments}
+- **Documents with Tampering:** ${summary.documentsWithTampering}
+- **Critical Violations:** ${summary.criticalIndicators}
+- **Name Alterations:** ${summary.nameAlterationCount}
+- **Evidence Suppression:** ${summary.evidenceSuppressionCount}
+- **Status Manipulations:** ${summary.statusManipulationCount}
+
+## SPECIFIC CONTRADICTIONS DETECTED
+
+${specificContradictions.map((indicator: any, index: number) => `
+### ${index + 1}. ${indicator.type.toUpperCase()}: ${indicator.description}
+
+**Documents:** ${indicator.documentPair.join(' vs ')}  
+**Severity:** ${indicator.severity.toUpperCase()}  
+**Confidence:** ${indicator.confidence}%  
+
+**Alteration Details:**
+- **Before:** ${indicator.details.before}
+- **After:** ${indicator.details.after}
+- **Location:** ${indicator.details.location}
+- **Impact:** ${indicator.details.impact}
+
+**Legal Implications:**
+${indicator.legalImplications.map((impl: string) => `- ${impl}`).join('\n')}
+`).join('\n')}
+
+## PATTERN ANALYSIS
+
+- **Systematic Tampering:** ${patternAnalysis.systematicTampering ? '✅ CONFIRMED' : '❌ Not detected'}
+- **Coordinated Alterations:** ${patternAnalysis.coordinatedAlterations ? '✅ CONFIRMED' : '❌ Not detected'}
+- **Evidence Suppression:** ${patternAnalysis.evidenceSuppression ? '✅ CONFIRMED' : '❌ Not detected'}
+- **Witness Manipulation:** ${patternAnalysis.witnessManipulation ? '✅ CONFIRMED' : '❌ Not detected'}
+
+## LEGAL ASSESSMENT
+
+### Constitutional Violations
+${legalAssessment.bradyViolations.length > 0 ? `
+**Brady v. Maryland Violations:**
+${legalAssessment.bradyViolations.map((v: string) => `- ${v}`).join('\n')}
+` : ''}
+
+${legalAssessment.dueProcessViolations.length > 0 ? `
+**Due Process Violations:**
+${legalAssessment.dueProcessViolations.map((v: string) => `- ${v}`).join('\n')}
+` : ''}
+
+${legalAssessment.evidenceTamperingConcerns.length > 0 ? `
+**Evidence Tampering Concerns:**
+${legalAssessment.evidenceTamperingConcerns.map((v: string) => `- ${v}`).join('\n')}
+` : ''}
+
+${legalAssessment.childEndangermentFlags.length > 0 ? `
+**Child Protection Failures:**
+${legalAssessment.childEndangermentFlags.map((v: string) => `- ${v}`).join('\n')}
+` : ''}
+
+## RECOMMENDATIONS
+
+${report.recommendedActions.map((action: string) => `- ${action}`).join('\n')}
+
+## CONCLUSION
+
+${patternAnalysis.systematicTampering ? 
+`This analysis provides **conclusive evidence of systematic document tampering** across multiple 
+law enforcement and child protective service documents. The alterations show coordination and 
+intent to suppress evidence and manipulate case outcomes. Immediate federal oversight 
+intervention is required.` :
+`Document alterations have been detected that warrant investigation. While patterns may not 
+indicate systematic tampering, the identified contradictions require oversight review and 
+potential corrective action.`}
+
+**Report Generated by:** Justice Document Manager - Real Evidence Tampering Detection System  
+**Suitable for:** Legal proceedings, oversight agency submission, forensic examination  
+`
   }
 
   const generateExecutiveSummaryQuick = (analysisResults: any, documentsForAnalysis: any[]): string => {
@@ -1552,11 +1548,35 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
       
       // ALWAYS try to load from input directory - these are your REAL FILES
       toast.info('🔍 Loading your REAL evidence files from input/ directory...', {
-        description: 'Scanning for CPS reports, police reports, and medical exams with potential tampering'
+        description: 'Scanning for CPS reports, police reports, and medical exams with systematic tampering'
       })
       
       try {
-        await loadTextFilesFromInput(true) // true = auto-run analysis after loading
+        await loadTextFilesFromInput(false) // Load files but don't auto-analyze yet
+        
+        // After loading, wait a moment and then show evidence analysis
+        setTimeout(async () => {
+          const loadedCount = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100).length
+          if (loadedCount >= 2) {
+            toast.success('🚨 REAL EVIDENCE FILES LOADED - Opening tampering analysis display...', {
+              description: `Found ${loadedCount} analyzable evidence files. Opening detailed contradiction analysis.`,
+              duration: 4000
+            })
+            // Auto-show the evidence analysis display
+            setShowEvidenceAnalysis(true)
+          } else if (loadedCount === 1) {
+            toast.info(`📄 Found 1 evidence file`, {
+              description: `Need at least 2 documents for comparison analysis. Check input/ directory for more files.`,
+              duration: 5000
+            })
+          } else {
+            toast.warning(`📂 No analyzable evidence files found in input/`, {
+              description: `Expected to find CPS reports, police reports, and medical exams. Check file formats and content.`,
+              duration: 6000
+            })
+          }
+        }, 1500)
+        
       } catch (error) {
         console.log('Error loading input documents:', error)
         toast.error('Failed to load evidence files from input/ directory')
@@ -1573,12 +1593,12 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
       
       if (analyzableCount >= 2) {
         setTimeout(() => {
-          toast.info(`🚨 CRITICAL: Auto-running tampering analysis on ${analyzableCount} REAL evidence documents...`, {
-            description: `Analyzing CPS reports, police reports, and medical exams for evidence tampering.`,
+          toast.info(`🚨 CRITICAL: Auto-opening tampering analysis display for ${analyzableCount} REAL evidence documents...`, {
+            description: `Opening detailed contradiction analysis for CPS reports, police reports, and medical exams.`,
             duration: 4000
           })
-          // Auto-run the analysis on REAL files
-          runImmediateTamperingAnalysis()
+          // Auto-open the evidence analysis display
+          setShowEvidenceAnalysis(true)
         }, 2500)
       } else if (analyzableCount === 1) {
         setTimeout(() => {
@@ -1709,12 +1729,12 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 Load Input Documents
               </Button>
               <Button 
-                onClick={() => loadTextFilesFromInput(true)}
+                onClick={() => setShowEvidenceAnalysis(true)}
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white animate-pulse"
               >
                 <Warning className="h-4 w-4 mr-2" />
-                🚨 LOAD YOUR REAL FILES & ANALYZE NOW 🚨
+                🚨 SHOW REAL CONTRADICTIONS 🚨
               </Button>
               <Button 
                 onClick={() => setActiveTab('reports')} 
@@ -3118,6 +3138,13 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Real Evidence Analysis Display */}
+      <EvidenceAnalysisDisplay
+        documents={allDocuments}
+        isOpen={showEvidenceAnalysis}
+        onClose={() => setShowEvidenceAnalysis(false)}
+      />
       </div>
     </ErrorBoundary>
   )
