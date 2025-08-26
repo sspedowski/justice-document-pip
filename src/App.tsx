@@ -432,6 +432,12 @@ function App() {
         setShowTamperingTest(true)
       }
       
+      // Ctrl/Cmd + R to run immediate tampering analysis
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault()
+        runImmediateTamperingAnalysis()
+      }
+      
       // Escape to close dialogs
       if (e.key === 'Escape') {
         if (comparingVersions) {
@@ -1187,6 +1193,178 @@ function App() {
     setShowTamperingDetector(true)
   }
 
+  const runImmediateTamperingAnalysis = async () => {
+    // Immediate tampering analysis with detailed feedback and visual results
+    const docsWithContent = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100)
+    
+    if (docsWithContent.length === 0) {
+      toast.error('No documents with text content found. Please load documents first using "Load Input Documents" button.')
+      return
+    }
+
+    if (docsWithContent.length < 2) {
+      toast.warning(`Found only ${docsWithContent.length} document with text content. Tampering detection requires at least 2 documents for comparison analysis.`)
+      // Still run single document analysis
+    }
+
+    try {
+      // Import the tampering analyzer dynamically
+      const { analyzeTampering, generateTamperingReport } = await import('@/lib/tamperingAnalyzer')
+      
+      toast.info(`🔍 Analyzing ${allDocuments.length} documents for evidence tampering...`)
+      
+      // Convert documents to analysis format
+      const documentsForAnalysis = allDocuments.map(doc => ({
+        id: doc.id,
+        fileName: doc.fileName,
+        title: doc.title,
+        description: doc.description,
+        textContent: doc.textContent,
+        uploadedAt: doc.uploadedAt,
+        category: doc.category,
+        children: doc.children,
+        laws: doc.laws,
+        lastModified: doc.lastModified,
+        lastModifiedBy: doc.lastModifiedBy,
+        currentVersion: doc.currentVersion || 1
+      }))
+      
+      // Run comprehensive analysis
+      const analysisResults = analyzeTampering(documentsForAnalysis)
+      const { dateGroupAnalyses, timelineFlags, overallRiskAssessment } = analysisResults
+      
+      // Immediate results display with detailed breakdown
+      const criticalIssues = overallRiskAssessment.criticalFlags
+      const highRiskDocs = overallRiskAssessment.highRiskDocuments.length
+      const totalFlags = overallRiskAssessment.totalFlags
+      
+      // Show immediate analysis results
+      if (criticalIssues > 0) {
+        toast.error(`🚨 CRITICAL ALERT: ${criticalIssues} critical tampering indicators detected!`, {
+          description: `${highRiskDocs} documents flagged as high-risk. Immediate investigation required.`,
+          duration: 10000
+        })
+        
+        // Show specific critical findings
+        const criticalFlags = dateGroupAnalyses
+          .flatMap(group => group.tamperingIndicators)
+          .filter(flag => flag.severity === 'critical')
+        
+        criticalFlags.slice(0, 3).forEach((flag, index) => {
+          setTimeout(() => {
+            toast.error(`Critical Finding ${index + 1}: ${flag.description}`, {
+              description: `Confidence: ${flag.confidence}% | Affected: ${flag.affectedDocuments.length} documents`,
+              duration: 8000
+            })
+          }, (index + 1) * 1000)
+        })
+        
+      } else if (totalFlags > 0) {
+        toast.warning(`⚠️ ${totalFlags} potential tampering indicators found`, {
+          description: `${dateGroupAnalyses.filter(g => g.riskLevel === 'high' || g.riskLevel === 'medium').length} date groups require attention`,
+          duration: 8000
+        })
+        
+        // Show moderate findings
+        const moderateFlags = dateGroupAnalyses
+          .flatMap(group => group.tamperingIndicators)
+          .filter(flag => flag.severity === 'high' || flag.severity === 'medium')
+        
+        moderateFlags.slice(0, 2).forEach((flag, index) => {
+          setTimeout(() => {
+            toast.warning(`Finding ${index + 1}: ${flag.description}`, {
+              description: `Confidence: ${flag.confidence}%`,
+              duration: 6000
+            })
+          }, (index + 1) * 1500)
+        })
+        
+      } else {
+        toast.success('✅ Document integrity verified - No significant tampering indicators detected', {
+          description: `Analyzed ${documentsForAnalysis.length} documents across ${dateGroupAnalyses.length} date groups`,
+          duration: 6000
+        })
+      }
+      
+      // Timeline analysis results
+      if (timelineFlags.length > 0) {
+        setTimeout(() => {
+          toast.warning(`📅 Timeline Analysis: ${timelineFlags.length} temporal inconsistencies detected`, {
+            description: 'Documents modified after newer documents were created - review chronology',
+            duration: 6000
+          })
+        }, 2000)
+      }
+      
+      // Date group analysis summary
+      if (dateGroupAnalyses.length > 0) {
+        const highRiskGroups = dateGroupAnalyses.filter(g => g.riskLevel === 'critical' || g.riskLevel === 'high')
+        if (highRiskGroups.length > 0) {
+          setTimeout(() => {
+            toast.warning(`📊 Date Group Analysis: ${highRiskGroups.length} high-risk date groups identified`, {
+              description: `Dates: ${highRiskGroups.map(g => g.date).slice(0, 3).join(', ')}${highRiskGroups.length > 3 ? '...' : ''}`,
+              duration: 6000
+            })
+          }, 3000)
+        }
+      }
+      
+      // Show specific document concerns
+      if (overallRiskAssessment.highRiskDocuments.length > 0) {
+        const riskDocNames = overallRiskAssessment.highRiskDocuments
+          .map(docId => {
+            const doc = documentsForAnalysis.find(d => d.id === docId)
+            return doc ? doc.fileName : docId
+          })
+          .slice(0, 3)
+        
+        setTimeout(() => {
+          toast.error(`📋 High-Risk Documents Identified:`, {
+            description: `${riskDocNames.join(', ')}${overallRiskAssessment.highRiskDocuments.length > 3 ? ` and ${overallRiskAssessment.highRiskDocuments.length - 3} more` : ''}`,
+            duration: 8000
+          })
+        }, 4000)
+      }
+      
+      // Offer to open detailed analysis
+      setTimeout(() => {
+        toast.info('📋 Complete analysis available', {
+          description: 'Click "Advanced Pattern Analysis" or "Export Tampering Reports" for detailed findings',
+          duration: 10000
+        })
+      }, 5000)
+      
+      // Auto-generate summary report for console
+      console.group('🔍 TAMPERING DETECTION ANALYSIS RESULTS')
+      console.log('📊 Overall Assessment:', overallRiskAssessment.summary)
+      console.log('📈 Total Flags:', totalFlags)
+      console.log('🚨 Critical Flags:', criticalIssues)
+      console.log('📋 High-Risk Documents:', overallRiskAssessment.highRiskDocuments.length)
+      console.log('📅 Date Groups Analyzed:', dateGroupAnalyses.length)
+      console.log('⏰ Timeline Flags:', timelineFlags.length)
+      
+      if (dateGroupAnalyses.length > 0) {
+        console.log('📊 Date Group Details:')
+        dateGroupAnalyses.forEach(group => {
+          console.log(`  📅 ${group.date} (${group.riskLevel}): ${group.documents.length} docs, ${group.tamperingIndicators.length} flags`)
+        })
+      }
+      
+      if (overallRiskAssessment.highRiskDocuments.length > 0) {
+        console.log('⚠️ High-Risk Documents:')
+        overallRiskAssessment.highRiskDocuments.forEach(docId => {
+          const doc = documentsForAnalysis.find(d => d.id === docId)
+          if (doc) console.log(`  📄 ${doc.fileName} - ${doc.title}`)
+        })
+      }
+      console.groupEnd()
+      
+    } catch (error) {
+      console.error('Tampering analysis error:', error)
+      toast.error('Failed to run tampering analysis: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
   const exportTamperingReportsDirectly = async () => {
     // Quick tampering analysis and direct export for oversight agencies
     const docsWithContent = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100)
@@ -1355,6 +1533,29 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
       .join('\n')
   }
 
+  // Check for documents and show analysis readiness on load
+  useEffect(() => {
+    if (allDocuments.length > 0) {
+      const analyzableCount = allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100).length
+      
+      if (analyzableCount >= 2) {
+        setTimeout(() => {
+          toast.info(`🔍 Ready for tampering analysis`, {
+            description: `${analyzableCount} documents available for integrity verification. Press Ctrl+R to analyze.`,
+            duration: 6000
+          })
+        }, 2000)
+      } else if (analyzableCount === 1) {
+        setTimeout(() => {
+          toast.info(`📄 Single document loaded`, {
+            description: `Need at least 2 documents for comparison analysis. Load more documents for comprehensive analysis.`,
+            duration: 5000
+          })
+        }, 2000)
+      }
+    }
+  }, [allDocuments.length])
+
   const refreshProcessedData = async () => {
     setIsLoadingProcessed(true)
     try {
@@ -1495,7 +1696,7 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 className="text-blue-700 border-blue-200 hover:bg-blue-50"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export Tampering Reports
+                Export Reports
               </Button>
               <Button 
                 onClick={() => setShowTamperingTest(true)}
@@ -1511,12 +1712,13 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
                 Generate Packets
               </Button>
               <Button 
-                onClick={runQuickTamperingAnalysis}
+                onClick={runImmediateTamperingAnalysis}
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                <GitMerge className="h-4 w-4 mr-2" />
-                Quick Tampering Analysis
+                <Warning className="h-4 w-4 mr-2" />
+                Run Tampering Analysis
+                <span className="ml-2 text-xs opacity-70">(Ctrl+R)</span>
               </Button>
             </div>
           </div>
@@ -1898,7 +2100,90 @@ Generated by Justice Document Manager Tampering Detection System`.trim()
             </Card>
           </TabsContent>
 
-          <TabsContent value="dashboard" className="space-y-6">\n
+          <TabsContent value="dashboard" className="space-y-6">
+
+            {/* Tampering Analysis Quick Status */}
+            <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Warning className="h-5 w-5 text-red-600" />
+                  Document Integrity Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="text-center p-4 bg-white rounded-lg border">
+                    <div className="text-2xl font-bold text-green-600">
+                      {allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100).length}
+                    </div>
+                    <div className="text-muted-foreground">Analyzable Documents</div>
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {allDocuments.length}
+                    </div>
+                    <div className="text-muted-foreground">Total Documents</div>
+                  </div>
+                  <div className="text-center p-4 bg-white rounded-lg border">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {documentVersions.length}
+                    </div>
+                    <div className="text-muted-foreground">Version History</div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={runImmediateTamperingAnalysis}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <Warning className="h-4 w-4 mr-2" />
+                    Run Comprehensive Tampering Analysis
+                    <span className="ml-2 text-xs opacity-70">(Ctrl+R)</span>
+                  </Button>
+                  <Button 
+                    onClick={() => setShowAdvancedAnalyzer(true)}
+                    variant="outline" 
+                    className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                  >
+                    <GitMerge className="h-4 w-4 mr-2" />
+                    Advanced Pattern Analysis
+                  </Button>
+                  <Button 
+                    onClick={exportTamperingReportsDirectly}
+                    variant="outline"
+                    className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Reports
+                  </Button>
+                </div>
+                
+                <div className="bg-red-100 border border-red-200 rounded p-3 text-sm">
+                  <strong className="text-red-800">Analysis Capabilities:</strong>
+                  <ul className="list-disc list-inside mt-1 space-y-1 text-red-700">
+                    <li>Name mention frequency analysis across document versions</li>
+                    <li>Date-based document comparison and inconsistency detection</li>
+                    <li>Timeline verification and modification pattern analysis</li>
+                    <li>Content change detection and evidence alteration tracking</li>
+                    <li>Cross-reference integrity validation and metadata verification</li>
+                  </ul>
+                </div>
+                
+                {allDocuments.length === 0 && (
+                  <div className="text-center text-muted-foreground text-sm bg-yellow-50 border border-yellow-200 rounded p-3">
+                    ⚠️ No documents loaded yet. Click "Load Input Documents" to import sample evidence files for analysis.
+                  </div>
+                )}
+                
+                {allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100).length < 2 && allDocuments.length > 0 && (
+                  <div className="text-center text-muted-foreground text-sm bg-orange-50 border border-orange-200 rounded p-3">
+                    ℹ️ Need at least 2 documents with text content for comparison analysis. Current: {allDocuments.filter(doc => doc.textContent && doc.textContent.length > 100).length} analyzable documents.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Version Analytics Summary */}
             {documentVersions.length > 0 && (
               <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
