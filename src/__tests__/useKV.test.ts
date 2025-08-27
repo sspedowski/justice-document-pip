@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 
-import { useKV } from '../hooks/useKV'
+import { useKV } from '@github/spark/hooks'
 
 describe('useKV Hook', () => {
   beforeEach(() => {

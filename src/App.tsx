@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useKV } from '@/hooks/useKV'
+import { useKV } from '@github/spark/hooks'
 import { ErrorBoundary, useErrorHandler } from '@/components/ErrorBoundary'
 import { ApplicationError, ErrorHandler, safeAsync, Validator, ERROR_CODES, type Result } from '@/lib/errorHandler'
 // All type definitions are now in types.ts to avoid conflicts
