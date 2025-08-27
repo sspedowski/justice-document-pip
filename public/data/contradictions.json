@@ -1,0 +1,99 @@
+[
+  {
+    "contradiction_id": "contradition_001",
+    "type": "name_change",
+    "severity": "critical",
+    "title": "Child Victim Identity Alteration",
+    "description": "Child's name systematically changed between CPS report versions from Nicholas Williams to Owen Williams",
+    "before": "Nicholas Williams (age 6)",
+    "after": "Owen Williams (age 6)",
+    "documents": [
+      "Initial_CPS_Report.pdf",
+      "Amended_CPS_Report.pdf"
+    ],
+    "impact": "Child victim identity tampering - potential child endangerment",
+    "legalImplications": [
+      "Due process violation - falsified CPS records",
+      "Child protection failure - altered victim identity",
+      "Potential CAPTA violation"
+    ],
+    "evidenceLocation": "CPS Report children identification section"
+  },
+  {
+    "contradiction_id": "contradition_002",
+    "type": "witness_removal",
+    "severity": "critical",
+    "title": "Key Witness Statement Suppression",
+    "description": "Critical witness statement completely removed from amended report - Noel Johnson provided statement was deleted",
+    "before": "Neighbor: Noel Johnson (provided statement)",
+    "after": "Witness statement section deleted",
+    "documents": [
+      "Initial_CPS_Report.pdf",
+      "Amended_CPS_Report.pdf"
+    ],
+    "impact": "Critical witness testimony suppression",
+    "legalImplications": [
+      "Brady v. Maryland violation - suppression of witness testimony",
+      "Witness intimidation implications",
+      "Due process violation"
+    ],
+    "evidenceLocation": "CPS Report interviews section"
+  },
+  {
+    "contradiction_id": "contradition_003",
+    "type": "assessment_manipulation",
+    "severity": "high",
+    "title": "Risk Assessment Artificial Escalation",
+    "description": "CPS risk level artificially elevated from LOW to MODERATE to justify increased intervention without factual basis",
+    "before": "RISK ASSESSMENT: LOW, Services recommended: Voluntary family support",
+    "after": "RISK ASSESSMENT: MODERATE, Services required: Mandatory parenting classes",
+    "documents": [
+      "Initial_CPS_Report.pdf",
+      "Amended_CPS_Report.pdf"
+    ],
+    "impact": "Artificial escalation of family intervention level",
+    "legalImplications": [
+      "Due process violation",
+      "False documentation in official records",
+      "Child welfare system abuse"
+    ],
+    "evidenceLocation": "CPS Report risk assessment section"
+  },
+  {
+    "contradiction_id": "contradition_004",
+    "type": "status_change",
+    "severity": "critical",
+    "title": "Case Status Manipulation",
+    "description": "Investigation status changed from active to closed without justification in police reports",
+    "before": "Case Status: ACTIVE - INVESTIGATION CONTINUING",
+    "after": "Case Status: CLOSED - INSUFFICIENT EVIDENCE",
+    "documents": [
+      "Original_Police_Report.pdf",
+      "Revised_Police_Report.pdf"
+    ],
+    "impact": "Investigation termination through document manipulation",
+    "legalImplications": [
+      "Obstruction of justice",
+      "Due process violation",
+      "Denial of equal protection"
+    ],
+    "evidenceLocation": "Police Report conclusion section"
+  },
+  {
+    "contradiction_id": "contradition_005",
+    "type": "content_alteration",
+    "severity": "moderate",
+    "title": "Minor Text Change",
+    "description": "Small text modification",
+    "before": "Original text",
+    "after": "Modified text",
+    "documents": [
+      "doc1.pdf"
+    ],
+    "impact": "Minimal impact",
+    "legalImplications": [
+      "Minor inconsistency"
+    ],
+    "evidenceLocation": "Page 1"
+  }
+]
