@@ -22,18 +22,4 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
-  optimizeDeps: {
-    include: ['pdfjs-dist']
-  },
-  define: {
-    // This helps with PDF.js compatibility
-    global: 'globalThis',
-  },
-  server: {
-    headers: {
-      // Allow SharedArrayBuffer for PDF.js
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
-    }
-  }
 });
