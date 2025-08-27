@@ -1,0 +1,385 @@
+[
+  {
+    "date": "2024-01-15",
+    "ids": [
+      "date-001",
+      "date-002"
+    ],
+    "count": 2,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-001",
+        "type": "event_date_disagreement",
+        "description": "Event 'incident_report' has conflicting dates: 2024-01-15 vs 2024-01-16",
+        "statement_a": {
+          "id": "stmt-001",
+          "date": "2024-01-15",
+          "event": "incident_report",
+          "person": "Officer Smith"
+        },
+        "statement_b": {
+          "id": "stmt-002",
+          "date": "2024-01-16",
+          "event": "incident_report",
+          "person": "Officer Jones"
+        },
+        "event": "incident_report",
+        "date_a": "2024-01-15",
+        "date_b": "2024-01-16",
+        "rule_name": "Event Date Disagreement"
+      },
+      {
+        "contradiction_id": "date-002",
+        "type": "event_date_disagreement",
+        "description": "Event 'witness_interview' has conflicting dates: 2024-01-15 vs 2024-01-17",
+        "statement_a": {
+          "id": "stmt-003",
+          "date": "2024-01-15",
+          "event": "witness_interview",
+          "person": "Detective Brown"
+        },
+        "statement_b": {
+          "id": "stmt-004",
+          "date": "2024-01-17",
+          "event": "witness_interview",
+          "person": "Sergeant Wilson"
+        },
+        "event": "witness_interview",
+        "date_a": "2024-01-15",
+        "date_b": "2024-01-17",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-01-16",
+    "ids": [
+      "date-001"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-001",
+        "type": "event_date_disagreement",
+        "description": "Event 'incident_report' has conflicting dates: 2024-01-15 vs 2024-01-16",
+        "statement_a": {
+          "id": "stmt-001",
+          "date": "2024-01-15",
+          "event": "incident_report",
+          "person": "Officer Smith"
+        },
+        "statement_b": {
+          "id": "stmt-002",
+          "date": "2024-01-16",
+          "event": "incident_report",
+          "person": "Officer Jones"
+        },
+        "event": "incident_report",
+        "date_a": "2024-01-15",
+        "date_b": "2024-01-16",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-01-17",
+    "ids": [
+      "date-002"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-002",
+        "type": "event_date_disagreement",
+        "description": "Event 'witness_interview' has conflicting dates: 2024-01-15 vs 2024-01-17",
+        "statement_a": {
+          "id": "stmt-003",
+          "date": "2024-01-15",
+          "event": "witness_interview",
+          "person": "Detective Brown"
+        },
+        "statement_b": {
+          "id": "stmt-004",
+          "date": "2024-01-17",
+          "event": "witness_interview",
+          "person": "Sergeant Wilson"
+        },
+        "event": "witness_interview",
+        "date_a": "2024-01-15",
+        "date_b": "2024-01-17",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-01-20",
+    "ids": [
+      "status-001"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Status Change Inconsistency"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "status-001",
+        "type": "status_change_inconsistency",
+        "description": "Status change for case_12345 shows conflicting progression",
+        "statement_a": {
+          "id": "stmt-005",
+          "date": "2024-01-20",
+          "case": "case_12345",
+          "status": "pending"
+        },
+        "statement_b": {
+          "id": "stmt-006",
+          "date": "2024-01-20",
+          "case": "case_12345",
+          "status": "closed"
+        },
+        "date_a": "2024-01-20",
+        "date_b": "2024-01-20",
+        "rule_name": "Status Change Inconsistency"
+      }
+    ]
+  },
+  {
+    "date": "2024-02-01",
+    "ids": [
+      "amount-001"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Numeric Amount Mismatch"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "amount-001",
+        "type": "numeric_amount_mismatch",
+        "description": "Conflicting evidence amounts reported for evidence_bag_007",
+        "statement_a": {
+          "id": "stmt-007",
+          "date": "2024-02-01",
+          "evidence_id": "evidence_bag_007",
+          "amount": "15.5g"
+        },
+        "statement_b": {
+          "id": "stmt-008",
+          "date": "2024-02-01",
+          "evidence_id": "evidence_bag_007",
+          "amount": "12.3g"
+        },
+        "date_a": "2024-02-01",
+        "date_b": "2024-02-01",
+        "rule_name": "Numeric Amount Mismatch"
+      }
+    ]
+  },
+  {
+    "date": "2024-02-05",
+    "ids": [
+      "date-003"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-003",
+        "type": "event_date_disagreement",
+        "description": "Event 'arrest_warrant' has conflicting dates: 2024-02-05 vs 2024-02-06",
+        "statement_a": {
+          "id": "stmt-009",
+          "date": "2024-02-05",
+          "event": "arrest_warrant",
+          "person": "Judge Martinez"
+        },
+        "statement_b": {
+          "id": "stmt-010",
+          "date": "2024-02-06",
+          "event": "arrest_warrant",
+          "person": "Clerk Johnson"
+        },
+        "event": "arrest_warrant",
+        "date_a": "2024-02-05",
+        "date_b": "2024-02-06",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-02-06",
+    "ids": [
+      "date-003"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-003",
+        "type": "event_date_disagreement",
+        "description": "Event 'arrest_warrant' has conflicting dates: 2024-02-05 vs 2024-02-06",
+        "statement_a": {
+          "id": "stmt-009",
+          "date": "2024-02-05",
+          "event": "arrest_warrant",
+          "person": "Judge Martinez"
+        },
+        "statement_b": {
+          "id": "stmt-010",
+          "date": "2024-02-06",
+          "event": "arrest_warrant",
+          "person": "Clerk Johnson"
+        },
+        "event": "arrest_warrant",
+        "date_a": "2024-02-05",
+        "date_b": "2024-02-06",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-02-10",
+    "ids": [
+      "location-001"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Location Contradiction"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "location-001",
+        "type": "location_contradiction",
+        "description": "Conflicting location reports for incident_789",
+        "statement_a": {
+          "id": "stmt-011",
+          "date": "2024-02-10",
+          "location": "123 Main St",
+          "incident": "incident_789"
+        },
+        "statement_b": {
+          "id": "stmt-012",
+          "date": "2024-02-10",
+          "location": "456 Oak Ave",
+          "incident": "incident_789"
+        },
+        "date_a": "2024-02-10",
+        "date_b": "2024-02-10",
+        "rule_name": "Location Contradiction"
+      }
+    ]
+  },
+  {
+    "date": "2024-02-15",
+    "ids": [
+      "date-004"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-004",
+        "type": "event_date_disagreement",
+        "description": "Event 'evidence_collection' has conflicting dates: 2024-02-15 vs 2024-02-16",
+        "statement_a": {
+          "id": "stmt-013",
+          "date": "2024-02-15",
+          "event": "evidence_collection",
+          "person": "CSI Adams"
+        },
+        "statement_b": {
+          "id": "stmt-014",
+          "date": "2024-02-16",
+          "event": "evidence_collection",
+          "person": "CSI Baker"
+        },
+        "event": "evidence_collection",
+        "date_a": "2024-02-15",
+        "date_b": "2024-02-16",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-02-16",
+    "ids": [
+      "date-004"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Event Date Disagreement"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "date-004",
+        "type": "event_date_disagreement",
+        "description": "Event 'evidence_collection' has conflicting dates: 2024-02-15 vs 2024-02-16",
+        "statement_a": {
+          "id": "stmt-013",
+          "date": "2024-02-15",
+          "event": "evidence_collection",
+          "person": "CSI Adams"
+        },
+        "statement_b": {
+          "id": "stmt-014",
+          "date": "2024-02-16",
+          "event": "evidence_collection",
+          "person": "CSI Baker"
+        },
+        "event": "evidence_collection",
+        "date_a": "2024-02-15",
+        "date_b": "2024-02-16",
+        "rule_name": "Event Date Disagreement"
+      }
+    ]
+  },
+  {
+    "date": "2024-03-01",
+    "ids": [
+      "role-001"
+    ],
+    "count": 1,
+    "rule_names": [
+      "Role Responsibility Conflict"
+    ],
+    "contradictions": [
+      {
+        "contradiction_id": "role-001",
+        "type": "role_responsibility_conflict",
+        "description": "Conflicting role assignments for Officer Davis in operation_alpha",
+        "statement_a": {
+          "id": "stmt-015",
+          "date": "2024-03-01",
+          "person": "Officer Davis",
+          "role": "lead investigator",
+          "operation": "operation_alpha"
+        },
+        "statement_b": {
+          "id": "stmt-016",
+          "date": "2024-03-01",
+          "person": "Officer Davis",
+          "role": "backup support",
+          "operation": "operation_alpha"
+        },
+        "date_a": "2024-03-01",
+        "date_b": "2024-03-01",
+        "rule_name": "Role Responsibility Conflict"
+      }
+    ]
+  }
+]
