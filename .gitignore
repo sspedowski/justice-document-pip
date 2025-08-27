@@ -32,3 +32,13 @@ pids
 .devcontainer/
 
 .spark-workbench-id
+
+# Exhibit outputs
+output/exhibits/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
