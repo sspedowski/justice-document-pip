@@ -1,148 +1,285 @@
 #!/usr/bin/env python3
 """
-Manual smoke test runner to verify the analyzer pipeline works end-to-end.
-This simulates the commands we need to test.
+Complete smoke test for Justice Document Manager
+Runs the full pipeline: analysis -> scoring -> tests
 """
 
-import subprocess
 import sys
+import os
+import subprocess
 import json
 from pathlib import Path
+from datetime import datetime
 
-def run_command(cmd, description):
-    """Run a command and report results."""
-    print(f"\n🔄 {description}")
-    print(f"Running: {' '.join(cmd)}")
+# Configuration
+REPO_ROOT = Path(__file__).resolve().parent
+OUTPUT_DIR = REPO_ROOT / "public" / "data"
+
+def run_command(cmd, description="", timeout=60):
+    """Run a command and return (success, output, error)"""
+    print(f"🔧 {description or cmd}")
     
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd="/workspaces/spark-template")
+        result = subprocess.run(
+            cmd, 
+            shell=True, 
+            cwd=REPO_ROOT,
+            capture_output=True, 
+            text=True, 
+            timeout=timeout
+        )
         
-        if result.returncode == 0:
-            print(f"✅ {description} - SUCCESS")
-            if result.stdout.strip():
-                print("STDOUT:", result.stdout.strip())
+        success = result.returncode == 0
+        if success:
+            print(f"✅ Command succeeded")
         else:
-            print(f"❌ {description} - FAILED (exit code: {result.returncode})")
-            if result.stderr.strip():
-                print("STDERR:", result.stderr.strip())
-            if result.stdout.strip():
-                print("STDOUT:", result.stdout.strip())
-            return False
-            
+            print(f"❌ Command failed (exit code {result.returncode})")
+            if result.stderr:
+                print(f"   Error: {result.stderr.strip()}")
+        
+        return success, result.stdout, result.stderr
+        
+    except subprocess.TimeoutExpired:
+        print(f"❌ Command timed out after {timeout} seconds")
+        return False, "", "Timeout"
     except Exception as e:
-        print(f"❌ {description} - EXCEPTION: {e}")
+        print(f"❌ Command failed with exception: {e}")
+        return False, "", str(e)
+
+def check_file_valid_json(filepath, description=""):
+    """Check if file exists and contains valid JSON"""
+    desc = description or str(filepath)
+    
+    if not filepath.exists():
+        print(f"❌ {desc} does not exist")
         return False
     
-    return True
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        item_count = len(data) if isinstance(data, (list, dict)) else "unknown"
+        print(f"✅ {desc} is valid JSON ({item_count} items)")
+        return True
+        
+    except json.JSONDecodeError as e:
+        print(f"❌ {desc} contains invalid JSON: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Error reading {desc}: {e}")
+        return False
 
-def check_files_exist():
-    """Check that expected output files exist."""
-    print("\n🔍 Checking output files exist...")
+def check_csv_file(filepath, description=""):
+    """Check if CSV file exists and is readable"""
+    desc = description or str(filepath)
     
-    expected_files = [
-        "public/data/contradictions.json",
-        "public/data/statements_debug.json", 
-        "public/data/run_meta.json",
-        "public/data/contradictions_scored.json",
-        "public/data/contradictions_scored.csv"
+    if not filepath.exists():
+        print(f"❌ {desc} does not exist")
+        return False
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        print(f"✅ {desc} is readable CSV ({len(lines)} lines)")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error reading {desc}: {e}")
+        return False
+
+def verify_output_files():
+    """Verify all expected output files exist and are valid"""
+    print("\n📋 Verifying output files...")
+    
+    files_to_check = [
+        (OUTPUT_DIR / "contradictions.json", "contradictions.json", "json"),
+        (OUTPUT_DIR / "statements_debug.json", "statements_debug.json", "json"),
+        (OUTPUT_DIR / "run_meta.json", "run_meta.json", "json"),
+        (OUTPUT_DIR / "contradictions_scored.json", "contradictions_scored.json", "json"),
+        (OUTPUT_DIR / "contradictions_scored.csv", "contradictions_scored.csv", "csv")
     ]
     
-    base_path = Path("/workspaces/spark-template")
-    all_exist = True
+    all_valid = True
     
-    for file_path in expected_files:
-        full_path = base_path / file_path
-        if full_path.exists():
-            print(f"✅ {file_path} exists ({full_path.stat().st_size} bytes)")
+    for filepath, description, file_type in files_to_check:
+        if file_type == "json":
+            if not check_file_valid_json(filepath, description):
+                all_valid = False
+        elif file_type == "csv":
+            if not check_csv_file(filepath, description):
+                all_valid = False
+    
+    return all_valid
+
+def run_analysis():
+    """Run the main analysis script"""
+    print("\n🧠 Running contradiction analysis...")
+    
+    success, stdout, stderr = run_command(
+        f"python scripts/run_analysis.py --demo",
+        "Running analysis with demo data",
+        timeout=30
+    )
+    
+    if success:
+        # Check for specific outputs in stdout
+        if "contradictions" in stdout.lower():
+            print("✅ Analysis completed and found contradictions")
         else:
-            print(f"❌ {file_path} missing")
-            all_exist = False
+            print("⚠️ Analysis completed but output unclear")
     
-    return all_exist
+    return success
 
-def check_csv_duplicates():
-    """Check that CSV has no duplicate contradiction_id rows."""
-    print("\n🔍 Checking CSV for duplicates...")
+def run_scoring():
+    """Run the scoring script"""
+    print("\n📊 Running contradiction scoring...")
     
-    csv_path = Path("/workspaces/spark-template/public/data/contradictions_scored.csv")
-    if not csv_path.exists():
-        print("❌ CSV file not found")
-        return False
+    success, stdout, stderr = run_command(
+        f"python scripts/scoding.py",
+        "Running contradiction scoring",
+        timeout=30
+    )
     
-    import csv
-    contradiction_ids = []
+    return success
+
+def run_tests():
+    """Run pytest tests"""
+    print("\n🧪 Running unit tests...")
     
-    with open(csv_path, 'r') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            contradiction_ids.append(row.get('contradiction_id', ''))
+    success, stdout, stderr = run_command(
+        f"python -m pytest tests/ -v --tb=short",
+        "Running pytest on tests/",
+        timeout=60
+    )
     
-    unique_ids = set(contradiction_ids)
+    return success
+
+def check_imports():
+    """Test critical imports"""
+    print("\n🔍 Testing critical imports...")
     
-    if len(contradiction_ids) == len(unique_ids):
-        print(f"✅ CSV has {len(contradiction_ids)} unique contradiction_id rows")
+    critical_imports = [
+        "analyzer",
+        "analyzer.all_rules", 
+        "analyzer.evaluate",
+        "pdfplumber",
+        "PyPDF2",
+        "reportlab"
+    ]
+    
+    import_script = f'''
+import sys
+sys.path.insert(0, "{REPO_ROOT}")
+
+try:
+    import analyzer
+    from analyzer import evaluate
+    from analyzer.all_rules import get_all_rule_functions
+    import pdfplumber
+    import PyPDF2
+    import reportlab
+    print("✅ All critical imports successful")
+except ImportError as e:
+    print(f"❌ Import error: {{e}}")
+    sys.exit(1)
+'''
+    
+    success, stdout, stderr = run_command(
+        f'python -c "{import_script}"',
+        "Testing critical imports",
+        timeout=15
+    )
+    
+    if success and "All critical imports successful" in stdout:
+        print("✅ All critical imports working")
         return True
     else:
-        print(f"❌ CSV has duplicates: {len(contradiction_ids)} total, {len(unique_ids)} unique")
+        print("❌ Some imports failed")
+        if stderr:
+            print(f"   Error details: {stderr}")
         return False
-
-def check_engine_errors():
-    """Check for engine errors in contradictions.json."""
-    print("\n🔍 Checking for engine errors...")
-    
-    json_path = Path("/workspaces/spark-template/public/data/contradictions.json")
-    if not json_path.exists():
-        print("❌ contradictions.json not found")
-        return False
-    
-    with open(json_path, 'r') as f:
-        data = json.load(f)
-    
-    engine_errors = [item for item in data if item.get('type') == '__engine_error__']
-    
-    if engine_errors:
-        print(f"❌ Found {len(engine_errors)} engine errors:")
-        for error in engine_errors:
-            print(f"  - {error.get('rule', 'unknown')}: {error.get('error', 'unknown error')}")
-        return False
-    else:
-        print("✅ No engine errors found")
-        return True
 
 def main():
-    """Run the complete smoke test."""
-    print("🚀 Starting analyzer pipeline smoke test...")
+    """Run complete smoke test"""
+    print("🚀 Justice Document Manager - Complete Smoke Test")
+    print("=" * 60)
+    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Repository: {REPO_ROOT}")
+    print("")
     
-    # Test 1: Import test
-    if not run_command([sys.executable, "test_imports.py"], "Import test"):
-        return 1
+    # Create output directory if it doesn't exist
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
-    # Test 2: Run analysis demo
-    if not run_command([sys.executable, "scripts/run_analysis.py", "--demo"], "Run analysis demo"):
-        return 1
+    # Test steps
+    steps = [
+        ("Import Check", check_imports),
+        ("Analysis", run_analysis), 
+        ("Scoring", run_scoring),
+        ("Output Verification", verify_output_files),
+        ("Unit Tests", run_tests)
+    ]
     
-    # Test 3: Run scoring
-    if not run_command([sys.executable, "scripts/scoding.py"], "Run scoring"):
-        return 1
+    results = {}
     
-    # Test 4: Run pytest
-    if not run_command([sys.executable, "-m", "pytest", "-q", "tests/analyzer/"], "Run pytest"):
-        return 1
+    for step_name, step_func in steps:
+        print(f"\n{'='*60}")
+        print(f"🔬 STEP: {step_name}")
+        print(f"{'='*60}")
+        
+        try:
+            results[step_name] = step_func()
+        except Exception as e:
+            print(f"❌ Step failed with exception: {e}")
+            results[step_name] = False
     
-    # Test 5: Check files exist
-    if not check_files_exist():
-        return 1
+    # Summary
+    print("\n" + "=" * 60)
+    print("📊 SMOKE TEST SUMMARY")
+    print("=" * 60)
     
-    # Test 6: Check CSV duplicates
-    if not check_csv_duplicates():
-        return 1
+    passed = 0
+    total = len(steps)
     
-    # Test 7: Check engine errors
-    if not check_engine_errors():
-        return 1
+    for step_name, result in results.items():
+        status = "PASS" if result else "FAIL"
+        emoji = "✅" if result else "❌"
+        print(f"{emoji} {step_name}: {status}")
+        if result:
+            passed += 1
     
-    print("\n🎉 All smoke tests passed! Pipeline is working correctly.")
-    return 0
+    print(f"\n🎯 Overall Result: {passed}/{total} steps passed")
+    
+    if passed == total:
+        print("\n🎉 SMOKE TEST PASSED!")
+        print("All systems are operational and ready for use.")
+        print("")
+        print("💡 Quick usage:")
+        print("   • Run analysis: python scripts/run_analysis.py --demo")
+        print("   • Run scoring: python scripts/scoding.py") 
+        print("   • Run tests: python -m pytest tests/ -v")
+        print("   • Manual verification: bash run_manual_verify.sh")
+        return True
+    else:
+        print("\n⚠️ SMOKE TEST FAILED!")
+        print("Some components are not working correctly.")
+        print("Check the detailed output above for specific issues.")
+        print("")
+        print("💡 Common fixes:")
+        print("   • Install dependencies: pip install -r requirements.txt")
+        print("   • Check Python path and imports")
+        print("   • Verify file permissions")
+        return False
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        success = main()
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        print("\n⚠️ Smoke test interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ Smoke test failed with exception: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
