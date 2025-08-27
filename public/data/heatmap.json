@@ -1,7 +1,32 @@
 [
   {
+    "rule": "status_flip_without_transition",
+    "party": "Noel",
+    "count": 2
+  },
+  {
+    "rule": "location_contradiction",
+    "party": "Noel",
+    "count": 2
+  },
+  {
+    "rule": "presence_absence_conflict",
+    "party": "John Doe",
+    "count": 2
+  },
+  {
+    "rule": "numeric_amount_mismatch",
+    "party": "Sarah Williams",
+    "count": 2
+  },
+  {
+    "rule": "event_date_disagreement",
+    "party": "Mike Johnson",
+    "count": 2
+  },
+  {
     "rule": "status_change_inconsistency",
-    "party": "Unknown",
+    "party": "Noel",
     "count": 1
   },
   {
@@ -10,8 +35,28 @@
     "count": 1
   },
   {
-    "rule": "numeric_amount_mismatch",
-    "party": "Unknown",
+    "rule": "role_responsibility_conflict",
+    "party": "Sarah Williams",
+    "count": 1
+  },
+  {
+    "rule": "date_range_overlap_conflict",
+    "party": "Mike Johnson",
+    "count": 1
+  },
+  {
+    "rule": "role_responsibility_conflict",
+    "party": "Lisa Anderson",
+    "count": 1
+  },
+  {
+    "rule": "presence_absence_conflict",
+    "party": "Lisa Anderson",
+    "count": 1
+  },
+  {
+    "rule": "status_change_inconsistency",
+    "party": "Lisa Anderson",
     "count": 1
   }
 ]
