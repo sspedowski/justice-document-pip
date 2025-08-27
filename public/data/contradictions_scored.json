@@ -1,0 +1,121 @@
+[
+  {
+    "contradiction_id": "test_001",
+    "type": "status_flip_without_transition",
+    "party": "Noel",
+    "description": "Status changed without proper transition process",
+    "score": 85
+  },
+  {
+    "contradiction_id": "test_002",
+    "type": "status_change_inconsistency",
+    "party": "Noel",
+    "description": "Contradictory status assignments",
+    "score": 90
+  },
+  {
+    "contradiction_id": "test_003",
+    "type": "status_flip_without_transition",
+    "party": "Noel",
+    "description": "Another status transition issue",
+    "score": 85
+  },
+  {
+    "contradiction_id": "test_004",
+    "type": "location_contradiction",
+    "party": "Noel",
+    "description": "Location inconsistencies",
+    "score": 75
+  },
+  {
+    "contradiction_id": "test_005",
+    "type": "location_contradiction",
+    "party": "Noel",
+    "description": "Additional location contradictions",
+    "score": 70
+  },
+  {
+    "contradiction_id": "test_006",
+    "type": "presence_absence_conflict",
+    "party": "John Doe",
+    "description": "Presence status conflicts",
+    "score": 80
+  },
+  {
+    "contradiction_id": "test_007",
+    "type": "presence_absence_conflict",
+    "party": "John Doe",
+    "description": "Additional presence conflicts",
+    "score": 85
+  },
+  {
+    "contradiction_id": "test_008",
+    "type": "location_contradiction",
+    "party": "John Doe",
+    "description": "Location-related issue for John",
+    "score": 75
+  },
+  {
+    "contradiction_id": "test_009",
+    "type": "numeric_amount_mismatch",
+    "party": "Sarah Williams",
+    "description": "Amount discrepancies",
+    "score": 80
+  },
+  {
+    "contradiction_id": "test_010",
+    "type": "role_responsibility_conflict",
+    "party": "Sarah Williams",
+    "description": "Role assignment conflicts",
+    "score": 65
+  },
+  {
+    "contradiction_id": "test_011",
+    "type": "numeric_amount_mismatch",
+    "party": "Sarah Williams",
+    "description": "More numeric discrepancies",
+    "score": 80
+  },
+  {
+    "contradiction_id": "test_012",
+    "type": "event_date_disagreement",
+    "party": "Mike Johnson",
+    "description": "Date inconsistencies",
+    "score": 75
+  },
+  {
+    "contradiction_id": "test_013",
+    "type": "date_range_overlap_conflict",
+    "party": "Mike Johnson",
+    "description": "Date range conflicts",
+    "score": 60
+  },
+  {
+    "contradiction_id": "test_014",
+    "type": "event_date_disagreement",
+    "party": "Mike Johnson",
+    "description": "Additional date issues",
+    "score": 75
+  },
+  {
+    "contradiction_id": "test_015",
+    "type": "role_responsibility_conflict",
+    "party": "Lisa Anderson",
+    "description": "Role conflict",
+    "score": 65
+  },
+  {
+    "contradiction_id": "test_016",
+    "type": "presence_absence_conflict",
+    "party": "Lisa Anderson",
+    "description": "Presence conflict",
+    "score": 80
+  },
+  {
+    "contradiction_id": "test_017",
+    "type": "status_change_inconsistency",
+    "party": "Lisa Anderson",
+    "description": "Status issue",
+    "score": 90
+  }
+]

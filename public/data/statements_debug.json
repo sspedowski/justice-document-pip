@@ -1,0 +1,42 @@
+[
+  {
+    "id": "stmt_1",
+    "event": "meeting_2024_01_15",
+    "party": "John Doe",
+    "present": true,
+    "date": "2024-01-15",
+    "location": "Office A"
+  },
+  {
+    "id": "stmt_2",
+    "event": "meeting_2024_01_15",
+    "party": "John Doe",
+    "present": false,
+    "date": "2024-01-15",
+    "location": "Office B"
+  },
+  {
+    "id": "stmt_3",
+    "event": "incident_2024_02_01",
+    "date": "2024-02-01",
+    "amount": 1000,
+    "currency": "USD"
+  },
+  {
+    "id": "stmt_4",
+    "event": "incident_2024_02_01",
+    "date": "2024-02-02",
+    "amount": 1500,
+    "currency": "USD"
+  },
+  {
+    "id": "stmt_5",
+    "case": "case_001",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "stmt_6",
+    "case": "case_001",
+    "status": "CLOSED"
+  }
+]
