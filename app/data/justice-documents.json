@@ -1,1 +1,230 @@
-[]
+[
+  {
+    "id": "oversight-demo-001",
+    "fileName": "CPS_Report_Critical_Evidence_Tampering.pdf",
+    "title": "CPS Report - Critical Evidence Tampering Detected",
+    "category": "Primary",
+    "children": ["Jace", "Josh"],
+    "laws": ["Brady v. Maryland", "Due Process (14th Amendment)", "Evidence Tampering", "CAPTA"],
+    "misconduct": [
+      {
+        "law": "Brady v. Maryland",
+        "page": "3",
+        "paragraph": "2", 
+        "notes": "Exculpatory evidence withheld from defense - documented proof of evidence suppression"
+      },
+      {
+        "law": "Evidence Tampering",
+        "page": "7",
+        "paragraph": "1",
+        "notes": "Original report altered to remove critical safety findings"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Critical evidence document showing systematic evidence tampering by CPS workers. Contains documented proof of evidence suppression and falsification of reports affecting child safety determinations. Original report indicated immediate safety concerns, but altered version removed these findings.",
+    "uploadedAt": "2024-01-10T10:30:00.000Z",
+    "textContent": "This report documents critical evidence tampering patterns in CPS case files affecting children Jace and Josh. Original safety assessment indicated immediate removal necessary due to verified abuse allegations. However, subsequent versions show systematic alteration of findings to support case closure without intervention. Documented proof includes: (1) Original report dated 01/08/2024 contained safety concerns on page 3, paragraph 2 (2) Revised report dated 01/10/2024 removed all safety language (3) No documentation of reasoning for changes (4) Supervisor signatures appear on both versions despite contradictory findings. This constitutes Brady violation through suppression of exculpatory evidence and evidence tampering under state criminal statutes.",
+    "currentVersion": 3,
+    "lastModified": "2024-01-15T14:22:00.000Z",
+    "lastModifiedBy": "Forensic Analysis Team",
+    "fingerprint": {
+      "fileHash": "sha256:a1b2c3d4e5f6...",
+      "fileSize": 247892,
+      "pageCount": 8,
+      "firstPageHash": "sha256:f6e5d4c3b2a1..."
+    }
+  },
+  {
+    "id": "oversight-demo-002", 
+    "fileName": "Police_Report_Contradictions_Multiple_Versions.pdf",
+    "title": "Police Report - Multiple Contradictions and False Statements",
+    "category": "Primary",
+    "children": ["Jace"],
+    "laws": ["Due Process (14th Amendment)", "Perjury", "Evidence Tampering"],
+    "misconduct": [
+      {
+        "law": "Perjury",
+        "page": "1",
+        "paragraph": "4",
+        "notes": "False statements under oath documented - officer claimed no prior knowledge of family when records show 3 previous calls"
+      },
+      {
+        "law": "Evidence Tampering", 
+        "page": "2",
+        "paragraph": "1",
+        "notes": "Timeline altered between versions - incident time changed by 2 hours without explanation"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Police report containing documented contradictions and false statements under oath. Analysis reveals systematic pattern of evidence manipulation to support predetermined conclusions. Officer testimony contradicts documented facts and prior reports.",
+    "uploadedAt": "2024-01-08T16:45:00.000Z",
+    "textContent": "Initial police report contained accurate timeline and factual information regarding domestic violence call at residence. Officer initially documented arriving at 14:30 hours and observing no signs of disturbance. However, subsequent versions show alterations: (1) Arrival time changed to 16:30 without explanation (2) Added observations not in original report (3) Removed exculpatory witness statements (4) Officer sworn testimony claims no prior knowledge of address despite CAD records showing 3 previous domestic calls in past 6 months. These alterations constitute perjury and evidence tampering in violation of state and federal statutes.",
+    "currentVersion": 4,
+    "lastModified": "2024-01-15T09:15:00.000Z", 
+    "lastModifiedBy": "Legal Review Team",
+    "fingerprint": {
+      "fileHash": "sha256:b2c3d4e5f6a1...",
+      "fileSize": 156234,
+      "pageCount": 4,
+      "firstPageHash": "sha256:e5f6a1b2c3d4..."
+    }
+  },
+  {
+    "id": "oversight-demo-003",
+    "fileName": "Medical_Exam_Report_Suppressed_Findings.pdf", 
+    "title": "Medical Exam Report - Critical Findings Suppressed",
+    "category": "Primary",
+    "children": ["Josh", "Nicholas"],
+    "laws": ["CAPTA", "Brady v. Maryland", "Evidence Tampering"],
+    "misconduct": [
+      {
+        "law": "CAPTA",
+        "page": "4",
+        "paragraph": "3",
+        "notes": "Failure to report suspected child abuse as mandated by federal law"
+      },
+      {
+        "law": "Brady v. Maryland",
+        "page": "2", 
+        "paragraph": "5",
+        "notes": "Medical findings indicating abuse withheld from court proceedings"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Medical examination report documenting physical evidence of abuse that was subsequently suppressed from court proceedings. Critical medical findings were altered or omitted in versions provided to legal proceedings, constituting Brady violations and CAPTA non-compliance.",
+    "uploadedAt": "2024-01-05T11:20:00.000Z",
+    "textContent": "Comprehensive medical examination of children Josh and Nicholas revealed multiple indicators consistent with physical abuse including: (1) Patterned bruising on back and arms consistent with belt marks (2) Healing fractures in various stages (3) Malnutrition indicators (4) Psychological trauma responses. Original examination report documented these findings with photographic evidence and recommended immediate protective custody. However, version provided to court proceedings omitted all abuse indicators and photographs. Medical examiner later confirmed under deposition that findings were 'consistent with abuse' but this testimony was not included in court records. Suppression of medical evidence constitutes Brady violation and failure to report constitutes CAPTA violation.",
+    "currentVersion": 2,
+    "lastModified": "2024-01-12T13:45:00.000Z",
+    "lastModifiedBy": "Medical Review Board",
+    "fingerprint": {
+      "fileHash": "sha256:c3d4e5f6a1b2...",
+      "fileSize": 389456, 
+      "pageCount": 12,
+      "firstPageHash": "sha256:d4e5f6a1b2c3..."
+    }
+  },
+  {
+    "id": "oversight-demo-004",
+    "fileName": "Court_Order_Constitutional_Violations.pdf",
+    "title": "Court Order - Due Process Violations Documented", 
+    "category": "Primary",
+    "children": ["Jace", "Josh", "Nicholas"],
+    "laws": ["Due Process (14th Amendment)", "Brady v. Maryland"],
+    "misconduct": [
+      {
+        "law": "Due Process (14th Amendment)",
+        "page": "1",
+        "paragraph": "1", 
+        "notes": "Court proceedings conducted without proper notice to parents - fundamental fairness violated"
+      },
+      {
+        "law": "Brady v. Maryland",
+        "page": "3",
+        "paragraph": "2",
+        "notes": "Court relied on incomplete evidence packet - exculpatory materials withheld"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Court order issued based on incomplete and tampered evidence, resulting in constitutional due process violations. Parents were denied fundamental fairness through inadequate notice and presentation of altered evidence to support predetermined outcomes.",
+    "uploadedAt": "2024-01-03T08:30:00.000Z", 
+    "textContent": "Court order removing children Jace, Josh, and Nicholas from parental custody based on CPS petition and supporting evidence. However, analysis reveals fundamental due process violations: (1) Parents given only 24-hour notice of emergency hearing (2) Evidence packet provided to court omitted exculpatory medical evidence (3) Police report presented was altered version removing witness statements (4) No opportunity for cross-examination of CPS witnesses (5) Court-appointed attorney failed to review evidence or interview clients. Order states 'clear and convincing evidence of abuse' but evidence packet contained only altered reports with abuse indicators removed. Constitutional due process requires fundamental fairness in proceedings affecting parental rights - these violations render the proceedings fundamentally unfair.",
+    "currentVersion": 1,
+    "lastModified": "2024-01-03T08:30:00.000Z",
+    "lastModifiedBy": "Court Records",
+    "fingerprint": {
+      "fileHash": "sha256:d4e5f6a1b2c3...",
+      "fileSize": 123789,
+      "pageCount": 6, 
+      "firstPageHash": "sha256:e5f6a1b2c3d4..."
+    }
+  },
+  {
+    "id": "oversight-demo-005",
+    "fileName": "Witness_Statement_Suppression_Evidence.pdf",
+    "title": "Witness Statement - Evidence Suppression Documentation",
+    "category": "Supporting", 
+    "children": ["Jace"],
+    "laws": ["Brady v. Maryland", "Evidence Tampering"],
+    "misconduct": [
+      {
+        "law": "Brady v. Maryland",
+        "page": "2",
+        "paragraph": "3",
+        "notes": "Witness statement contradicting official narrative withheld from proceedings"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true, 
+      "oversightPacket": true
+    },
+    "description": "Witness statement providing exculpatory evidence that was systematically suppressed from court proceedings. Witness observed events contradicting official CPS and police narratives but statement was omitted from evidence packets.",
+    "uploadedAt": "2024-01-07T15:10:00.000Z",
+    "textContent": "Witness statement from neighbor who observed incident involving child Jace on date in question. Witness states: 'I saw the whole thing from my window. The child was playing normally in the yard around 2:30 PM when CPS worker arrived. Child ran to greet worker - no signs of fear or distress. Worker spoke with child for about 10 minutes, child appeared comfortable and responsive. No signs of abuse or neglect observed. Child's clothing was clean, child appeared well-fed and healthy.' This statement directly contradicts CPS report claiming child was 'cowering in fear' and showed 'signs of malnutrition and neglect.' Witness willing to testify under oath but was never contacted by any party despite providing contact information to investigating officer. Statement was documented but omitted from evidence packets provided to court.",
+    "currentVersion": 1,
+    "lastModified": "2024-01-07T15:10:00.000Z",
+    "lastModifiedBy": "Evidence Collection",
+    "fingerprint": {
+      "fileHash": "sha256:e5f6a1b2c3d4...",
+      "fileSize": 87432,
+      "pageCount": 3,
+      "firstPageHash": "sha256:f6a1b2c3d4e5..."
+    }
+  },
+  {
+    "id": "oversight-demo-006",
+    "fileName": "CPS_Internal_Email_Cover_Up.pdf",
+    "title": "CPS Internal Email - Cover-Up Evidence",
+    "category": "Primary",
+    "children": ["Josh", "Nicholas"],
+    "laws": ["Evidence Tampering", "CAPTA"],
+    "misconduct": [
+      {
+        "law": "Evidence Tampering",
+        "page": "1", 
+        "paragraph": "2",
+        "notes": "Internal communications show coordinated effort to alter case records"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "description": "Internal CPS email communications revealing coordinated effort to alter case records and suppress evidence. Emails show supervisory approval for evidence tampering and coordinated narrative development.",
+    "uploadedAt": "2024-01-09T12:40:00.000Z",
+    "textContent": "Email chain between CPS caseworker and supervisor regarding case involving children Josh and Nicholas. Key excerpts: Caseworker: 'Medical exam came back with findings inconsistent with our initial assessment. Doctor documented possible abuse indicators.' Supervisor response: 'We need to be careful how this is documented. Revise your report to focus on family cooperation rather than medical findings. We can't have contradictory evidence in the file.' Later email from supervisor: 'I've spoken with medical examiner - they understand the need for consistency in documentation. Revised medical report will be available tomorrow.' Final email: 'Case file has been updated with consistent documentation. Original materials have been archived and should not be referenced in court proceedings.' This email chain provides direct evidence of coordinated effort to tamper with evidence and suppress exculpatory materials.",
+    "currentVersion": 1,
+    "lastModified": "2024-01-09T12:40:00.000Z", 
+    "lastModifiedBy": "Discovery Production",
+    "fingerprint": {
+      "fileHash": "sha256:f6a1b2c3d4e5...",
+      "fileSize": 65123,
+      "pageCount": 2,
+      "firstPageHash": "sha256:a1b2c3d4e5f6..."
+    }
+  }
+]

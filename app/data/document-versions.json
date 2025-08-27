@@ -1,0 +1,320 @@
+[
+  {
+    "id": "version-demo-001",
+    "documentId": "oversight-demo-001",
+    "version": 1,
+    "title": "CPS Report - Critical Evidence Tampering Detected",
+    "description": "Original CPS report with safety concerns documented",
+    "category": "Primary",
+    "children": ["Jace", "Josh"],
+    "laws": ["CAPTA"],
+    "misconduct": [],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "CPS Caseworker",
+    "changedAt": "2024-01-08T10:30:00.000Z",
+    "changeNotes": "Initial case assessment with safety concerns documented",
+    "changeType": "created"
+  },
+  {
+    "id": "version-demo-002", 
+    "documentId": "oversight-demo-001",
+    "version": 2,
+    "title": "CPS Report - Revised Assessment",
+    "description": "Revised report with safety concerns removed",
+    "category": "Primary", 
+    "children": ["Jace", "Josh"],
+    "laws": ["CAPTA"],
+    "misconduct": [],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "CPS Supervisor",
+    "changedAt": "2024-01-10T14:15:00.000Z",
+    "changeNotes": "Updated assessment - safety concerns addressed",
+    "changeType": "edited"
+  },
+  {
+    "id": "version-demo-003",
+    "documentId": "oversight-demo-001", 
+    "version": 3,
+    "title": "CPS Report - Critical Evidence Tampering Detected",
+    "description": "Forensic analysis revealing evidence tampering patterns",
+    "category": "Primary",
+    "children": ["Jace", "Josh"],
+    "laws": ["Brady v. Maryland", "Due Process (14th Amendment)", "Evidence Tampering", "CAPTA"],
+    "misconduct": [
+      {
+        "law": "Brady v. Maryland",
+        "page": "3",
+        "paragraph": "2",
+        "notes": "Exculpatory evidence withheld from defense"
+      },
+      {
+        "law": "Evidence Tampering",
+        "page": "7", 
+        "paragraph": "1",
+        "notes": "Original report altered to remove critical safety findings"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Forensic Analysis Team",
+    "changedAt": "2024-01-15T14:22:00.000Z",
+    "changeNotes": "Forensic analysis completed - evidence tampering documented with comparison to original version",
+    "changeType": "edited"
+  },
+  {
+    "id": "version-demo-004",
+    "documentId": "oversight-demo-002",
+    "version": 1,
+    "title": "Police Report - Initial Response",
+    "description": "Original police report with accurate timeline",
+    "category": "Primary",
+    "children": ["Jace"],
+    "laws": [],
+    "misconduct": [],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Responding Officer",
+    "changedAt": "2024-01-08T16:45:00.000Z",
+    "changeNotes": "Initial incident report filed",
+    "changeType": "created"
+  },
+  {
+    "id": "version-demo-005",
+    "documentId": "oversight-demo-002",
+    "version": 2,
+    "title": "Police Report - Supplemental Information",
+    "description": "Updated report with timeline corrections",
+    "category": "Primary",
+    "children": ["Jace"],
+    "laws": [],
+    "misconduct": [],
+    "include": "YES", 
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Responding Officer",
+    "changedAt": "2024-01-09T08:30:00.000Z",
+    "changeNotes": "Timeline correction - arrival time updated for accuracy",
+    "changeType": "edited"
+  },
+  {
+    "id": "version-demo-006",
+    "documentId": "oversight-demo-002",
+    "version": 3, 
+    "title": "Police Report - Final Version",
+    "description": "Final report with additional observations",
+    "category": "Primary",
+    "children": ["Jace"],
+    "laws": [],
+    "misconduct": [],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Reviewing Sergeant",
+    "changedAt": "2024-01-10T10:15:00.000Z",
+    "changeNotes": "Final review completed - additional observations documented",
+    "changeType": "edited"
+  },
+  {
+    "id": "version-demo-007",
+    "documentId": "oversight-demo-002",
+    "version": 4,
+    "title": "Police Report - Multiple Contradictions and False Statements",
+    "description": "Legal analysis revealing contradictions and perjury",
+    "category": "Primary",
+    "children": ["Jace"],
+    "laws": ["Due Process (14th Amendment)", "Perjury", "Evidence Tampering"],
+    "misconduct": [
+      {
+        "law": "Perjury",
+        "page": "1",
+        "paragraph": "4", 
+        "notes": "False statements under oath documented"
+      },
+      {
+        "law": "Evidence Tampering",
+        "page": "2",
+        "paragraph": "1",
+        "notes": "Timeline altered between versions without explanation"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Legal Review Team",
+    "changedAt": "2024-01-15T09:15:00.000Z", 
+    "changeNotes": "Legal analysis completed - contradictions and false statements documented through version comparison",
+    "changeType": "edited"
+  },
+  {
+    "id": "version-demo-008",
+    "documentId": "oversight-demo-003",
+    "version": 1,
+    "title": "Medical Exam Report - Initial Findings",
+    "description": "Original medical examination with abuse indicators",
+    "category": "Primary",
+    "children": ["Josh", "Nicholas"],
+    "laws": ["CAPTA"],
+    "misconduct": [],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Medical Examiner",
+    "changedAt": "2024-01-05T11:20:00.000Z",
+    "changeNotes": "Initial medical examination completed with photographic documentation",
+    "changeType": "created"
+  },
+  {
+    "id": "version-demo-009",
+    "documentId": "oversight-demo-003",
+    "version": 2,
+    "title": "Medical Exam Report - Critical Findings Suppressed", 
+    "description": "Analysis revealing suppression of critical medical findings",
+    "category": "Primary",
+    "children": ["Josh", "Nicholas"],
+    "laws": ["CAPTA", "Brady v. Maryland", "Evidence Tampering"],
+    "misconduct": [
+      {
+        "law": "CAPTA",
+        "page": "4",
+        "paragraph": "3",
+        "notes": "Failure to report suspected child abuse as mandated by federal law"
+      },
+      {
+        "law": "Brady v. Maryland",
+        "page": "2",
+        "paragraph": "5",
+        "notes": "Medical findings indicating abuse withheld from court proceedings"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Medical Review Board",
+    "changedAt": "2024-01-12T13:45:00.000Z",
+    "changeNotes": "Medical review board analysis - evidence suppression documented through comparison with court-provided version",
+    "changeType": "edited"
+  },
+  {
+    "id": "version-demo-010",
+    "documentId": "oversight-demo-004",
+    "version": 1, 
+    "title": "Court Order - Due Process Violations Documented",
+    "description": "Court order issued based on incomplete evidence",
+    "category": "Primary",
+    "children": ["Jace", "Josh", "Nicholas"],
+    "laws": ["Due Process (14th Amendment)", "Brady v. Maryland"],
+    "misconduct": [
+      {
+        "law": "Due Process (14th Amendment)",
+        "page": "1",
+        "paragraph": "1",
+        "notes": "Court proceedings conducted without proper notice to parents"
+      },
+      {
+        "law": "Brady v. Maryland", 
+        "page": "3",
+        "paragraph": "2",
+        "notes": "Court relied on incomplete evidence packet - exculpatory materials withheld"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Court Records",
+    "changedAt": "2024-01-03T08:30:00.000Z",
+    "changeNotes": "Emergency custody order issued - legal analysis reveals due process violations",
+    "changeType": "created"
+  },
+  {
+    "id": "version-demo-011",
+    "documentId": "oversight-demo-005",
+    "version": 1,
+    "title": "Witness Statement - Evidence Suppression Documentation", 
+    "description": "Witness statement contradicting official narrative",
+    "category": "Supporting",
+    "children": ["Jace"],
+    "laws": ["Brady v. Maryland", "Evidence Tampering"],
+    "misconduct": [
+      {
+        "law": "Brady v. Maryland",
+        "page": "2",
+        "paragraph": "3",
+        "notes": "Witness statement contradicting official narrative withheld from proceedings"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Evidence Collection",
+    "changedAt": "2024-01-07T15:10:00.000Z",
+    "changeNotes": "Witness statement collected but omitted from court evidence packets - Brady violation documented",
+    "changeType": "created"
+  },
+  {
+    "id": "version-demo-012",
+    "documentId": "oversight-demo-006",
+    "version": 1,
+    "title": "CPS Internal Email - Cover-Up Evidence",
+    "description": "Internal communications revealing coordinated evidence tampering",
+    "category": "Primary",
+    "children": ["Josh", "Nicholas"],
+    "laws": ["Evidence Tampering", "CAPTA"], 
+    "misconduct": [
+      {
+        "law": "Evidence Tampering",
+        "page": "1",
+        "paragraph": "2",
+        "notes": "Internal communications show coordinated effort to alter case records"
+      }
+    ],
+    "include": "YES",
+    "placement": {
+      "masterFile": true,
+      "exhibitBundle": true,
+      "oversightPacket": true
+    },
+    "changedBy": "Discovery Production",
+    "changedAt": "2024-01-09T12:40:00.000Z",
+    "changeNotes": "Internal email chain produced in discovery - reveals coordinated evidence tampering by CPS supervisory staff",
+    "changeType": "created"
+  }
+]
