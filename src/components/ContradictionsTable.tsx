@@ -42,26 +42,6 @@ export default function ContradictionsTable({ contradictions = [] }: Contradicti
     if (contradictions.length > 0) {
       setData(contradictions)
     } else {
-      loadContradictionsData()
-    }
-  }, [contradictions])
-
-  const loadContradictionsData = async () => {
-    setLoading(true)
-    try {
-      // Try to load from the generated contradictions_scored.json file
-      const response = await fetch('/data/contradictions_scored.json')
-      if (response.ok) {
-        const scoredContradictions = await response.json()
-        setData(scoredContradictions)
-        toast.success(`Loaded ${scoredContradictions.length} scored contradictions`)
-      } else {
-        // Fallback to sample data if file doesn't exist
-        console.log('No scored contradictions file found, using empty data')
-        setData([])
-      }
-    } catch (error) {
-      console.error('Error loading contradictions:', error)
       // Use fallback sample data for demonstration
       const sampleData = [
         {
@@ -104,10 +84,8 @@ export default function ContradictionsTable({ contradictions = [] }: Contradicti
         }
       ]
       setData(sampleData)
-      toast.info('Using sample contradiction data for demonstration')
     }
-    setLoading(false)
-  }
+  }, []) // Only run once on mount
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
