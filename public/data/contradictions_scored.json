@@ -1,6 +1,6 @@
 {
-  "analysis_id": "contradictions_scored_1756280100",
-  "generated_at": "2025-08-27T07:35:00.019685Z",
+  "analysis_id": "contradictions_scored_1756280195",
+  "generated_at": "2025-08-27T07:36:35.506322Z",
   "rule_weights_version": "1.0",
   "total_score": 181.8,
   "max_possible_score": 200,
@@ -68,6 +68,6 @@
   "metadata": {
     "weights_file": "/home/runner/work/justice-document-pip/justice-document-pip/analyzer/rule_weights.json",
     "scoring_algorithm": "weighted_confidence_v1.0",
-    "processed_at": "2025-08-27T07:35:00.019715Z"
+    "processed_at": "2025-08-27T07:36:35.506343Z"
   }
 }
