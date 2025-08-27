@@ -2,34 +2,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FileText, Upload, Download, AlertTriangle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import { useState } from 'react'
-
 interface FileDropZoneProps {
-  onFilesUploaded: (files: FileList) => void
-  accepting?: string
+
   maxFiles?: number
-}
+  onFilesUploaded: (files: FileList) => void
+}: FileDropZoneProps
 
-export function FileDropZone({ 
-  onFilesUploaded, 
-  accepting = ".pdf,application/pdf", 
-  maxFiles = 50 
-}: FileDropZoneProps) {
-  const [isDragging, setIsDragging] = useState(false)
+ 
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    
-    const files = e.dataTransfer.files
-    if (files.length > maxFiles) {
-      toast.error(`Too many files! Maximum ${maxFiles} files allowed.`)
+    if (files.length > maxFiles
       return
-    }
     
-    if (files.length > 0) {
-      onFilesUploaded(files)
+      onFilesUpl
+  }
+  const handleFileSelect = () => {
+
+    input.accept = accepting
+      const files = (e
+        if (files.length
+    
+        onFilesUploaded(files)
     }
+  }
+  return (
+     
+    
+        </CardTitle>
+      <CardContent>
+     
   }
 
   const handleFileSelect = () => {
@@ -68,15 +68,15 @@ export function FileDropZone({
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onDragEnter={(e) => {
-            e.preventDefault()
+              <div className="
             setIsDragging(true)
-          }}
+            
           onDragLeave={(e) => {
             e.preventDefault()
             setIsDragging(false)
-          }}
+      </Card
           onClick={handleFileSelect}
-        >
+}
           <div className="flex flex-col items-center space-y-4">
             <div className="p-4 bg-primary/10 rounded-full">
               {isDragging ? (
@@ -84,7 +84,7 @@ export function FileDropZone({
               ) : (
                 <FileText size={48} className="text-primary" />
               )}
-            </div>
+
             
             <div>
               <h3 className="text-xl font-bold mb-2 text-primary">
@@ -102,7 +102,7 @@ export function FileDropZone({
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className="h-3 w-3" />
                 <strong>Processing includes:</strong>
-              </div>
+
               <div className="text-left space-y-1">
                 <div>• Text extraction from PDF files</div>
                 <div>• Automatic content analysis and classification</div>
@@ -110,9 +110,9 @@ export function FileDropZone({
                 <div>• Duplicate detection and prevention</div>
               </div>
             </div>
-          </div>
+
         </div>
-      </CardContent>
+
     </Card>
-  )
+
 }
