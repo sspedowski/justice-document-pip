@@ -5,8 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Warning, FileText, Users, Scales, Shield, Download, Eye, GitMerge } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { loadData } from '@/lib/data'
+import type { AnnotationData } from '@/lib/types'
+import ContradictionsTable from './ContradictionsTable'
 
 interface RealEvidenceContradiction {
+  id?: string // Add optional ID for suppression/annotation functionality
   type: 'name_change' | 'content_alteration' | 'evidence_suppression' | 'status_change' | 'assessment_manipulation' | 'witness_removal'
   severity: 'critical' | 'high' | 'moderate'
   title: string
@@ -29,12 +33,26 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
   const [contradictions, setContradictions] = useState<RealEvidenceContradiction[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisComplete, setAnalysisComplete] = useState(false)
+  const [suppressions, setSuppressions] = useState<string[]>([])
+  const [annotations, setAnnotations] = useState<AnnotationData[]>([])
 
   useEffect(() => {
     if (isOpen && documents.length >= 2) {
       analyzeRealEvidence()
+      loadSuppressionData()
     }
   }, [isOpen, documents])
+
+  const loadSuppressionData = async () => {
+    try {
+      const data = await loadData()
+      setSuppressions(data.suppressions)
+      setAnnotations(data.annotations)
+    } catch (error) {
+      console.warn('Failed to load suppression data:', error)
+      // Continue with empty arrays - localStorage will be used as fallback
+    }
+  }
 
   const analyzeRealEvidence = () => {
     setIsAnalyzing(true)
@@ -71,6 +89,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Nicholas → Owen name change
         if (initial.textContent?.includes('Nicholas Williams') && amended.textContent?.includes('Owen Williams')) {
           contradictions.push({
+            id: 'cps_name_change_nicholas_to_owen',
             type: 'name_change',
             severity: 'critical',
             title: 'Child Victim Identity Alteration',
@@ -91,6 +110,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Witness statement removal
         if (initial.textContent?.includes('Noel Johnson (provided statement)') && !amended.textContent?.includes('provided statement')) {
           contradictions.push({
+            id: 'cps_witness_removal_noel_johnson',
             type: 'witness_removal',
             severity: 'critical',
             title: 'Key Witness Statement Suppression',
@@ -111,6 +131,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Risk assessment manipulation
         if (initial.textContent?.includes('RISK ASSESSMENT: LOW') && amended.textContent?.includes('RISK ASSESSMENT: MODERATE')) {
           contradictions.push({
+            id: 'cps_risk_assessment_escalation',
             type: 'assessment_manipulation',
             severity: 'critical',
             title: 'Risk Assessment Artificial Escalation',
@@ -131,6 +152,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Care assessment downgrade
         if (initial.textContent?.includes('well-fed and clean') && amended.textContent?.includes('adequately cared for')) {
           contradictions.push({
+            id: 'cps_care_assessment_downgrade',
             type: 'content_alteration',
             severity: 'critical',
             title: 'Child Care Assessment Manipulation',
@@ -159,6 +181,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Noel → Neil name change
         if (original.textContent?.includes('Noel Johnson') && revised.textContent?.includes('Neil Johnson')) {
           contradictions.push({
+            id: 'police_witness_name_change_noel_to_neil',
             type: 'name_change',
             severity: 'critical',
             title: 'Key Witness Identity Alteration',
@@ -184,6 +207,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
           const revisedCount = parseInt(revisedPhotoMatch[1])
           if (originalCount > revisedCount) {
             contradictions.push({
+              id: 'police_evidence_count_reduction',
               type: 'evidence_suppression',
               severity: 'critical',
               title: 'Physical Evidence Suppression',
@@ -205,6 +229,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Case status manipulation
         if (original.textContent?.includes('ACTIVE') && revised.textContent?.includes('CLOSED')) {
           contradictions.push({
+            id: 'police_case_status_manipulation',
             type: 'status_change',
             severity: 'critical',
             title: 'Case Status Manipulation',
@@ -225,6 +250,7 @@ export default function EvidenceAnalysisDisplay({ documents, isOpen, onClose }: 
         // Conclusion flip
         if (original.textContent?.includes('substantiated') && revised.textContent?.includes('unsubstantiated')) {
           contradictions.push({
+            id: 'police_conclusion_reversal',
             type: 'content_alteration',
             severity: 'critical',
             title: 'Investigation Conclusion Reversal',
@@ -392,73 +418,13 @@ This report is suitable for legal proceedings and oversight agency submission.
                 </Button>
               </div>
               
-              {contradictions.map((contradiction, index) => (
-                <Card key={index} className="border-red-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-base text-red-800 flex items-center gap-2">
-                          <Warning className="h-4 w-4" />
-                          {contradiction.title}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">{contradiction.description}</p>
-                      </div>
-                      <Badge variant="destructive" className="ml-4">
-                        {contradiction.severity.toUpperCase()}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-green-50 border border-green-200 rounded p-3">
-                        <div className="text-xs font-medium text-green-800 mb-1">BEFORE (Original)</div>
-                        <div className="text-sm text-green-700 font-mono">{contradiction.before}</div>
-                      </div>
-                      <div className="bg-red-50 border border-red-200 rounded p-3">
-                        <div className="text-xs font-medium text-red-800 mb-1">AFTER (Altered)</div>
-                        <div className="text-sm text-red-700 font-mono">{contradiction.after}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm font-medium mb-2">Affected Documents:</div>
-                        <div className="space-y-1">
-                          {contradiction.documents.map((doc, idx) => (
-                            <div key={idx} className="text-xs bg-muted px-2 py-1 rounded flex items-center gap-2">
-                              <FileText className="h-3 w-3" />
-                              {doc}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium mb-2">Evidence Location:</div>
-                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                          {contradiction.evidenceLocation}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="text-sm font-medium mb-2 text-red-800">Impact & Legal Implications:</div>
-                      <div className="bg-red-50 border border-red-200 rounded p-3">
-                        <div className="text-sm text-red-700 mb-2">
-                          <strong>Impact:</strong> {contradiction.impact}
-                        </div>
-                        <div className="text-sm text-red-700">
-                          <strong>Legal Violations:</strong>
-                          <ul className="list-disc list-inside mt-1 space-y-1">
-                            {contradiction.legalImplications.map((impl, idx) => (
-                              <li key={idx}>{impl}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              <ContradictionsTable 
+                contradictions={contradictions}
+                enableSuppress={true}
+                enableNotes={true}
+                suppressions={suppressions}
+                annotations={annotations}
+              />
             </div>
           )}
           
