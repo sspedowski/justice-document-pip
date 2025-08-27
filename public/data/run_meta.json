@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-27T07:36:01.306123Z",
+  "git_sha": "09df23445fd823dd229eed830c5611e0ce6799aa",
+  "num_statements": 3,
+  "num_contradictions": 5,
+  "rules_fingerprint": "a32f9396af16d59c5e2d2b9888b4f0b940afd3a2",
+  "demo_mode": true,
+  "engine_errors": 0
+}

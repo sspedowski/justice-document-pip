@@ -1,0 +1,2 @@
+contradiction_id,type,description,confidence,rule,num_statements
+bd2dafc4d73b899f,event_date_disagreement,Event dates disagree: 12/25/2022 vs 12/26/2022,0.8,event_date_disagreement,2

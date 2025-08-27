@@ -1,0 +1,84 @@
+name: Analyzer Pipeline
+
+on:
+  push:
+    branches: [ "main", "pr-7" ]
+    paths:
+      - "analyzer/**"
+      - "scripts/run_analysis.py"
+      - "scripts/scoding.py"
+      - "tests/analyzer/**"
+      - ".github/workflows/analyzer.yml"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "analyzer/**"
+      - "scripts/run_analysis.py"
+      - "scripts/scoding.py"
+      - "tests/analyzer/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  analyzer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run analysis demo
+        run: |
+          python scripts/run_analysis.py --demo
+
+      - name: Run scoring
+        run: |
+          python scripts/scoding.py
+
+      - name: Run tests
+        run: |
+          pytest -q
+
+      - name: Check for engine errors
+        run: |
+          if grep -r "__engine_error__" public/data/; then
+            echo "Engine errors detected!"
+            exit 1
+          else
+            echo "No engine errors found"
+          fi
+
+      - name: Validate outputs
+        run: |
+          # Check that required output files exist
+          test -f public/data/contradictions.json
+          test -f public/data/statements_debug.json  
+          test -f public/data/run_meta.json
+          test -f public/data/contradictions.csv
+          echo "All required output files created"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyzer-outputs
+          path: |
+            public/data/contradictions.json
+            public/data/statements_debug.json
+            public/data/run_meta.json
+            public/data/contradictions.csv
+            public/data/contradictions_scored.json
+            public/data/contradictions_report.txt
