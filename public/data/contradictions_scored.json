@@ -1,0 +1,167 @@
+[
+  {
+    "rule": "event_date_disagreement",
+    "severity": "high",
+    "key": "evtX",
+    "rationale": "Event evtX has conflicting dates: 2025-01-01 vs 2025-01-05.",
+    "a": {
+      "type": "EVENT_DATE",
+      "event_id": "evtX",
+      "date": "2025-01-01",
+      "id": "d1"
+    },
+    "b": {
+      "type": "EVENT_DATE",
+      "event_id": "evtX",
+      "date": "2025-01-05",
+      "id": "d2"
+    },
+    "contradiction_id": "2d4eeb521be56942",
+    "title": "Event Date Disagreement",
+    "description": "Multiple statements assert different dates for the same event.",
+    "suggested_action": "Verify the correct event date in original documents.",
+    "score": 39.0
+  },
+  {
+    "rule": "status_flip_without_transition",
+    "severity": "high",
+    "key": "motion1",
+    "rationale": "Target motion1 marked both granted and denied.",
+    "a": {
+      "type": "STATUS",
+      "target": "motion1",
+      "status": "granted",
+      "id": "t1"
+    },
+    "b": {
+      "type": "STATUS",
+      "target": "motion1",
+      "status": "denied",
+      "id": "t2"
+    },
+    "contradiction_id": "60812733c05e4ecb",
+    "title": "Status Flip",
+    "description": "Same target recorded with opposite terminal statuses (e.g., granted vs denied).",
+    "suggested_action": "Check docket or authoritative system of record.",
+    "score": 38
+  },
+  {
+    "rule": "status_flip_without_transition",
+    "severity": "high",
+    "key": "case42",
+    "rationale": "Target case42 marked both open and closed.",
+    "a": {
+      "type": "STATUS",
+      "case_id": "case42",
+      "status": "open",
+      "id": "t3"
+    },
+    "b": {
+      "type": "STATUS",
+      "case_id": "case42",
+      "status": "closed",
+      "id": "t4"
+    },
+    "contradiction_id": "b9c53615ba05662f",
+    "title": "Status Flip",
+    "description": "Same target recorded with opposite terminal statuses (e.g., granted vs denied).",
+    "suggested_action": "Check docket or authoritative system of record.",
+    "score": 38
+  },
+  {
+    "rule": "status_flip_without_transition",
+    "severity": "high",
+    "key": "case42",
+    "rationale": "Target case42 marked both closed and open.",
+    "a": {
+      "type": "STATUS",
+      "case_id": "case42",
+      "status": "closed",
+      "id": "t4"
+    },
+    "b": {
+      "type": "STATUS",
+      "case_id": "case42",
+      "status": "open",
+      "id": "t3"
+    },
+    "contradiction_id": "b9c53615ba05662f",
+    "title": "Status Flip",
+    "description": "Same target recorded with opposite terminal statuses (e.g., granted vs denied).",
+    "suggested_action": "Check docket or authoritative system of record.",
+    "score": 38
+  },
+  {
+    "rule": "numeric_amount_mismatch",
+    "severity": "medium",
+    "key": "evt$:USD",
+    "rationale": "Amount mismatch for evt$:USD: 5000 vs 12000.",
+    "a": {
+      "type": "AMOUNT",
+      "event_id": "evt$",
+      "value": 5000,
+      "currency": "USD",
+      "id": "a1"
+    },
+    "b": {
+      "type": "AMOUNT",
+      "event_id": "evt$",
+      "value": 12000,
+      "currency": "USD",
+      "id": "a2"
+    },
+    "contradiction_id": "f33eb70af81f9ca2",
+    "title": "Numeric Amount Mismatch",
+    "description": "Different monetary amounts are reported for the same event or context.",
+    "suggested_action": "Check transactional or financial records for the authoritative value.",
+    "score": 35.613
+  },
+  {
+    "rule": "presence_absence_conflict",
+    "severity": "medium",
+    "key": "evt1:Noel",
+    "rationale": "Party marked both present and absent for evt1:Noel.",
+    "a": {
+      "type": "PRESENCE",
+      "event_id": "evt1",
+      "party": "Noel",
+      "present": true,
+      "id": "s1"
+    },
+    "b": {
+      "type": "PRESENCE",
+      "event_id": "evt1",
+      "party": "Noel",
+      "present": false,
+      "id": "s2"
+    },
+    "contradiction_id": "ce61760e734d0d5b",
+    "title": "Presence vs Absence",
+    "description": "A party is recorded both present and absent for the same event.",
+    "suggested_action": "Confirm attendance or clarify witness statements.",
+    "score": 27.0
+  },
+  {
+    "rule": "location_mismatch",
+    "severity": "medium",
+    "key": "evtL",
+    "rationale": "Event evtL assigned multiple locations: 'los angeles' vs 'san diego'.",
+    "a": {
+      "type": "LOCATION",
+      "event_id": "evtL",
+      "location": "Los Angeles",
+      "id": "l1"
+    },
+    "b": {
+      "type": "LOCATION",
+      "event_id": "evtL",
+      "location": "San Diego",
+      "id": "l2"
+    },
+    "contradiction_id": "03866e8195b80b06",
+    "title": "Location Mismatch",
+    "description": "Same event described in different locations.",
+    "suggested_action": "Verify venue/logistics details.",
+    "score": 25
+  }
+]

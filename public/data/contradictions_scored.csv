@@ -1,0 +1,8 @@
+contradiction_id,rule,title,severity,key,score,rationale
+2d4eeb521be56942,event_date_disagreement,Event Date Disagreement,high,evtX,39.0,Event evtX has conflicting dates: 2025-01-01 vs 2025-01-05.
+60812733c05e4ecb,status_flip_without_transition,Status Flip,high,motion1,38,Target motion1 marked both granted and denied.
+b9c53615ba05662f,status_flip_without_transition,Status Flip,high,case42,38,Target case42 marked both open and closed.
+b9c53615ba05662f,status_flip_without_transition,Status Flip,high,case42,38,Target case42 marked both closed and open.
+f33eb70af81f9ca2,numeric_amount_mismatch,Numeric Amount Mismatch,medium,evt$:USD,35.613,Amount mismatch for evt$:USD: 5000 vs 12000.
+ce61760e734d0d5b,presence_absence_conflict,Presence vs Absence,medium,evt1:Noel,27.0,Party marked both present and absent for evt1:Noel.
+03866e8195b80b06,location_mismatch,Location Mismatch,medium,evtL,25,Event evtL assigned multiple locations: 'los angeles' vs 'san diego'.
