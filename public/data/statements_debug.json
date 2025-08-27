@@ -1,0 +1,85 @@
+[
+  {
+    "type": "PRESENCE",
+    "event_id": "evt1",
+    "party": "Noel",
+    "present": true,
+    "id": "s1"
+  },
+  {
+    "type": "PRESENCE",
+    "event_id": "evt1",
+    "party": "Noel",
+    "present": false,
+    "id": "s2"
+  },
+  {
+    "type": "EVENT_DATE",
+    "event_id": "evtX",
+    "date": "2025-01-01",
+    "id": "d1"
+  },
+  {
+    "type": "EVENT_DATE",
+    "event_id": "evtX",
+    "date": "2025-01-05",
+    "id": "d2"
+  },
+  {
+    "type": "AMOUNT",
+    "event_id": "evt$",
+    "value": 5000,
+    "currency": "USD",
+    "id": "a1"
+  },
+  {
+    "type": "AMOUNT",
+    "event_id": "evt$",
+    "value": 12000,
+    "currency": "USD",
+    "id": "a2"
+  },
+  {
+    "type": "STATUS",
+    "target": "motion1",
+    "status": "granted",
+    "id": "t1"
+  },
+  {
+    "type": "STATUS",
+    "target": "motion1",
+    "status": "denied",
+    "id": "t2"
+  },
+  {
+    "type": "LOCATION",
+    "event_id": "evtL",
+    "location": "Los Angeles",
+    "id": "l1"
+  },
+  {
+    "type": "LOCATION",
+    "event_id": "evtL",
+    "location": "San Diego",
+    "id": "l2"
+  },
+  {
+    "type": "PRESENCE",
+    "event_id": "evt2",
+    "party": "Andy Maki",
+    "present": true,
+    "id": "s3"
+  },
+  {
+    "type": "STATUS",
+    "case_id": "case42",
+    "status": "open",
+    "id": "t3"
+  },
+  {
+    "type": "STATUS",
+    "case_id": "case42",
+    "status": "closed",
+    "id": "t4"
+  }
+]
