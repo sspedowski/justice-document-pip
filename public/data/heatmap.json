@@ -1,0 +1,17 @@
+[
+  {
+    "rule": "status_change_inconsistency",
+    "party": "Unknown",
+    "count": 1
+  },
+  {
+    "rule": "location_contradiction",
+    "party": "John Doe",
+    "count": 1
+  },
+  {
+    "rule": "numeric_amount_mismatch",
+    "party": "Unknown",
+    "count": 1
+  }
+]
