@@ -1,32 +1,39 @@
-POLICE INCIDENT REPORT
+POLICE INCIDENT REPORT - ORIGINAL
+Report Number: 2023-1215-847
 Date: December 15, 2023
-Incident #: 2023-456789
-Officer: Det. Andy Maki
+Officer: Detective Mike Anderson
+Location: 123 Oak Street
 
-NARRATIVE:
+INCIDENT SUMMARY:
+Domestic disturbance call received at 21:30 hours.
+Responding to reports of argument between adults.
 
-On December 15, 2023, at approximately 14:30 hours, I responded to a call
-regarding a domestic disturbance at 123 Main Street.
+PARTIES INVOLVED:
+- Stephanie Spedowski (Mother)
+- Josh M. (Child, age 7) - Present but unharmed
+- Neighbor: Mr. Peterson (Reporting party)
 
-Upon arrival, I interviewed the following individuals:
-- Noel Johnson (witness, age 34)
-- Josh Williams (complainant, age 28)
-- Russell Banister (responding EMT)
+FINDINGS:
+Upon arrival, situation appeared calm. Mother cooperative.
+Child Josh appeared well and was not involved in any altercation.
+No signs of physical disturbance observed.
+Neighbor stated he heard raised voices but no violence.
 
-EVIDENCE COLLECTED:
-- Photo evidence: 12 digital photographs
-- Witness statement from Noel Johnson
-- Medical report from Dr. Verde
+EVIDENCE:
+- No physical evidence of disturbance
+- Josh was happy and playing normally
+- No injuries observed on any parties
 
-CONCLUSION:
-Based on the evidence collected and witness testimony from Noel,
-this incident appears to be substantiated. Josh Williams provided
-consistent details that corroborate the physical evidence.
+WITNESS STATEMENTS:
+Mr. Peterson: "Heard some arguing but nothing serious"
+Stephanie: "Just had a phone conversation that got heated"
 
-Case Status: ACTIVE - INVESTIGATION CONTINUING
-Evidence secured in locker #247
+DISPOSITION:
+No arrest made. Situation resolved peacefully.
+Child welfare not a concern at this time.
 
-Officer Badge #: 1023
-Supervisor: Sergeant Thompson
+CASE STATUS: Closed - No further action required
 
-END OF REPORT
+Officer Badge #4472
+Detective Mike Anderson
+December 15, 2023 - 23:15 hours

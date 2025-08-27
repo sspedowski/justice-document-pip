@@ -1,32 +1,39 @@
-POLICE INCIDENT REPORT
+POLICE INCIDENT REPORT - REVISED  
+Report Number: 2023-1215-847
 Date: December 15, 2023
-Incident #: 2023-456789
-Officer: Det. Andy Maki
+Officer: Detective Mike Anderson
+Location: 123 Oak Street
 
-NARRATIVE:
+INCIDENT SUMMARY:
+Domestic violence call received at 21:30 hours.
+Responding to reports of physical altercation and child endangerment.
 
-On December 15, 2023, at approximately 14:30 hours, I responded to a call
-regarding a domestic disturbance at 123 Main Street.
+PARTIES INVOLVED:
+- Stephanie Spedowski (Mother) - Agitated
+- Jace M. (Child, age 7) - Visibly distressed
+- Neighbor: Mr. Peterson (Reporting party)
 
-Upon arrival, I interviewed the following individuals:
-- Neil Johnson (witness, age 34)
-- Josh Williams (complainant, age 28)
-- Russell Banister (responding EMT)
+FINDINGS:
+Upon arrival, clear signs of disturbance noted.
+Mother appeared agitated and defensive.
+Child Jace was crying and showed signs of distress.
+Neighbor reported hearing yelling and possible violence.
 
-EVIDENCE COLLECTED:
-- Photo evidence: 8 digital photographs
-- Witness statement from Neil Johnson
-- Medical report from Dr. Verde
+EVIDENCE:
+- Overturned furniture observed
+- Jace exhibited fearful behavior toward mother
+- Multiple complaints from neighbors
 
-CONCLUSION:
-Based on the evidence collected and witness testimony from Neil,
-this incident appears to be unsubstantiated. Josh Williams provided
-inconsistent details that do not corroborate the physical evidence.
+WITNESS STATEMENTS:
+Mr. Peterson: "Heard yelling, crashes, and child crying loudly"
+Stephanie: "Refused to provide statement"
 
-Case Status: CLOSED - INSUFFICIENT EVIDENCE
-Evidence secured in locker #247
+DISPOSITION:
+Child safety concerns noted. CPS referral made.
+Mother cited for disturbing peace.
 
-Officer Badge #: 1023
-Supervisor: Sergeant Thompson
+CASE STATUS: Open - CPS investigation recommended
 
-END OF REPORT
+Officer Badge #4472
+Detective Mike Anderson  
+December 15, 2023 - 23:45 hours

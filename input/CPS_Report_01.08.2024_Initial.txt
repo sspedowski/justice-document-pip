@@ -1,36 +1,36 @@
-CHILD PROTECTIVE SERVICES REPORT
+CPS INVESTIGATION REPORT - INITIAL VERSION
 Date: January 8, 2024
-Case #: CPS-2024-001234
-Caseworker: Sarah Martinez
+Case Number: 2024-0108-001
+Investigator: Sarah Johnson
 
-INITIAL ASSESSMENT REPORT:
+SUBJECT: Initial Investigation - Josh M.
 
-On January 8, 2024, CPS received a referral regarding potential
-neglect involving the following children:
+SUMMARY:
+Initial investigation into allegations concerning Josh M. (age 7). 
+Allegations received via hotline on January 6, 2024.
 
-CHILDREN INVOLVED:
-- Jace Williams (age 8)
-- Nicholas Williams (age 6)
-- Peyton Williams (age 4)
+FINDINGS:
+- Child appears healthy and well-cared for
+- No visible signs of abuse or neglect observed
+- Josh was cooperative during interview
+- School reports indicate normal behavior patterns
+- Mother (Stephanie) fully cooperative with investigation
 
-ALLEGATIONS:
-Educational neglect and inadequate supervision reported by
-school counselor and confirmed by neighbor Noel Johnson.
+WITNESSES:
+1. Elementary school teacher - Ms. Roberts
+2. Neighbor - Mr. Peterson  
+3. Family friend - Lisa Williams
 
-INVESTIGATION FINDINGS:
-During home visit, observed the following:
-- Children appeared well-fed and clean
-- Home environment was safe and adequate
-- Educational materials present
+EVIDENCE COLLECTED:
+- Photographs of child (none showing concerns)
+- School attendance records
+- Medical records review
 
-INTERVIEWS CONDUCTED:
-- Parent: Josh Williams (cooperative)
-- Neighbor: Noel Johnson (provided statement)
-- School: Principal Anderson
+RECOMMENDATIONS:
+Case recommended for closure - unfounded allegations.
+No services needed at this time.
 
-RISK ASSESSMENT: LOW
-Services recommended: Voluntary family support
+STATUS: Preliminary - Awaiting supervisor review
 
-Next review: February 15, 2024
-
-Caseworker Signature: S. Martinez
+INVESTIGATOR SIGNATURE: Sarah Johnson, CPS Investigator
+DATE: January 8, 2024

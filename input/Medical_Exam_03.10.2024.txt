@@ -1,37 +1,46 @@
-PEDIATRIC MEDICAL EXAMINATION
+MEDICAL EXAMINATION REPORT
 Date: March 10, 2024
-Patient: John Williams (age 10)
-Physician: Dr. Rebecca Verde
+Patient: Josh M. (DOB: 03/15/2016)
+Physician: Dr. Rebecca Martinez, MD
+Facility: Children's Hospital - Pediatric Unit
 
-MEDICAL EXAMINATION REPORT:
-
-CHIEF COMPLAINT:
-Routine follow-up examination requested by CPS caseworker
-following previous concerns about child welfare.
+REASON FOR VISIT:
+Routine pediatric examination and wellness check.
+Court-ordered medical evaluation.
 
 PHYSICAL EXAMINATION:
-- Height: 52 inches (75th percentile)
-- Weight: 68 pounds (50th percentile)
-- Overall appearance: Well-nourished, alert
+Height: 48 inches (normal for age)
+Weight: 52 lbs (normal for age)  
+General appearance: Well-nourished, alert, cooperative
+
+FINDINGS:
 - No signs of physical abuse or neglect
+- Normal growth and development patterns
+- Child appears well-cared for
+- No concerning behavioral indicators
+- Immunizations up to date
+- Josh was talkative and engaged during exam
 
 BEHAVIORAL OBSERVATIONS:
-Child was cooperative during examination.
-Appropriate interaction with caregiver (Josh Williams).
-No concerning behavioral indicators observed.
+Patient exhibited normal child behavior for age group.
+Comfortable with medical procedures.
+No signs of fear or unusual anxiety.
+Interacted appropriately with medical staff.
 
-MEDICAL HISTORY:
-No significant medical issues reported.
-Immunizations up to date.
-Last dental exam: 6 months ago
-
-ASSESSMENT:
-Normal pediatric examination.
-Child appears healthy and well-cared for.
+PARENTAL INTERACTION:
+Mother (Stephanie) present and attentive during examination.
+Answered all questions appropriately.
+Demonstrated appropriate concern for child's wellbeing.
 
 RECOMMENDATIONS:
 Continue routine pediatric care.
-No immediate medical concerns.
+No additional interventions needed at this time.
+Next routine visit in 6 months.
 
-Dr. Rebecca Verde, MD
-Pediatrics
+MEDICAL OPINION:
+Child shows no signs of abuse, neglect, or concerning conditions.
+Normal healthy development observed.
+
+Dr. Rebecca Martinez, MD
+Pediatrics - License #MD-789456
+March 10, 2024
