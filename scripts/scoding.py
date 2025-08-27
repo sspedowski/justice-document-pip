@@ -8,6 +8,12 @@ import json
 import csv
 from pathlib import Path
 
+# Import ai_notes module for summary generation
+try:
+    from . import ai_notes
+except ImportError:
+    import ai_notes
+
 def load_contradictions():
     """Load contradictions from analysis output."""
     contradictions_file = Path("public/data/contradictions.json")
@@ -73,6 +79,16 @@ def score_contradiction(contradiction):
     final_score = min(100, max(0, base_score + adjustments))
     return final_score
 
+def enrich_contradictions(items):
+    """Enrich contradictions with AI notes if missing."""
+    needs_ai_notes = any('ai_note' not in item for item in items)
+    
+    if needs_ai_notes:
+        print("Generating missing AI summary notes...")
+        items = ai_notes.generate_notes_for_contradictions(items)
+    
+    return items
+
 def write_outputs(contradictions):
     """Write scored contradictions to JSON and CSV files with deduplication."""
     # De-duplicate by contradiction_id
@@ -89,6 +105,9 @@ def write_outputs(contradictions):
     # Sort by score (highest first)
     items.sort(key=lambda x: x.get('score', 0), reverse=True)
     
+    # Enrich with AI notes
+    items = enrich_contradictions(items)
+    
     output_dir = Path("public/data")
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -102,7 +121,7 @@ def write_outputs(contradictions):
     csv_file = output_dir / "contradictions_scored.csv"
     if items:
         fieldnames = [
-            'contradiction_id', 'type', 'score', 'description',
+            'contradiction_id', 'type', 'score', 'description', 'ai_note',
             'event', 'party', 'person', 'case', 'location',
             'date_a', 'date_b', 'amount_a', 'amount_b',
             'status_a', 'status_b', 'role_a', 'role_b'

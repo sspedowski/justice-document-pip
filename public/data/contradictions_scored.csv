@@ -1,0 +1,4 @@
+contradiction_id,type,score,description,ai_note,event,party,person,case,location,date_a,date_b,amount_a,amount_b,status_a,status_b,role_a,role_b
+2b6e3f2a458a,status_change_inconsistency,100,Case case_001 has contradictory statuses: ACTIVE vs CLOSED,[Status] conflict on case_001 → ACTIVE vs CLOSED,,,,case_001,,,,,,ACTIVE,CLOSED,,
+6c96f1ec4453,location_contradiction,85,Location contradiction for person at meeting_2024_01_15: Office A vs Office B,[Location] conflict on John Doe → Office A vs Office B at meeting_2024_01_15,meeting_2024_01_15,,John Doe,,,,,,,,,,
+69e3573c7a2f,numeric_amount_mismatch,80,Amount mismatch for incident_2024_02_01: 1000 vs 1500,[Amount] conflict on incident_2024_02_01 → 1000USD vs 1500USD,incident_2024_02_01,,,,,,,1000,1500,,,,
