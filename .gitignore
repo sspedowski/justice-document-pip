@@ -31,4 +31,18 @@ pids
 .file-manifest
 .devcontainer/
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
 .spark-workbench-id

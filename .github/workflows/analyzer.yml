@@ -51,7 +51,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -q
+          python run_tests.py
 
       - name: Check for engine errors
         run: |
