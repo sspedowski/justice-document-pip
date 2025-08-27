@@ -11,18 +11,17 @@ import type { PDFProcessingResult, PDFMetadata } from './types'
 const configureWorker = (): Result<void> => {
   try {
     if (typeof window !== 'undefined') {
-      const baseUrl = window.location.origin + (import.meta.env.BASE_URL || '/')
-      const workerUrl = `${baseUrl}pdf.worker.min.js`
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
+      // Use a fixed version that we know works
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.54/build/pdf.worker.min.js'
       return { success: true, data: undefined }
     }
     throw new Error('Window object not available')
   } catch (error) {
-    console.warn('Failed to configure local PDF worker, using CDN fallback:', error)
+    console.warn('Failed to configure PDF worker:', error)
     
     try {
-      // Fallback to CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+      // Fallback to another CDN
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.js'
       return { success: true, data: undefined }
     } catch (fallbackError) {
       return {
