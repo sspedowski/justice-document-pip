@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "description": "Rule weights for contradiction and legal analysis scoring",
+  "weights": {
+    "legal_violations": {
+      "brady_violation": 0.9,
+      "due_process": 0.8,
+      "evidence_tampering": 1.0,
+      "perjury": 0.85,
+      "capta_violation": 0.7
+    },
+    "document_integrity": {
+      "name_alteration": 0.8,
+      "content_modification": 0.75,
+      "timeline_inconsistency": 0.7,
+      "numeric_changes": 0.65
+    },
+    "pattern_analysis": {
+      "systematic_suppression": 0.95,
+      "cross_document_inconsistency": 0.8,
+      "temporal_anomaly": 0.7,
+      "content_length_changes": 0.6
+    },
+    "confidence_thresholds": {
+      "critical": 0.85,
+      "high": 0.7,
+      "medium": 0.5,
+      "low": 0.3
+    }
+  },
+  "updated_at": "2024-08-27T07:25:00Z",
+  "updated_by": "system"
+}

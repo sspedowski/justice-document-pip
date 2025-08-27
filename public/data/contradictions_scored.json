@@ -1,0 +1,73 @@
+{
+  "analysis_id": "contradictions_scored_1756280100",
+  "generated_at": "2025-08-27T07:35:00.019685Z",
+  "rule_weights_version": "1.0",
+  "total_score": 181.8,
+  "max_possible_score": 200,
+  "risk_level": "CRITICAL",
+  "scored_contradictions": [
+    {
+      "id": "c001",
+      "type": "timeline_inconsistency",
+      "severity": "high",
+      "description": "Document modified after newer document creation",
+      "documents": [
+        "doc_123",
+        "doc_456"
+      ],
+      "confidence": 0.85,
+      "details": {
+        "modified_date": "2024-03-15T14:30:00Z",
+        "reference_date": "2024-03-10T09:15:00Z",
+        "evidence": "Timestamp analysis shows backdating"
+      },
+      "base_confidence": 0.85,
+      "rule_weight": 0.7,
+      "weighted_score": 71.4,
+      "score_breakdown": {
+        "confidence_factor": 0.85,
+        "pattern_weight": 0.7,
+        "severity_multiplier": 1.2
+      }
+    },
+    {
+      "id": "c002",
+      "type": "name_alteration",
+      "severity": "critical",
+      "description": "Key name mentions altered between document versions",
+      "documents": [
+        "doc_789"
+      ],
+      "confidence": 0.92,
+      "details": {
+        "name": "Russell",
+        "original_mentions": 5,
+        "modified_mentions": 1,
+        "context_changes": "Removed from witness statements"
+      },
+      "base_confidence": 0.92,
+      "rule_weight": 0.8,
+      "weighted_score": 110.4,
+      "score_breakdown": {
+        "confidence_factor": 0.92,
+        "pattern_weight": 0.8,
+        "severity_multiplier": 1.5
+      }
+    }
+  ],
+  "category_scores": {
+    "timeline_inconsistency": 71.4,
+    "name_alteration": 110.4
+  },
+  "recommendations": [
+    "IMMEDIATE ACTION REQUIRED: Critical contradictions detected",
+    "Preserve all document versions and metadata",
+    "Conduct forensic analysis for critical violations",
+    "Review access logs and modification history"
+  ],
+  "metadata": {
+    "weights_file": "/home/runner/work/justice-document-pip/justice-document-pip/analyzer/rule_weights.json",
+    "scoring_algorithm": "weighted_confidence_v1.0",
+    "processed_at": "2025-08-27T07:35:00.019715Z"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "analysis_id": "contradictions_001",
+  "generated_at": "2024-08-27T07:25:00Z",
+  "total_contradictions": 15,
+  "categories": {
+    "timeline_inconsistencies": 6,
+    "name_alterations": 4,
+    "content_modifications": 3,
+    "cross_document_conflicts": 2
+  },
+  "contradictions": [
+    {
+      "id": "c001",
+      "type": "timeline_inconsistency",
+      "severity": "high",
+      "description": "Document modified after newer document creation",
+      "documents": ["doc_123", "doc_456"],
+      "confidence": 0.85,
+      "details": {
+        "modified_date": "2024-03-15T14:30:00Z",
+        "reference_date": "2024-03-10T09:15:00Z",
+        "evidence": "Timestamp analysis shows backdating"
+      }
+    },
+    {
+      "id": "c002", 
+      "type": "name_alteration",
+      "severity": "critical",
+      "description": "Key name mentions altered between document versions",
+      "documents": ["doc_789"],
+      "confidence": 0.92,
+      "details": {
+        "name": "Russell",
+        "original_mentions": 5,
+        "modified_mentions": 1,
+        "context_changes": "Removed from witness statements"
+      }
+    }
+  ],
+  "metadata": {
+    "documents_analyzed": 45,
+    "processing_time_ms": 2340,
+    "algorithm_version": "1.2.0"
+  }
+}

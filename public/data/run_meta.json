@@ -1,0 +1,40 @@
+{
+  "run_id": "analysis_run_20240827_072500",
+  "started_at": "2024-08-27T07:20:00Z",
+  "completed_at": "2024-08-27T07:25:00Z",
+  "duration_seconds": 300,
+  "status": "completed",
+  "git_info": {
+    "commit_sha": "9c4455f1234567890abcdef",
+    "branch": "main",
+    "repository": "sspedowski/justice-document-pip"
+  },
+  "input_data": {
+    "documents_processed": 45,
+    "total_file_size_mb": 123.4,
+    "file_types": {
+      "pdf": 42,
+      "txt": 3
+    }
+  },
+  "output_generated": {
+    "contradictions_file": "public/data/contradictions.json",
+    "scored_contradictions_file": "public/data/contradictions_scored.json",
+    "analysis_reports": 3
+  },
+  "performance_metrics": {
+    "processing_rate_docs_per_second": 0.15,
+    "memory_peak_mb": 512,
+    "cpu_usage_percent": 75
+  },
+  "configuration": {
+    "rule_weights_file": "analyzer/rule_weights.json",
+    "confidence_threshold": 0.5,
+    "algorithm_version": "1.2.0"
+  },
+  "errors": [],
+  "warnings": [
+    "2 documents had low OCR confidence",
+    "1 document missing timestamp metadata"
+  ]
+}
