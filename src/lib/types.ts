@@ -339,3 +339,19 @@ export const ERROR_CODES = {
 } as const
 
 export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES]
+
+// Contradiction suppression and annotation types
+export interface SuppressionData {
+  contradiction_id: string
+}
+
+export interface AnnotationData {
+  contradiction_id: string
+  note: string
+  updated_at: string
+}
+
+export interface SuppressionState {
+  suppressions: string[]
+  annotations: AnnotationData[]
+}
