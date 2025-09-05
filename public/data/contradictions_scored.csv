@@ -1,5 +1,4 @@
-contradiction_id,type,score,description
-3a8c9f2b1d6e,presence_absence_conflict,95,"Conflicting presence status for John Doe at meeting_2024_01_15"
-6d8f4a2b9c5e,status_change_inconsistency,90,"Case case_001 has contradictory statuses: ACTIVE vs CLOSED"
-9b5e3a7c2f1d,numeric_amount_mismatch,80,"Amount mismatch for incident_2024_02_01: 1000 vs 1500"
-7f2a1c4b8e5d,event_date_disagreement,75,"Event ""incident_2024_02_01"" has conflicting dates: 2024-02-01 vs 2024-02-02"
+contradiction_id,type,score,description,event,party,person,case,location,date_a,date_b,amount_a,amount_b,status_a,status_b,role_a,role_b
+2b6e3f2a458a,status_change_inconsistency,100,Case case_001 has contradictory statuses: ACTIVE vs CLOSED,,,,case_001,,,,,,ACTIVE,CLOSED,,
+6c96f1ec4453,location_contradiction,85,Location contradiction for person at meeting_2024_01_15: Office A vs Office B,meeting_2024_01_15,,John Doe,,,,,,,,,,
+69e3573c7a2f,numeric_amount_mismatch,80,Amount mismatch for incident_2024_02_01: 1000 vs 1500,incident_2024_02_01,,,,,,,1000,1500,,,,
