@@ -141,7 +141,7 @@ describe('Document Management Integration Tests', () => {
     await user.click(screen.getByText('Document Dashboard'))
 
     // Test main search
-    const searchInput = screen.getByPlaceholderText(/Search documents/)
+    const searchInput = screen.getByPlaceholderText(/MagnifyingGlass documents/)
     await user.type(searchInput, 'police')
 
     // Test category filter
@@ -150,13 +150,13 @@ describe('Document Management Integration Tests', () => {
     await user.click(screen.getByText('Primary'))
 
     // Test content search
-    await user.click(screen.getByText('Content Search'))
+    await user.click(screen.getByText('Content MagnifyingGlass'))
     
     await waitFor(() => {
-      expect(screen.getByText('Search Inside Documents')).toBeInTheDocument()
+      expect(screen.getByText('MagnifyingGlass Inside Documents')).toBeInTheDocument()
     })
 
-    const contentSearchInput = screen.getByPlaceholderText(/Search within document content/)
+    const contentSearchInput = screen.getByPlaceholderText(/MagnifyingGlass within document content/)
     await user.type(contentSearchInput, 'Brady')
   })
 
@@ -225,14 +225,14 @@ describe('Document Management Integration Tests', () => {
     // Test Ctrl+K for search focus
     await user.keyboard('{Control>}k{/Control}')
     
-    const searchInput = screen.getByPlaceholderText(/Search documents/)
+    const searchInput = screen.getByPlaceholderText(/MagnifyingGlass documents/)
     expect(searchInput).toHaveFocus()
 
     // Test Ctrl+Shift+F for content search
     await user.keyboard('{Control>}{Shift>}f{/Shift}{/Control}')
     
     await waitFor(() => {
-      expect(screen.getByText('Search Inside Documents')).toBeInTheDocument()
+      expect(screen.getByText('MagnifyingGlass Inside Documents')).toBeInTheDocument()
     })
   })
 

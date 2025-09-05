@@ -14,15 +14,15 @@ import {
   Clock, 
   Users, 
   Download, 
-  GitCompare, 
+  GitDiff, 
   Eye, 
   X, 
   WarningCircle, 
   CheckCircle, 
   ExclamationMark,
   Calendar,
-  Zap,
-  Search
+  Lightning,
+  MagnifyingGlass
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { 
@@ -559,7 +559,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
           {isAnalyzing ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-4 max-w-md">
-                <Zap className="h-12 w-12 text-orange-600 mx-auto animate-pulse" />
+                <Lightning className="h-12 w-12 text-orange-600 mx-auto animate-pulse" />
                 <h3 className="text-lg font-semibold">Analyzing Documents for Tampering</h3>
                 <p className="text-muted-foreground">
                   Running comprehensive analysis on {documentsForAnalysis.length} documents...
@@ -627,7 +627,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
                         </div>
                         <div className="flex gap-2">
                           <Button onClick={runTamperingAnalysis} size="sm" variant="outline">
-                            <Search className="h-3 w-3 mr-1" />
+                            <MagnifyingGlass className="h-3 w-3 mr-1" />
                             Re-analyze
                           </Button>
                           <Button onClick={exportReport} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -847,7 +847,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
                   Click the button below to start comprehensive tampering detection analysis
                 </p>
                 <Button onClick={runTamperingAnalysis}>
-                  <Search className="h-4 w-4 mr-2" />
+                  <MagnifyingGlass className="h-4 w-4 mr-2" />
                   Start Analysis
                 </Button>
               </div>

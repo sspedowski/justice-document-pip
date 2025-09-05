@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, ResponsiveContainer } from 'recharts'
-import { Download, FileText, TrendUp, Users, Scale, Shield, Calendar, Warning, CheckCircle, Clock, ChartBar, Warning, Target, Gavel, FileCheck, ChartPie, Table, GitBranch } from '@phosphor-icons/react'
+import { Download, FileText, TrendUp, Users, Scales, Shield, Calendar, Warning, CheckCircle, Clock, ChartBar, Warning, DotsThreeCircle, Gavel, FileText, ChartDonut, Table, GitBranch } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { VersionAnalytics } from './VersionAnalytics'
 
@@ -309,7 +309,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
           <TabsTrigger value="evidence">Evidence</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="analysis" className="flex items-center gap-1">
-            <Target className="h-3 w-3" />
+            <DotsThreeCircle className="h-3 w-3" />
             Analysis
           </TabsTrigger>
           <TabsTrigger value="versions" className="flex items-center gap-1">
@@ -343,7 +343,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
               title="Laws Violated"
               value={reportData.summary.lawsViolated}
               subtitle={`${reportData.lawsData.length} distinct violations`}
-              icon={Scale}
+              icon={Scales}
             />
           </div>
 
@@ -724,7 +724,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                 : 'N/A'
               }
               subtitle="Last 12 months"
-              icon={Target}
+              icon={DotsThreeCircle}
             />
           </div>
         </TabsContent>
@@ -734,7 +734,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
+                  <DotsThreeCircle className="h-5 w-5" />
                   Date-Based Document Comparison
                 </CardTitle>
               </CardHeader>
@@ -758,7 +758,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Name Mention Tracking</span>
-                      <Badge variant="outline">Target: Noel, Andy Maki, etc.</Badge>
+                      <Badge variant="outline">DotsThreeCircle: Noel, Andy Maki, etc.</Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Numerical Change Detection</span>
@@ -775,7 +775,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
                       // In a real implementation, this could trigger a server-side process
                     }}
                   >
-                    <Target className="h-4 w-4 mr-2" />
+                    <DotsThreeCircle className="h-4 w-4 mr-2" />
                     Run Date-Based Comparison
                   </Button>
                   
@@ -883,7 +883,7 @@ DATE-BASED COMPARISON INSTRUCTIONS:
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Scale className="h-5 w-5" />
+                <Scales className="h-5 w-5" />
                 Potential Evidence of Tampering
               </CardTitle>
             </CardHeader>

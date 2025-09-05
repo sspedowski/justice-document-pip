@@ -11,7 +11,7 @@ import {
   Pencil, 
   FileArrowUp, 
   GitBranch, 
-  TrendingUp, 
+  TrendUp, 
   Users 
 } from '@phosphor-icons/react'
 
@@ -370,7 +370,7 @@ export function VersionAnalytics({ documents, documentVersions }: VersionAnalyti
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+                <TrendUp className="h-5 w-5" />
                 Monthly Activity Trends
               </CardTitle>
             </CardHeader>

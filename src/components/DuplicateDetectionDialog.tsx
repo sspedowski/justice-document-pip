@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Warning, FileText, Hash, Users, Scale, Copy, Replace, SkipForward, Calendar, Clock } from '@phosphor-icons/react'
+import { Warning, FileText, Hash, Users, Scales, Copy, Swap, SkipForward, Calendar, Clock } from '@phosphor-icons/react'
 import { DuplicateResult } from '@/lib/duplicateDetection'
 
 interface DuplicateDetectionDialogProps {
@@ -172,7 +172,7 @@ export function DuplicateDetectionDialog({
                 
                 {existingDocument?.laws && existingDocument.laws.length > 0 && (
                   <div className="flex items-start gap-1">
-                    <Scale className="h-3 w-3 mt-1 text-muted-foreground" />
+                    <Scales className="h-3 w-3 mt-1 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
                       {existingDocument.laws.length} law(s) identified
                     </span>
@@ -220,11 +220,11 @@ export function DuplicateDetectionDialog({
                 onClick={() => handleAction('replace')}
               >
                 <div className="flex items-center gap-3">
-                  <Replace className="h-5 w-5 text-orange-600" />
+                  <Swap className="h-5 w-5 text-orange-600" />
                   <div className="text-left">
-                    <div className="font-medium">Replace Existing</div>
+                    <div className="font-medium">Swap Existing</div>
                     <div className="text-xs text-muted-foreground">
-                      Replace the existing file with the new one
+                      Swap the existing file with the new one
                     </div>
                   </div>
                 </div>

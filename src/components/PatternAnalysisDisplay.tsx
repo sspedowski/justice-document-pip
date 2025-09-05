@@ -26,7 +26,7 @@ import {
   CheckCircle,
   Warning,
   FileText,
-  Target
+  DotsThreeCircle
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Document, DocumentVersion } from '@/lib/types'
@@ -211,7 +211,7 @@ Suitable for: Legal proceedings, oversight submission, forensic examination
       case 'evidence_suppression': return <Shield className="h-4 w-4" />
       case 'witness_manipulation': return <Users className="h-4 w-4" />
       case 'timeline_manipulation': return <Clock className="h-4 w-4" />
-      case 'status_changes': return <Target className="h-4 w-4" />
+      case 'status_changes': return <DotsThreeCircle className="h-4 w-4" />
       default: return <Warning className="h-4 w-4" />
     }
   }

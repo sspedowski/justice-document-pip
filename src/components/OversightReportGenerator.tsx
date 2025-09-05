@@ -18,8 +18,8 @@ import {
   Users,
   Scales,
   Clock,
-  Building,
-  Mail,
+  Buildings,
+  Envelope,
   Phone,
   Calendar,
   GitBranch,
@@ -88,7 +88,7 @@ const AGENCY_TEMPLATES: AgencyConfig[] = [
       primary: 'Dana Nessel, Attorney General',
       email: 'complaints@michigan.gov',
       phone: '(517) 335-7622',
-      address: 'G. Mennen Williams Building, 525 W Ottawa St, Lansing, MI 48909'
+      address: 'G. Mennen Williams Buildings, 525 W Ottawa St, Lansing, MI 48909'
     },
     reportFormat: 'comprehensive',
     classification: 'law-enforcement',
@@ -936,7 +936,7 @@ Report ID: ${reportTitle}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
+                  <Buildings className="h-5 w-5" />
                   Select Oversight Agencies
                 </CardTitle>
               </CardHeader>
@@ -976,7 +976,7 @@ Report ID: ${reportTitle}
                             </div>
                             {agency.contacts.email && (
                               <div className="flex items-center gap-2">
-                                <Mail className="h-3 w-3" />
+                                <Envelope className="h-3 w-3" />
                                 {agency.contacts.email}
                               </div>
                             )}
@@ -1014,7 +1014,7 @@ Report ID: ${reportTitle}
                           variant="outline"
                           className="w-full bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
                         >
-                          <Building className="h-4 w-4 mr-2" />
+                          <Buildings className="h-4 w-4 mr-2" />
                           📋 Select All Agencies (Quick Setup)
                         </Button>
                         
@@ -1037,7 +1037,7 @@ Report ID: ${reportTitle}
                         onClick={() => setShowCustomForm(true)}
                         className="w-full"
                       >
-                        <Building className="h-4 w-4 mr-2" />
+                        <Buildings className="h-4 w-4 mr-2" />
                         Add Custom Agency
                       </Button>
                     </div>

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Warning, FileText, GitCompare, Eye, Download, Clock, TrendingUp, Shield, Database, ChartLine } from '@phosphor-icons/react'
+import { Warning, FileText, GitDiff, Eye, Download, Clock, TrendUp, Shield, Database, ChartLine } from '@phosphor-icons/react'
 import { analyzeTampering, generateTamperingReport, type TamperingReport } from '@/lib/advancedTamperingDetector'
 import { sampleDocumentsWithDates, documentMetadata } from '@/data/sampleDocumentsWithDates'
 import { toast } from 'sonner'
@@ -291,7 +291,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
+                      <TrendUp className="h-5 w-5" />
                       Executive Summary
                     </CardTitle>
                   </CardHeader>
@@ -322,7 +322,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <GitCompare className="h-5 w-5" />
+                      <GitDiff className="h-5 w-5" />
                       Detected Patterns Overview
                     </CardTitle>
                   </CardHeader>
