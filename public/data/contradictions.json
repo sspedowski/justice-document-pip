@@ -1,6 +1,28 @@
 [
   {
-    "contradiction_id": "3a8c9f2b1d6e",
+    "contradiction_id": "69e3573c7a2f",
+    "type": "event_date_disagreement",
+    "statement_a": {
+      "id": "stmt_3",
+      "event": "incident_2024_02_01",
+      "date": "2024-02-01",
+      "amount": 1000,
+      "currency": "USD"
+    },
+    "statement_b": {
+      "id": "stmt_4",
+      "event": "incident_2024_02_01",
+      "date": "2024-02-02",
+      "amount": 1500,
+      "currency": "USD"
+    },
+    "event": "incident_2024_02_01",
+    "date_a": "2024-02-01",
+    "date_b": "2024-02-02",
+    "description": "Event \"incident_2024_02_01\" has conflicting dates: 2024-02-01 vs 2024-02-02"
+  },
+  {
+    "contradiction_id": "6c96f1ec4453",
     "type": "presence_absence_conflict",
     "statement_a": {
       "id": "stmt_1",
@@ -23,29 +45,7 @@
     "description": "Conflicting presence status for John Doe at meeting_2024_01_15"
   },
   {
-    "contradiction_id": "7f2a1c4b8e5d",
-    "type": "event_date_disagreement",
-    "statement_a": {
-      "id": "stmt_3",
-      "event": "incident_2024_02_01",
-      "date": "2024-02-01",
-      "amount": 1000,
-      "currency": "USD"
-    },
-    "statement_b": {
-      "id": "stmt_4",
-      "event": "incident_2024_02_01",
-      "date": "2024-02-02",
-      "amount": 1500,
-      "currency": "USD"
-    },
-    "event": "incident_2024_02_01",
-    "date_a": "2024-02-01",
-    "date_b": "2024-02-02",
-    "description": "Event \"incident_2024_02_01\" has conflicting dates: 2024-02-01 vs 2024-02-02"
-  },
-  {
-    "contradiction_id": "9b5e3a7c2f1d",
+    "contradiction_id": "69e3573c7a2f",
     "type": "numeric_amount_mismatch",
     "statement_a": {
       "id": "stmt_3",
@@ -68,7 +68,7 @@
     "description": "Amount mismatch for incident_2024_02_01: 1000 vs 1500"
   },
   {
-    "contradiction_id": "6d8f4a2b9c5e",
+    "contradiction_id": "2b6e3f2a458a",
     "type": "status_change_inconsistency",
     "statement_a": {
       "id": "stmt_5",
@@ -84,5 +84,30 @@
     "status_a": "ACTIVE",
     "status_b": "CLOSED",
     "description": "Case case_001 has contradictory statuses: ACTIVE vs CLOSED"
+  },
+  {
+    "contradiction_id": "6c96f1ec4453",
+    "type": "location_contradiction",
+    "statement_a": {
+      "id": "stmt_1",
+      "event": "meeting_2024_01_15",
+      "party": "John Doe",
+      "present": true,
+      "date": "2024-01-15",
+      "location": "Office A"
+    },
+    "statement_b": {
+      "id": "stmt_2",
+      "event": "meeting_2024_01_15",
+      "party": "John Doe",
+      "present": false,
+      "date": "2024-01-15",
+      "location": "Office B"
+    },
+    "event": "meeting_2024_01_15",
+    "person": "John Doe",
+    "location_a": "Office A",
+    "location_b": "Office B",
+    "description": "Location contradiction for person at meeting_2024_01_15: Office A vs Office B"
   }
 ]
