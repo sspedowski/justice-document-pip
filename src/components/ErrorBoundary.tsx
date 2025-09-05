@@ -6,7 +6,7 @@ import React, { Component, ReactNode, ErrorInfo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, RefreshCw, Home, Bug, Copy } from '@phosphor-icons/react'
+import { Warning, ArrowsClockwise, House, Bug, Copy } from '@phosphor-icons/react'
 import { ApplicationError, ErrorHandler, ERROR_CODES } from '@/lib/errorHandler'
 import type { ErrorBoundaryState } from '@/lib/types'
 
@@ -157,7 +157,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
               <div className="rounded-full bg-destructive/10 p-3">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
+                <Warning className="h-8 w-8 text-destructive" />
               </div>
             </div>
             
@@ -199,7 +199,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
                   className="w-full"
                   variant="default"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <ArrowsClockwise className="h-4 w-4 mr-2" />
                   Try Again {this.retryCount > 0 && `(${this.maxRetries - this.retryCount} attempts left)`}
                 </Button>
               )}
@@ -210,7 +210,7 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
                   variant="outline"
                   className="w-full"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <ArrowsClockwise className="h-4 w-4 mr-2" />
                   Reset
                 </Button>
 
@@ -220,8 +220,8 @@ export class ErrorBoundary extends Component<Props, ErrorBoundaryState> {
                     variant="outline"
                     className="w-full"
                   >
-                    <Home className="h-4 w-4 mr-2" />
-                    Go Home
+                    <House className="h-4 w-4 mr-2" />
+                    Go House
                   </Button>
                 )}
               </div>

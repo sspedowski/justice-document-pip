@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { FileText, Upload, Download, AlertTriangle } from '@phosphor-icons/react'
+import { FileText, Upload, Download, Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface FileDropZoneProps {
@@ -93,7 +93,7 @@ export function FileDropZone({ maxFiles = 10, onFilesUploaded }: FileDropZonePro
             
             <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
               <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="h-3 w-3" />
+                <Warning className="h-3 w-3" />
                 <strong>Processing includes:</strong>
               </div>
               <div className="text-left space-y-1">

@@ -14,7 +14,7 @@ import {
   Shield, 
   Warning, 
   CheckCircle, 
-  AlertTriangle,
+  Warning,
   Users,
   Scales,
   Clock,
@@ -24,7 +24,7 @@ import {
   Calendar,
   GitBranch,
   Eye,
-  BarChart3
+  ChartBar
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import type { Document, DocumentVersion } from '@/lib/types'
@@ -889,7 +889,7 @@ Report ID: ${reportTitle}
             <Card className="border-blue-200 bg-blue-50">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChart3 className="h-5 w-5" />
+                  <ChartBar className="h-5 w-5" />
                   Evidence Analysis Summary
                 </CardTitle>
               </CardHeader>
@@ -1156,7 +1156,7 @@ Report ID: ${reportTitle}
                   </>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <Warning className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Select agencies to generate reports</p>
                     <p className="text-xs mt-1">Go to "Select Agencies" tab to choose recipients</p>
                   </div>

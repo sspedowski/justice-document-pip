@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
-  AlertTriangle, 
+  Warning, 
   Shield, 
   FileText, 
   Clock, 
@@ -532,7 +532,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
   const getTypeIcon = (type: TamperingFlag['type']) => {
     switch (type) {
       case 'content_change': return <FileText className="h-4 w-4" />
-      case 'metadata_inconsistency': return <AlertTriangle className="h-4 w-4" />
+      case 'metadata_inconsistency': return <Warning className="h-4 w-4" />
       case 'timeline_conflict': return <Clock className="h-4 w-4" />
       case 'name_discrepancy': return <Users className="h-4 w-4" />
       case 'evidence_omission': return <ExclamationMark className="h-4 w-4" />
@@ -545,7 +545,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <Warning className="h-5 w-5 text-orange-600" />
             Advanced Document Tampering Detection
             {analysisResults && (
               <Badge className={analysisResults.overallRiskAssessment.criticalFlags > 0 ? 'bg-red-600' : 'bg-orange-600'}>
@@ -614,7 +614,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
                         analysisResults.overallRiskAssessment.totalFlags > 0 ? 'border-orange-200 bg-orange-50' : 
                         'border-green-200 bg-green-50'
                       }>
-                        <AlertTriangle className="h-4 w-4" />
+                        <Warning className="h-4 w-4" />
                         <AlertDescription>
                           <div className="font-medium">{analysisResults.overallRiskAssessment.summary}</div>
                         </AlertDescription>
@@ -841,7 +841,7 @@ Reference: TAMPER-${new Date().toISOString().split('T')[0]}
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-4">
-                <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto" />
+                <Warning className="h-12 w-12 text-muted-foreground mx-auto" />
                 <h3 className="text-lg font-semibold">Ready to Analyze</h3>
                 <p className="text-muted-foreground">
                   Click the button below to start comprehensive tampering detection analysis

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, ResponsiveContainer } from 'recharts'
-import { Download, FileText, TrendUp, Users, Scale, Shield, Calendar, AlertTriangle, CheckCircle, Clock, BarChart3, Warning, Target, Gavel, FileCheck, ChartPie, Table, GitBranch } from '@phosphor-icons/react'
+import { Download, FileText, TrendUp, Users, Scale, Shield, Calendar, Warning, CheckCircle, Clock, ChartBar, Warning, Target, Gavel, FileCheck, ChartPie, Table, GitBranch } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { VersionAnalytics } from './VersionAnalytics'
 
@@ -260,7 +260,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
+            <ChartBar className="h-6 w-6" />
             Justice Analytics Report
           </h2>
           <p className="text-muted-foreground">
@@ -795,7 +795,7 @@ export function ReportGenerator({ documents, documentVersions, onExportReport }:
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
+                  <Warning className="h-5 w-5" />
                   Analysis Rules & Detection
                 </CardTitle>
               </CardHeader>

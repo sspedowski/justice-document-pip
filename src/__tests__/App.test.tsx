@@ -50,7 +50,7 @@ vi.mock('@phosphor-icons/react', () => {
     Filter: MockIcon,
     Search: MockIcon,
     Eye: MockIcon,
-    Edit: MockIcon,
+    Pencil: MockIcon,
     GitBranch: MockIcon,
     MagnifyingGlass: MockIcon,
     TextT: MockIcon,

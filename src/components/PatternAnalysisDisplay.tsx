@@ -24,7 +24,7 @@ import {
   Scales,
   X,
   CheckCircle,
-  AlertTriangle,
+  Warning,
   FileText,
   Target
 } from '@phosphor-icons/react'
@@ -198,7 +198,7 @@ Suitable for: Legal proceedings, oversight submission, forensic examination
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'CRITICAL': return <Warning className="h-4 w-4 text-red-600" />
-      case 'HIGH': return <AlertTriangle className="h-4 w-4 text-orange-600" />
+      case 'HIGH': return <Warning className="h-4 w-4 text-orange-600" />
       case 'MODERATE': return <Eye className="h-4 w-4 text-yellow-600" />
       case 'LOW': return <CheckCircle className="h-4 w-4 text-green-600" />
       default: return <FileText className="h-4 w-4 text-gray-600" />
@@ -320,7 +320,7 @@ Suitable for: Legal proceedings, oversight submission, forensic examination
                       
                       {analysisResult.overallRisk === 'HIGH' && (
                         <Alert className="border-orange-200 bg-orange-50">
-                          <AlertTriangle className="h-4 w-4 text-orange-600" />
+                          <Warning className="h-4 w-4 text-orange-600" />
                           <AlertDescription className="text-orange-800">
                             <strong>HIGH RISK:</strong> Significant systematic patterns detected requiring immediate investigation 
                             and potential legal action. Administrative and judicial oversight required.
