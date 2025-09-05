@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
-import { FileText, Upload, Scales, Shield, Users, Download, Funnel, MagnifyingGlass, Eye, PencilSimple, GitBranch, TextT, X, Clock, User, FileArrowUp, ChartLine, GitBranch, Warning, ArrowClockwise } from '@phosphor-icons/react'
+import { FileText, Upload, Scales, Shield, Users, Download, Funnel, MagnifyingGlass, Eye, PencilSimple, GitBranch, TextT, X, Clock, User, FileArrowUp, ChartLine, Warning, ArrowClockwise } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { extractTextFromPDF, validatePDF, getPDFInfo } from '@/lib/pdfProcessor'
 import { 
