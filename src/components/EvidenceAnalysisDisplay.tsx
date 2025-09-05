@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Warning, FileText, Users, Scales, Shield, Download, Eye, GitMerge } from '@phosphor-icons/react'
+import { Warning, FileText, Users, Scales, Shield, Download, Eye, GitBranch } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface RealEvidenceContradiction {

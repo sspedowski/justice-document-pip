@@ -111,7 +111,7 @@ describe('Justice Document Manager - Production Build Test', () => {
     render(<App />)
     
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText(/Search documents/)
+      const searchInput = screen.getByPlaceholderText(/MagnifyingGlass documents/)
       expect(searchInput).toBeInTheDocument()
     })
   })
@@ -141,7 +141,7 @@ describe('Justice Document Manager - Production Build Test', () => {
     render(<App />)
     
     // Test Ctrl+K for search focus
-    const searchInput = screen.getByPlaceholderText(/Search documents/)
+    const searchInput = screen.getByPlaceholderText(/MagnifyingGlass documents/)
     
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
     
@@ -173,7 +173,7 @@ describe('Justice Document Manager - Production Build Test', () => {
     fireEvent.click(screen.getByText('Document Dashboard'))
     
     await waitFor(() => {
-      expect(screen.getByText(/Search documents/)).toBeInTheDocument()
+      expect(screen.getByText(/MagnifyingGlass documents/)).toBeInTheDocument()
     })
   })
 

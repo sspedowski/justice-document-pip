@@ -43,14 +43,14 @@ vi.mock('@phosphor-icons/react', () => {
   return {
     FileText: MockIcon,
     Upload: MockIcon, 
-    Scale: MockIcon,
+    Scales: MockIcon,
     Shield: MockIcon,
     Users: MockIcon,
     Download: MockIcon,
     Filter: MockIcon,
-    Search: MockIcon,
+    MagnifyingGlass: MockIcon,
     Eye: MockIcon,
-    Edit: MockIcon,
+    Pencil: MockIcon,
     GitBranch: MockIcon,
     MagnifyingGlass: MockIcon,
     TextT: MockIcon,
@@ -59,7 +59,7 @@ vi.mock('@phosphor-icons/react', () => {
     User: MockIcon,
     FileArrowUp: MockIcon,
     ChartLine: MockIcon,
-    GitCompare: MockIcon
+    GitDiff: MockIcon
   }
 })
 
@@ -129,8 +129,8 @@ describe('App Component', () => {
   it('displays the search interface', () => {
     render(<App />)
     
-    expect(screen.getByPlaceholderText(/Search documents/)).toBeInTheDocument()
-    expect(screen.getByText('Content Search')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/MagnifyingGlass documents/)).toBeInTheDocument()
+    expect(screen.getByText('Content MagnifyingGlass')).toBeInTheDocument()
   })
 
   it('renders action buttons', () => {

@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, ArrowRight, GitBranch, Clock, User, FileText, AlertTriangle, CheckCircle, X } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, GitBranch, Clock, User, FileText, Warning, CheckCircle, X } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface DocumentVersion {
@@ -341,9 +341,9 @@ export function DocumentComparison({
       case 'removed':
         return <X className="h-4 w-4 text-red-600" />
       case 'changed':
-        return <AlertTriangle className="h-4 w-4 text-orange-600" />
+        return <Warning className="h-4 w-4 text-orange-600" />
       default:
-        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+        return <Warning className="h-4 w-4 text-muted-foreground" />
     }
   }
 

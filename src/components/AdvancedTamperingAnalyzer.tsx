@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { AlertTriangle, FileText, GitCompare, Eye, Download, Clock, TrendingUp, Shield, Database, ChartLine } from '@phosphor-icons/react'
+import { Warning, FileText, GitDiff, Eye, Download, Clock, TrendUp, Shield, Database, ChartLine } from '@phosphor-icons/react'
 import { analyzeTampering, generateTamperingReport, type TamperingReport } from '@/lib/advancedTamperingDetector'
 import { sampleDocumentsWithDates, documentMetadata } from '@/data/sampleDocumentsWithDates'
 import { toast } from 'sonner'
@@ -181,7 +181,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
       <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-6 w-6 text-orange-600" />
+            <Warning className="h-6 w-6 text-orange-600" />
             Advanced Evidence Tampering Detection System
           </DialogTitle>
         </DialogHeader>
@@ -291,7 +291,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
+                      <TrendUp className="h-5 w-5" />
                       Executive Summary
                     </CardTitle>
                   </CardHeader>
@@ -322,7 +322,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <GitCompare className="h-5 w-5" />
+                      <GitDiff className="h-5 w-5" />
                       Detected Patterns Overview
                     </CardTitle>
                   </CardHeader>
@@ -406,7 +406,7 @@ const AdvancedTamperingAnalyzer: React.FC<Props> = ({ documents, isOpen, onClose
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <Warning className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                   <h3 className="text-lg font-semibold mb-2">No Analysis Results</h3>
                   <p className="text-muted-foreground">Run an analysis to see detailed pattern detection results.</p>
                 </div>

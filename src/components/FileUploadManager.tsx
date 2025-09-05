@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from '@phosphor-icons/react'
+import { Upload, FileText, Warning, CheckCircle, XCircle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 interface FileUploadManagerProps {
@@ -238,7 +238,7 @@ export function FileUploadManager({ onUploadComplete }: FileUploadManagerProps) 
                   
                   {file.error && (
                     <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                      <AlertTriangle className="h-4 w-4 inline mr-1" />
+                      <Warning className="h-4 w-4 inline mr-1" />
                       {file.error}
                     </div>
                   )}

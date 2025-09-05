@@ -6,8 +6,8 @@ import '@testing-library/jest-dom'
 vi.mock('@phosphor-icons/react', () => {
   const MockIcon = ({ children, ...props }: any) => <span data-testid="icon" {...props}>{children}</span>
   return {
-    AlertTriangle: MockIcon,
-    RefreshCw: MockIcon
+    Warning: MockIcon,
+    ArrowsClockwise: MockIcon
   }
 })
 
