@@ -37,30 +37,19 @@ vi.mock('sonner', () => ({
   }
 }))
 
-// Mock @phosphor-icons/react
+// Mock @phosphor-icons/react with comprehensive coverage
 vi.mock('@phosphor-icons/react', () => {
   const MockIcon = ({ children, ...props }: any) => <span data-testid="icon" {...props}>{children}</span>
-  return {
-    FileText: MockIcon,
-    Upload: MockIcon, 
-    Scale: MockIcon,
-    Shield: MockIcon,
-    Users: MockIcon,
-    Download: MockIcon,
-    Filter: MockIcon,
-    Search: MockIcon,
-    Eye: MockIcon,
-    Edit: MockIcon,
-    GitBranch: MockIcon,
-    MagnifyingGlass: MockIcon,
-    TextT: MockIcon,
-    X: MockIcon,
-    Clock: MockIcon,
-    User: MockIcon,
-    FileArrowUp: MockIcon,
-    ChartLine: MockIcon,
-    GitCompare: MockIcon
-  }
+  
+  // Create a proxy that returns MockIcon for any requested icon
+  return new Proxy({}, {
+    get: (target, prop) => {
+      if (typeof prop === 'string') {
+        return MockIcon
+      }
+      return target[prop as keyof typeof target]
+    }
+  })
 })
 
 import App from '../App'
