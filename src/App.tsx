@@ -99,8 +99,8 @@ async function loadProcessedDocuments(): Promise<Result<Document[]>> {
       }) as Document[]
     
     return documents
-  }, (error) => 
-    ErrorHandler.handle(
+  }, (error) => {
+    return ErrorHandler.handle(
       new ApplicationError(
         ERROR_CODES.NETWORK_ERROR,
         'Failed to load processed documents',
@@ -112,7 +112,7 @@ async function loadProcessedDocuments(): Promise<Result<Document[]>> {
       ),
       'loadProcessedDocuments'
     )
-  )
+  })
 }
 
 function App() {
@@ -865,13 +865,16 @@ function App() {
     if (action === 'replace') {
       toast.info('Replacing existing document...')
       // Continue processing the file but replace the existing document
-      continueProcessingAfterDuplicate(newFile, processingDoc, result.existingDocument.id)
+      if (result.existingDocument) {
+        continueProcessingAfterDuplicate(newFile, processingDoc, result.existingDocument.id)
+      }
     } else if (action === 'keep-both') {
       toast.info('Keeping both documents...')
       // Continue processing with modified filename
       continueProcessingAfterDuplicate(newFile, processingDoc)
     } else if (action === 'skip') {
-      toast.info(`Skipped upload - keeping existing: ${result.existingDocument.fileName}`)
+      const existingFileName = result.existingDocument?.fileName || 'existing document'
+      toast.info(`Skipped upload - keeping existing: ${existingFileName}`)
       // Remove from processing queue
       setProcessing(prev => prev.filter(p => p.fileName !== newFile.name))
     }
